@@ -193,7 +193,8 @@ jobs:
           pe.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_IMPORT"]])
           names = sorted(e.dll.decode().lower() for e in pe.DIRECTORY_ENTRY_IMPORT)
           print("\n".join(names))
-          app = [n for n in names if n.startswith(("qt6", "av", "sw", "dav1d"))]
+          ffmpeg = ("avcodec-", "avformat-", "avutil-", "avfilter-", "avdevice-", "swresample-", "swscale-", "dav1d")
+          app = [n for n in names if n.startswith(("qt6",) + ffmpeg)]
           expected = {"qt6core.dll","qt6gui.dll","qt6network.dll","qt6qml.dll","qt6quick.dll","qt6widgets.dll",
                       "avcodec-63.dll","avformat-63.dll","avutil-61.dll","swresample-7.dll","swscale-10.dll"}
           extra = sorted(set(app) - expected)
