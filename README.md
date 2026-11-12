@@ -185,10 +185,19 @@ Not as an OBS plugin yet; it is on the roadmap. Today you can capture the PushFP
 
 ## Build from source
 
-PushFPS builds the same way as Veyra: Visual Studio 2022 (MSVC), CMake with Ninja, Qt 6.8.3, a patched
-FFmpeg 9.0.1, and NVIDIA, AMD and Intel SDKs that are downloaded separately and never committed. See
-[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md), [docs/BUILD_2.1.5.md](docs/BUILD_2.1.5.md) and
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The program builds as `PushFPS.exe`.
+Every push builds PushFPS on GitHub Actions ([build-windows.yml](.github/workflows/build-windows.yml)), and
+that workflow is the build recipe: Visual Studio 2022, CMake with Ninja, Qt 6.8.3, FFmpeg 9.0.1 from vcpkg
+at the pinned baseline, the NVIDIA DLSS SDK 310.7.0, nv-codec-headers, the CUDA driver header, Intel XeSS
+3.0.2 and AMD FidelityFX 1.1.4 and 2.3.0. All of them are downloaded from their official public sources at
+pinned versions; none is committed. The workflow then checks that `PushFPS.exe` links exactly the Qt and
+FFmpeg libraries in Veyra's runtime package, installs it with the real installer and starts it.
+
+The NVIDIA Optical Flow SDK needs a developer login, so release builds leave it out and use AMD FidelityFX
+optical flow for motion estimation instead (it runs on any DirectX 12 GPU). NVIDIA Video Frame Generation
+has its own optical flow and is not affected. If you build locally with the Optical Flow SDK in
+`third_party_local/nvidia/Optical_Flow_SDK_5.0.7`, NVIDIA optical flow is available as in Veyra.
+
+More background: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md), [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 Inside the code, PushFPS keeps Veyra's names (namespaces, targets, the `qml/Veyra` module) so fixes from
 Veyra keep merging cleanly. The PushFPS name and links live in

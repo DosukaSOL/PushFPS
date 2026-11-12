@@ -38,6 +38,21 @@ and edits would conflict on every merge.
 | Program name `PushFPS.exe` | `CMakeLists.txt` (`OUTPUT_NAME` on `veyra_qml_ui`) |
 | Logo and icon | `qml/Veyra/logo.png`, `assets/veyra.ico` (PushFPS artwork, upstream file name), `assets/pushfps-*.png` |
 
+## Building and releasing
+
+- `.github/workflows/build-windows.yml` is the build recipe (pinned, login-free dependencies). It builds
+  `PushFPS.exe`, runs the GPU-free unit tests, checks the exe's Qt/FFmpeg imports against Veyra's runtime
+  package, packages `packaging/make-release.ps1`, then installs with `packaging/Install-PushFPS.ps1` and
+  starts the program; QML errors at startup fail the build. FFmpeg (~40 min) is cached by vcpkg commit.
+- Releases: push a tag `vX.Y.Z` (stable numbers only: the in-app update checker ignores other tags). The
+  workflow publishes it as a GitHub **pre-release**; mark it as the latest release only after a person has
+  tested it with a real capture card and GPU. Builds without a tag are versioned `2.1.5-pushfps.<run>`.
+- The upstream runtime package version is `UPSTREAM_TAG` in the workflow; its SHA-256 values are pinned into
+  the installer at build time from Veyra's own `SHA256SUMS.txt`. Moving to a newer Veyra release means
+  merging upstream and changing `UPSTREAM_TAG` together.
+- Release builds have no NVIDIA Optical Flow SDK (login-only): `src/ngx/NvOfSessionUnavailable.cpp` makes
+  NVOF report unavailable and the app uses AMD FidelityFX optical flow.
+
 ## Syncing with Veyra
 
 ```
