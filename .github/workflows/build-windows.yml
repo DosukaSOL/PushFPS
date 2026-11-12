@@ -175,14 +175,21 @@ jobs:
           Get-Item "$env:BUILD\PushFPS.exe" | Format-List Name, Length, VersionInfo
 
       - name: Unit tests that need no GPU
-        continue-on-error: true
         run: |
           cmake --build $env:BUILD --target veyra_update_checker_tests veyra_ui_i18n_tests --parallel
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $env:PATH = "$env:QT_ROOT_DIR\bin;$env:PATH"
+          $failed = 0
           foreach ($t in 'veyra_update_checker_tests', 'veyra_ui_i18n_tests') {
             $exe = Get-ChildItem $env:BUILD -Recurse -Filter "$t.exe" | Select-Object -First 1
-            if ($exe) { & $exe.FullName; Write-Host "$t exit $LASTEXITCODE" }
+            if (-not $exe) { Write-Host "::error::$t.exe not built"; $failed++; continue }
+            & $exe.FullName -o "$t.txt,txt" 2>&1 | Out-Host
+            $code = $LASTEXITCODE
+            if (Test-Path "$t.txt") { Get-Content "$t.txt" | Out-Host }
+            Write-Host "$t exit $code"
+            if ($code -ne 0) { $failed++ }
           }
+          if ($failed) { exit 1 }
 
       - name: Imports must match the upstream runtime package
         run: |
