@@ -73,6 +73,53 @@ jobs:
           dir: D:\
           cache: true
 
+      - name: NVIDIA DLSS SDK ${{ env.DLSS_TAG }} (headers + static NGX library)
+        working-directory: D:\deps
+        shell: bash
+        run: |
+          GIT_LFS_SKIP_SMUDGE=1 git clone -q --depth 1 --branch "$DLSS_TAG" --filter=blob:none --sparse https://github.com/NVIDIA/DLSS.git dlss
+          git -C dlss sparse-checkout set include lib/Windows_x86_64/x64
+          test -f dlss/include/nvsdk_ngx.h && test -f dlss/lib/Windows_x86_64/x64/nvsdk_ngx_s.lib
+
+      - name: NVENC headers, CUDA driver header, XeSS, FidelityFX
+        working-directory: D:\deps
+        shell: bash
+        run: |
+          set -e
+          git clone -q --depth 1 --branch "$NVCODEC_TAG" https://github.com/FFmpeg/nv-codec-headers.git nv-codec-headers
+          curl -sSfL "$CUDART_ZIP" -o cudart.zip && unzip -q cudart.zip -d cudart && mv cudart/*/ cudart-root
+          test -f cudart-root/include/cuda.h
+          gh release download "$XESS_TAG" -R intel/xess -p '*.zip' -O xess.zip && unzip -q xess.zip -d xess
+          find xess -name xefg_swapchain_d3d12.h | head -1
+          GIT_LFS_SKIP_SMUDGE=1 git clone -q --depth 1 --branch "$FFX2_TAG" --filter=blob:none --sparse https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK.git ffx2
+          git -C ffx2 sparse-checkout set Kits/FidelityFX/api/include Kits/FidelityFX/framegeneration/include Kits/FidelityFX/upscalers/include
+          gh release download "$FFX1_TAG" -R GPUOpen-LibrariesAndSDKs/FidelityFX-SDK -p '*.zip' -O ffx1.zip && unzip -q ffx1.zip -d ffx1
+
+      # FidelityFX 1.1.4 ships source only. Build the optical flow + DX12 backend static libraries with the
+      # static C runtime (/MT), as PushFPS links it; they land in sdk/bin/ffx_sdk where CMakeLists.txt looks.
+      - name: Build FidelityFX 1.1.4 optical flow (static)
+        working-directory: D:\deps\ffx1\sdk
+        run: |
+          cmake -S . -B build -A x64 -DFFX_API_BACKEND=DX12_X64 -DFFX_ALL=OFF -DFFX_OF=ON -DFFX_AUTO_COMPILE_SHADERS=1 `
+            -DCMAKE_POLICY_DEFAULT_CMP0091=NEW -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build build --config Release --parallel
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem bin\ffx_sdk -Filter *.lib | Format-Table Name, Length
+
+      - name: Locate SDK roots
+        shell: bash
+        run: |
+          xess=$(dirname "$(dirname "$(dirname "$(find /d/deps/xess -name xefg_swapchain_d3d12.h | head -1)")")")
+          ffx1lib=$(find /d/deps/ffx1/sdk/bin -iname 'ffx_opticalflow_x64.lib' | head -1)
+          ffx1=""; [ -n "$ffx1lib" ] && ffx1=$(dirname "$(dirname "$(dirname "$ffx1lib")")")
+          {
+            echo "XESS_ROOT=$(cygpath -m "$xess")"
+            echo "FFX1_ROOT=$( [ -n "$ffx1" ] && cygpath -m "$ffx1" )"
+          } >> "$GITHUB_ENV"
+          echo "XeSS root: $xess"; echo "FidelityFX 1.x root: ${ffx1:-not found}"
+          if [ -z "$ffx1" ]; then echo "::error::FidelityFX 1.1.4 optical flow libraries not found; PushFPS needs them for optical flow"; exit 1; fi
+
       # Restore and save are separate steps: actions/cache only saves when the whole job succeeds,
       # and FFmpeg takes ~40 minutes to build, so it is saved as soon as it is built.
       - name: Restore vcpkg binaries
@@ -100,42 +147,6 @@ jobs:
         with:
           path: D:\deps\vcpkg-binary
           key: vcpkg-ffmpeg-${{ env.VCPKG_COMMIT }}-avfilter-v1
-
-      - name: NVIDIA DLSS SDK ${{ env.DLSS_TAG }} (headers + static NGX library)
-        working-directory: D:\deps
-        shell: bash
-        run: |
-          GIT_LFS_SKIP_SMUDGE=1 git clone -q --depth 1 --branch "$DLSS_TAG" --filter=blob:none --sparse https://github.com/NVIDIA/DLSS.git dlss
-          git -C dlss sparse-checkout set include lib/Windows_x86_64/x64
-          test -f dlss/include/nvsdk_ngx.h && test -f dlss/lib/Windows_x86_64/x64/nvsdk_ngx_s.lib
-
-      - name: NVENC headers, CUDA driver header, XeSS, FidelityFX
-        working-directory: D:\deps
-        shell: bash
-        run: |
-          set -e
-          git clone -q --depth 1 --branch "$NVCODEC_TAG" https://github.com/FFmpeg/nv-codec-headers.git nv-codec-headers
-          curl -sSfL "$CUDART_ZIP" -o cudart.zip && unzip -q cudart.zip -d cudart && mv cudart/*/ cudart-root
-          test -f cudart-root/include/cuda.h
-          gh release download "$XESS_TAG" -R intel/xess -p '*.zip' -O xess.zip && unzip -q xess.zip -d xess
-          find xess -name xefg_swapchain_d3d12.h | head -1
-          GIT_LFS_SKIP_SMUDGE=1 git clone -q --depth 1 --branch "$FFX2_TAG" --filter=blob:none --sparse https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK.git ffx2
-          git -C ffx2 sparse-checkout set Kits/FidelityFX/api/include Kits/FidelityFX/framegeneration/include Kits/FidelityFX/upscalers/include
-          gh release download "$FFX1_TAG" -R GPUOpen-LibrariesAndSDKs/FidelityFX-SDK -p '*.zip' -O ffx1.zip && unzip -q ffx1.zip -d ffx1
-          echo "FidelityFX 1.x optical flow libraries:"; find ffx1 -iname 'ffx_opticalflow_x64.lib' -o -iname 'ffx_backend_dx12_x64.lib' | head
-
-      - name: Locate SDK roots
-        shell: bash
-        run: |
-          xess=$(dirname "$(dirname "$(dirname "$(find /d/deps/xess -name xefg_swapchain_d3d12.h | head -1)")")")
-          ffx1lib=$(find /d/deps/ffx1 -iname 'ffx_opticalflow_x64.lib' | head -1)
-          ffx1=""; [ -n "$ffx1lib" ] && ffx1=$(dirname "$(dirname "$(dirname "$ffx1lib")")")
-          {
-            echo "XESS_ROOT=$(cygpath -m "$xess")"
-            echo "FFX1_ROOT=$( [ -n "$ffx1" ] && cygpath -m "$ffx1" )"
-          } >> "$GITHUB_ENV"
-          echo "XeSS root: $xess"; echo "FidelityFX 1.x root: ${ffx1:-not found}"
-          if [ -z "$ffx1" ]; then echo "::error::FidelityFX 1.1.4 optical flow libraries not found; PushFPS needs them for optical flow"; exit 1; fi
 
       - name: Configure
         run: |
