@@ -17,6 +17,11 @@ on:
     paths-ignore: ['**/*.md', 'docs/**', 'assets/**', '.github/workflows/checks.yml']
   pull_request:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Publish this build as a pre-release with this tag (vX.Y.Z, e.g. v2.1.5). Leave empty for a test build.'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -55,8 +60,13 @@ jobs:
 
       # A release tag (v2.1.5) builds exactly that version; every other build is 2.1.5-pushfps.<run>.
       - name: Version
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.TrimStart('v') }
+          $tag = $env:RELEASE_TAG
+          if ($tag -and $tag -notmatch '^v\d+\.\d+\.\d+$') { throw "release_tag must look like v2.1.5" }
+          if ($tag) { $v = $tag.TrimStart('v') }
+          elseif ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.TrimStart('v') }
           else { $v = "2.1.5-pushfps.$env:GITHUB_RUN_NUMBER" }
           "PUSHFPS_VERSION=$v" | Out-File -Append $env:GITHUB_ENV
           New-Item -ItemType Directory -Force $env:DEPS | Out-Null
@@ -255,13 +265,14 @@ jobs:
   # Publishes a tagged build as a GitHub pre-release. It stays a pre-release (which the in-app update
   # checker ignores) until someone has tested it on real hardware and marks it as the latest release.
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.release_tag != ''
     needs: build
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     env:
       GH_TOKEN: ${{ github.token }}
+      TAG: ${{ inputs.release_tag || github.ref_name }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -288,5 +299,6 @@ jobs:
 
           PushFPS is free software (GPL-3.0), built on [Veyra](https://github.com/Likely7/Veyra-NRVideo) by Likely7.
           NOTES
-          gh release create "$GITHUB_REF_NAME" dist/* -R "$GITHUB_REPOSITORY" --title "PushFPS $GITHUB_REF_NAME" \
-            --notes-file notes.md --prerelease --verify-tag
+          # A manual run creates the tag on the commit it built; a tag push already has it.
+          gh release create "$TAG" dist/* -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "PushFPS $TAG" \
+            --notes-file notes.md --prerelease
