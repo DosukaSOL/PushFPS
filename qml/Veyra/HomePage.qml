@@ -126,6 +126,7 @@ VPage {
         PushQuickSetup {
             objectName: "home-pushfps-quick"
             compact: true
+            showSetupTip: true
             // The home page does not scroll: on a short window the cards keep the
             // space and the quick setup stays in Professional → 补帧.
             visible: root.height >= 700
@@ -146,8 +147,18 @@ VPage {
         Flow {
             id: srcGrid
             Layout.alignment: Qt.AlignHCenter
-            Layout.preferredWidth: Math.min(1044, root.width - 48)
+            // PushFPS: only sources this build includes get a card (PS5 / PC / Xbox streaming
+            // can be compiled out), and the grid is as wide as the cards it shows.
+            readonly property int shownCards: 3 + (available("ps5") ? 1 : 0) + (available("moonlight") ? 1 : 0)
+                                                  + (available("xbox") ? 1 : 0)
+            Layout.preferredWidth: Math.min(shownCards * 164 + (shownCards - 1) * 12, root.width - 48)
             spacing: 12
+            function available(act) {
+                if (act === "ps5") return !!veyra.ps5 && veyra.ps5.available === true
+                if (act === "moonlight") return !!veyra.moonlight
+                if (act === "xbox") return !!veyra.xbox
+                return true
+            }
             // Subtitles name what is really there: the device of the last capture
             // session and the saved PS5 host; generic wording when there is none.
             // Only the subtitle follows the live state. The cards themselves are a fixed
@@ -180,6 +191,7 @@ VPage {
                     id: slot
                     required property var modelData
                     required property int index
+                    visible: srcGrid.available(modelData.act)
                     implicitWidth: 164
                     implicitHeight: 124
                     VRise { page: root; target: slot; d: 2 + slot.index }

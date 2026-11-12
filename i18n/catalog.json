@@ -3389,6 +3389,13 @@
    "ja": "本体は同じアカウントでサインインし、設定 → デバイスと接続 → リモート機能 でリモート機能を有効にする必要があります"
   },
   {
+   "zh": "主机请输出 60 Hz。PlayStation 需在 设置 → 系统 → HDMI 中关闭 HDCP，否则采集画面为黑屏。",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "主機請輸出 60 Hz。PlayStation 需在 設定 → 系統 → HDMI 中關閉 HDCP，否則擷取畫面為黑屏。",
+   "en": "Set the console to 60 Hz output. On PlayStation, turn off HDCP in Settings → System → HDMI, or the capture picture stays black.",
+   "ja": "コンソールは 60 Hz で出力してください。PlayStation は 設定 → システム → HDMI で HDCP をオフにしないと、キャプチャ映像が黒くなります。"
+  },
+  {
    "zh": "主机转换画面失败。开启 HDR 时，主机桌面分辨率与串流分辨率不兼容会这样。",
    "src": "src/source/MoonlightSessionSource.cpp",
    "zh-TW": "主機轉換畫面失敗。開啟 HDR 時，主機桌面解析度與串流解析度不相容會這樣。",

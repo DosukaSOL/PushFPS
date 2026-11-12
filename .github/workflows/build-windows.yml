@@ -20,6 +20,11 @@ on:
 permissions:
   contents: read
 
+# One build at a time per branch: a second push waits and then reuses the FFmpeg cache.
+concurrency:
+  group: build-windows-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   UPSTREAM_REPO: Likely7/Veyra-NRVideo
   UPSTREAM_TAG: v2.1.5

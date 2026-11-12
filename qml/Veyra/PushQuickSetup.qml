@@ -11,6 +11,8 @@ VGroup {
     objectName: "pushfps-quick-setup"
     // Home shows the short form: no low-latency row and no intro line.
     property bool compact: false
+    // Home only: the first-run setup tip, until a capture card has been used once.
+    property bool showSetupTip: false
     // Console games send 30 FPS content inside a 60 Hz signal. The multiplier is
     // chosen from this; the output cap then holds the result at the target, so a
     // 40 or 60 FPS game still lands on the chosen rate.
@@ -87,6 +89,18 @@ VGroup {
         visible: !quick.compact
         Layout.fillWidth: true
         text: qsTr("为主机游戏选好帧率和画面，其他细节在专业模式里")
+        color: Theme.t3
+        font.family: Theme.fontUi
+        font.pixelSize: Theme.fsBody
+        wrapMode: Text.WordWrap
+    }
+
+    Text {
+        objectName: "pushfps-setup-tip"
+        visible: quick.showSetupTip && !veyra.hasCaptureSession
+        Layout.fillWidth: true
+        Layout.topMargin: 8
+        text: qsTr("主机请输出 60 Hz。PlayStation 需在 设置 → 系统 → HDMI 中关闭 HDCP，否则采集画面为黑屏。")
         color: Theme.t3
         font.family: Theme.fontUi
         font.pixelSize: Theme.fsBody
