@@ -25,8 +25,7 @@ jobs:
         run: |
           gh release download v1.1.4 -R GPUOpen-LibrariesAndSDKs/FidelityFX-SDK -p '*.zip' -O ffx1.zip
           unzip -q ffx1.zip -d ffx1
-          ls ffx1; ls ffx1/* | head -30
-          root=$(dirname "$(find ffx1 -path '*sdk/CMakeLists.txt' | head -1)")
+          root=ffx1/sdk
           echo "sdk root: $root"; ls "$root"; ls "$root/include" | head; ls "$root/bin" 2>/dev/null | head
           find ffx1 -iname '*.bat' | head
           grep -n -E 'option\(|FFX_API_BACKEND|set\(FFX_.*CACHE' "$root/CMakeLists.txt" | head -60

@@ -73,8 +73,11 @@ jobs:
           dir: D:\
           cache: true
 
-      - name: Cache vcpkg binaries
-        uses: actions/cache@v4
+      # Restore and save are separate steps: actions/cache only saves when the whole job succeeds,
+      # and FFmpeg takes ~40 minutes to build, so it is saved as soon as it is built.
+      - name: Restore vcpkg binaries
+        id: vcpkg-cache
+        uses: actions/cache/restore@v4
         with:
           path: D:\deps\vcpkg-binary
           key: vcpkg-ffmpeg-${{ env.VCPKG_COMMIT }}-avfilter-v1
@@ -90,6 +93,13 @@ jobs:
           & vcpkg\vcpkg.exe install "ffmpeg[core,avcodec,avformat,avfilter,swresample,swscale]:x64-windows" --clean-after-build
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Get-ChildItem vcpkg\installed\x64-windows\bin\av*.dll, vcpkg\installed\x64-windows\bin\sw*.dll | Format-Table Name, Length
+
+      - name: Save vcpkg binaries
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: D:\deps\vcpkg-binary
+          key: vcpkg-ffmpeg-${{ env.VCPKG_COMMIT }}-avfilter-v1
 
       - name: NVIDIA DLSS SDK ${{ env.DLSS_TAG }} (headers + static NGX library)
         working-directory: D:\deps
