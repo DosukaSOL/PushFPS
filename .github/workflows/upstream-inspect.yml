@@ -1,0 +1,71 @@
+# Manual helper: downloads Veyra's official release package and reports what it contains (files, DLL
+# versions, what the main program imports). PushFPS builds against the same Qt / FFmpeg ABI so that its
+# program runs with the upstream runtime components. Read-only; nothing is published.
+name: upstream-inspect
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Veyra release tag
+        default: v2.1.5
+  push:
+    paths:
+      - .github/workflows/upstream-inspect.yml
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ inputs.tag || 'v2.1.5' }}
+    steps:
+      - name: Release assets
+        run: |
+          gh api repos/Likely7/Veyra-NRVideo/releases/tags/$env:TAG --jq '.assets[] | "\(.name)\t\(.size)"'
+          gh api "repos/Likely7/Veyra-NRVideo/releases/tags/$($env:TAG)-sources" --jq '.assets[] | "\(.name)\t\(.size)"'
+
+      - name: Download NVIDIA package
+        run: |
+          New-Item -ItemType Directory -Force up | Out-Null
+          gh release download $env:TAG -R Likely7/Veyra-NRVideo -p '*NVIDIA*portable*.zip' -D up
+          Get-ChildItem up | Format-Table Name, Length
+          Expand-Archive (Get-ChildItem up/*.zip)[0].FullName -DestinationPath pkg
+          $root = (Get-ChildItem pkg -Directory | Select-Object -First 1).FullName
+          if (-not (Get-ChildItem $root -Filter *.exe -ErrorAction SilentlyContinue)) { $root = (Resolve-Path pkg).Path }
+          "ROOT=$root" | Out-File -Append $env:GITHUB_ENV
+
+      - name: Tree (folders and every DLL/EXE with version)
+        run: |
+          Get-ChildItem $env:ROOT -Directory -Recurse -Depth 2 | ForEach-Object { $_.FullName.Substring($env:ROOT.Length) }
+          Get-ChildItem $env:ROOT -Recurse -Include *.exe,*.dll | ForEach-Object {
+            $v = $_.VersionInfo
+            "{0}`t{1}`t{2}`t{3}" -f $_.FullName.Substring($env:ROOT.Length), $_.Length, $v.FileVersion, $v.ProductName
+          }
+
+      - name: Imports of the main program and its direct dependencies
+        run: |
+          python -m pip install --quiet pefile
+          @'
+          import os, sys, pefile
+          root = os.environ["ROOT"]
+          exes = [os.path.join(dp, f) for dp, _, fs in os.walk(root) for f in fs if f.lower().endswith(".exe")]
+          for exe in exes:
+              pe = pefile.PE(exe, fast_load=True)
+              pe.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_IMPORT"], pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT"]])
+              print("==", os.path.relpath(exe, root))
+              for attr, kind in (("DIRECTORY_ENTRY_IMPORT", "import"), ("DIRECTORY_ENTRY_DELAY_IMPORT", "delay")):
+                  for e in getattr(pe, attr, []):
+                      print(f"  {kind} {e.dll.decode()}  ({len(e.imports)} symbols)")
+          '@ | Out-File -Encoding utf8 imports.py
+          python imports.py
+
+      - name: Text files at the top level
+        run: Get-ChildItem $env:ROOT -File | Where-Object { $_.Extension -in '.txt','.md','.json','.ini','.cmd' } | ForEach-Object { "=== $($_.Name)"; Get-Content $_.FullName -TotalCount 40 }
