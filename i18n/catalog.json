@@ -638,6 +638,13 @@
    "ja": "2X はネイティブ動作、3X / 4X は実験的なアンロックです。失敗の理由は診断を参照してください"
   },
   {
+   "zh": "30 FPS 游戏将以 %1 FPS 运行（%2× 补帧）",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "30 FPS 遊戲將以 %1 FPS 執行（%2× 補幀）",
+   "en": "A 30 FPS game runs at %1 FPS (%2× frame generation)",
+   "ja": "30 FPS のゲームが %1 FPS で動作します（%2× フレーム生成）"
+  },
+  {
    "zh": "4 项",
    "src": "qml/ProDisplayPanel.qml",
    "zh-TW": "4 項",
@@ -664,6 +671,13 @@
    "zh-TW": "8 位配對碼",
    "en": "8-digit pairing code",
    "ja": "8 桁のペアリングコード"
+  },
+  {
+   "zh": "AI 画面增强",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "AI 畫面增強",
+   "en": "AI picture enhancement",
+   "ja": "AI 画質強化"
   },
   {
    "zh": "AMD FSR 帧生成上限为 2X；请求未应用",
@@ -3116,6 +3130,13 @@
    "ja": "一時ファイルの削除に失敗しました（Windows エラー {}）：{}"
   },
   {
+   "zh": "为主机游戏选好帧率和画面，其他细节在专业模式里",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "為主機遊戲選好影格率和畫面，其他細節在專業模式裡",
+   "en": "Pick a frame rate and picture for console games. Everything else is in Professional mode.",
+   "ja": "コンソールゲームのフレームレートと画質を選びます。その他の設定はプロモードにあります。"
+  },
+  {
    "zh": "主字幕",
    "src": "qml/SubtitleSettingsDialog.qml",
    "zh-TW": "主字幕",
@@ -3331,6 +3352,13 @@
    "zh-TW": "主機沒有連上 Xbox 服務。請確認主機開著，或處於“睡眠（即時啟動）”模式，並在主機的 設定 → 裝置和連接 → 遠程功能 裡開啟“啟用遠程功能”。",
    "en": "The console is not connected to Xbox services. Make sure it is on or in Sleep (instant-on) mode, and turn on \"Enable remote features\" under Settings → Devices & connections → Remote features on the console.",
    "ja": "本体が Xbox サービスに接続されていません。本体の電源が入っているか「スリープ（クイック起動）」になっていることを確認し、本体の 設定 → デバイスと接続 → リモート機能 で「リモート機能を有効にする」をオンにしてください。"
+  },
+  {
+   "zh": "主机游戏保持原有帧率",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "主機遊戲保持原有影格率",
+   "en": "Games keep the console's own frame rate",
+   "ja": "ゲームはコンソール本来のフレームレートのままです"
   },
   {
    "zh": "主机现在连不上（离线、休眠，或地址变了）。开机后点「刷新」。",
@@ -4188,6 +4216,13 @@
    "ja": "オフでは元の変化量を保持（最大 5）"
   },
   {
+   "zh": "关闭时只做补帧。开启后每帧都经过 NVIDIA 神经渲染（DLSS 5 NR）增强，画面更清晰，但更耗 GPU",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "關閉時只做補幀。開啟後每幀都經過 NVIDIA 神經渲染（DLSS 5 NR）增強，畫面更清晰，但更耗 GPU",
+   "en": "Off: frame generation only. On: every frame also goes through NVIDIA's neural renderer (DLSS 5 NR) for a sharper picture, at a higher GPU cost",
+   "ja": "オフ：フレーム生成のみ。オン：すべてのフレームを NVIDIA のニューラルレンダリング（DLSS 5 NR）でも強化し、より鮮明になりますが GPU 負荷が増えます"
+  },
+  {
    "zh": "关闭时增强、补帧和导出用性能最强的显卡",
    "src": "src/ui/bridge/Preferences.cpp",
    "zh-TW": "關閉時增強、補幀和匯出用效能最強的顯示卡",
@@ -4445,6 +4480,13 @@
    "zh-TW": "減少處理排隊。高負載時建議選「開」而不是「開＋增強」：增強有機率導致掉幀，還會提高 GPU 時脈、增加功耗。",
    "en": "Reduce processing queue depth. Under heavy load, choose On rather than On + Boost: Boost can drop frames, and it raises GPU clocks and power use.",
    "ja": "処理の待ち行列を減らします。高負荷時は「オン＋ブースト」ではなく「オン」を推奨します。ブーストはフレーム落ちを起こすことがあり、GPU クロックと消費電力も上がります。"
+  },
+  {
+   "zh": "减少处理排队，降低输入延迟",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "減少處理排隊，降低輸入延遲",
+   "en": "Less queuing, lower input latency",
+   "ja": "処理の待ち行列を減らし、入力遅延を下げます"
   },
   {
    "zh": "减少暗部被进一步压黑，保留提亮细节",
@@ -7737,6 +7779,13 @@
    "ja": "「キャプチャーカード」で PS5 コントローラー操作がオンです：キャプチャーカード接続中はリモートプレイでコントローラーだけを送ります"
   },
   {
+   "zh": "已在专业模式中手动设置",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "已在專業模式中手動設定",
+   "en": "Set by hand in Professional mode",
+   "ja": "プロモードで手動設定されています"
+  },
+  {
    "zh": "已复制调色参数",
    "src": "src/ui/bridge/Preferences.cpp",
    "zh-TW": "已複製調色參數",
@@ -8743,6 +8792,13 @@
    "zh-TW": "當前組合：內容 %1 · 環境 %2",
    "en": "Current combination: content %1 · environment %2",
    "ja": "現在の組み合わせ：内容 %1 · 環境 %2"
+  },
+  {
+   "zh": "当前补帧方式最高 %1×，30 FPS 游戏约为 %2 FPS",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "目前補幀方式最高 %1×，30 FPS 遊戲約為 %2 FPS",
+   "en": "This frame generation method stops at %1×, about %2 FPS for a 30 FPS game",
+   "ja": "現在のフレーム生成方式は最大 %1× で、30 FPS のゲームは約 %2 FPS になります"
   },
   {
    "zh": "当前设备不能执行所选 NR，请选择此显卡可用的 NR 运行库",
@@ -13441,6 +13497,13 @@
    "zh-TW": "目標已失效",
    "en": "The target is no longer valid",
    "ja": "対象が無効になりました"
+  },
+  {
+   "zh": "目标帧率",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "目標影格率",
+   "en": "Target frame rate",
+   "ja": "目標フレームレート"
   },
   {
    "zh": "目标文件已存在，请使用其他名称",

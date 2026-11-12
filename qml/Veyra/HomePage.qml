@@ -121,6 +121,19 @@ VPage {
             }
         }
 
+        // PushFPS: pick the frame rate before connecting; the same settings as
+        // Professional → 补帧, in their short form.
+        PushQuickSetup {
+            objectName: "home-pushfps-quick"
+            compact: true
+            // The home page does not scroll: on a short window the cards keep the
+            // space and the quick setup stays in Professional → 补帧.
+            visible: root.height >= 700
+            Layout.alignment: Qt.AlignHCenter
+            Layout.fillWidth: false
+            Layout.preferredWidth: Math.min(560, root.width - 48)
+        }
+
         VButton {
             objectName: "home-playlist"
             Layout.alignment: Qt.AlignHCenter

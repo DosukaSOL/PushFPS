@@ -77,3 +77,4 @@ SubtitleSettingsDialog 1.0 SubtitleSettingsDialog.qml
 AudioSettingsDialog 1.0 AudioSettingsDialog.qml
 SavePresetDialog 1.0 SavePresetDialog.qml
 ManagePresetsDialog 1.0 ManagePresetsDialog.qml
+PushQuickSetup 1.0 PushQuickSetup.qml

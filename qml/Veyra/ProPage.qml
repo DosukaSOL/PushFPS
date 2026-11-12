@@ -1722,6 +1722,13 @@ VPage {
                         visible: root.tab === "fg"
                         objectName: "list-fg-group"
 
+                        // PushFPS: target frame rate, AI enhancement and low latency in
+                        // three controls; the detailed frame generation card follows.
+                        PushQuickSetup {
+                            objectName: "list-pushfps-quick"
+                            Layout.fillWidth: true
+                        }
+
                         VAccordion {
                             id: fgCard
                             objectName: "list-fg-card"
