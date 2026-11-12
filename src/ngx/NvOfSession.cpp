@@ -28,6 +28,8 @@ namespace {
 using PFN_NvOFGetMaxSupportedApiVersion = NV_OF_STATUS(NVOFAPI*)(uint32_t*);
 } // namespace
 
+bool NvOfSession::builtWithSdk() { return true; }
+
 NvOfSession::~NvOfSession()
 {
     shutdown();

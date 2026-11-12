@@ -12421,6 +12421,13 @@
    "ja": "このバージョンには Xbox ストリーミングが含まれていません"
   },
   {
+   "zh": "此版本未包含 NVIDIA 光流，已改用 AMD FidelityFX 光流",
+   "src": "src/ui/bridge/Hardware.cpp",
+   "zh-TW": "此版本未包含 NVIDIA 光流，已改用 AMD FidelityFX 光流",
+   "en": "This build has no NVIDIA optical flow; AMD FidelityFX optical flow is used instead",
+   "ja": "このビルドには NVIDIA オプティカルフローが含まれていないため、AMD FidelityFX オプティカルフローを使用します"
+  },
+  {
    "zh": "此版本未包含 PS5 远程游玩组件。",
    "src": "src/ui/bridge/RemotePlay.cpp",
    "zh-TW": "此版本未包含 PS5 遠程遊玩組件。",

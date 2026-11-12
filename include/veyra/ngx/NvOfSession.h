@@ -32,6 +32,11 @@ public:
     NvOfSession(const NvOfSession&) = delete;
     NvOfSession& operator=(const NvOfSession&) = delete;
 
+    // False when this program was built without the NVIDIA Optical Flow SDK
+    // (src/ngx/NvOfSessionUnavailable.cpp): initialize() then always fails and
+    // the capability table reports NVIDIA optical flow as unavailable.
+    static bool builtWithSdk();
+
     struct Desc {
         uint32_t width = 0;              // working extent (input frames)
         uint32_t height = 0;

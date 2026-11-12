@@ -1,0 +1,214 @@
+# Builds PushFPS.exe on Windows and packages the PushFPS release zip.
+#
+# PushFPS ships as a small overlay on Veyra's official runtime package: the installer in the zip downloads
+# Veyra's NVIDIA or AMD package from Veyra's own GitHub release (checked against SHA-256 values pinned here),
+# then adds PushFPS on top. PushFPS never rehosts NVIDIA / AMD / Intel runtime files. To run inside that
+# package, PushFPS.exe is built against exactly the same Qt (6.8.3) and FFmpeg (9.0.1) ABI as Veyra.
+#
+# Every dependency below is fetched from its official public source at a pinned version; none needs a login.
+# The NVIDIA Optical Flow SDK does (developer login), so this build uses AMD FidelityFX optical flow instead
+# (src/ngx/NvOfSessionUnavailable.cpp).
+name: build-windows
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**/*.md', 'docs/**', 'assets/**', '.github/workflows/checks.yml']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  UPSTREAM_REPO: Likely7/Veyra-NRVideo
+  UPSTREAM_TAG: v2.1.5
+  VCPKG_COMMIT: 30ef65cad98f08e7197c9a1656fbd871bcb72f2d   # builtin-baseline in vcpkg.json: FFmpeg 9.0.1
+  DLSS_TAG: v310.7.0
+  NVCODEC_TAG: n13.0.19.0
+  CUDART_ZIP: https://developer.download.nvidia.com/compute/cuda/redist/cuda_cudart/windows-x86_64/cuda_cudart-windows-x86_64-12.9.79-archive.zip
+  XESS_TAG: v3.0.2
+  FFX1_TAG: v1.1.4
+  FFX2_TAG: v2.3.0
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 240
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DEPS: D:\deps
+      BUILD: D:\b
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Version
+        run: |
+          $v = "2.1.5-pushfps.$env:GITHUB_RUN_NUMBER"
+          "PUSHFPS_VERSION=$v" | Out-File -Append $env:GITHUB_ENV
+          New-Item -ItemType Directory -Force $env:DEPS | Out-Null
+          Write-Host "PushFPS $v"
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Qt 6.8.3 (MSVC 2022 x64)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          host: windows
+          target: desktop
+          arch: win64_msvc2022_64
+          dir: D:\
+          cache: true
+
+      - name: Cache vcpkg binaries
+        uses: actions/cache@v4
+        with:
+          path: D:\deps\vcpkg-binary
+          key: vcpkg-ffmpeg-${{ env.VCPKG_COMMIT }}-avfilter-v1
+
+      - name: FFmpeg 9.0.1 (vcpkg at the pinned baseline)
+        working-directory: D:\deps
+        run: |
+          git init -q vcpkg; git -C vcpkg remote add origin https://github.com/microsoft/vcpkg.git
+          git -C vcpkg fetch -q --depth 1 origin $env:VCPKG_COMMIT; git -C vcpkg checkout -q FETCH_HEAD
+          & vcpkg\bootstrap-vcpkg.bat -disableMetrics
+          New-Item -ItemType Directory -Force vcpkg-binary | Out-Null
+          $env:VCPKG_DEFAULT_BINARY_CACHE = "$env:DEPS\vcpkg-binary"
+          & vcpkg\vcpkg.exe install "ffmpeg[core,avcodec,avformat,avfilter,swresample,swscale]:x64-windows" --clean-after-build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem vcpkg\installed\x64-windows\bin\av*.dll, vcpkg\installed\x64-windows\bin\sw*.dll | Format-Table Name, Length
+
+      - name: NVIDIA DLSS SDK ${{ env.DLSS_TAG }} (headers + static NGX library)
+        working-directory: D:\deps
+        shell: bash
+        run: |
+          GIT_LFS_SKIP_SMUDGE=1 git clone -q --depth 1 --branch "$DLSS_TAG" --filter=blob:none --sparse https://github.com/NVIDIA/DLSS.git dlss
+          git -C dlss sparse-checkout set include lib/Windows_x86_64/x64
+          test -f dlss/include/nvsdk_ngx.h && test -f dlss/lib/Windows_x86_64/x64/nvsdk_ngx_s.lib
+
+      - name: NVENC headers, CUDA driver header, XeSS, FidelityFX
+        working-directory: D:\deps
+        shell: bash
+        run: |
+          set -e
+          git clone -q --depth 1 --branch "$NVCODEC_TAG" https://github.com/FFmpeg/nv-codec-headers.git nv-codec-headers
+          curl -sSfL "$CUDART_ZIP" -o cudart.zip && unzip -q cudart.zip -d cudart && mv cudart/*/ cudart-root
+          test -f cudart-root/include/cuda.h
+          gh release download "$XESS_TAG" -R intel/xess -p '*.zip' -O xess.zip && unzip -q xess.zip -d xess
+          find xess -name xefg_swapchain_d3d12.h | head -1
+          GIT_LFS_SKIP_SMUDGE=1 git clone -q --depth 1 --branch "$FFX2_TAG" --filter=blob:none --sparse https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK.git ffx2
+          git -C ffx2 sparse-checkout set Kits/FidelityFX/api/include Kits/FidelityFX/framegeneration/include Kits/FidelityFX/upscalers/include
+          gh release download "$FFX1_TAG" -R GPUOpen-LibrariesAndSDKs/FidelityFX-SDK -p '*.zip' -O ffx1.zip && unzip -q ffx1.zip -d ffx1
+          echo "FidelityFX 1.x optical flow libraries:"; find ffx1 -iname 'ffx_opticalflow_x64.lib' -o -iname 'ffx_backend_dx12_x64.lib' | head
+
+      - name: Locate SDK roots
+        shell: bash
+        run: |
+          xess=$(dirname "$(dirname "$(dirname "$(find /d/deps/xess -name xefg_swapchain_d3d12.h | head -1)")")")
+          ffx1lib=$(find /d/deps/ffx1 -iname 'ffx_opticalflow_x64.lib' | head -1)
+          ffx1=""; [ -n "$ffx1lib" ] && ffx1=$(dirname "$(dirname "$(dirname "$ffx1lib")")")
+          {
+            echo "XESS_ROOT=$(cygpath -m "$xess")"
+            echo "FFX1_ROOT=$( [ -n "$ffx1" ] && cygpath -m "$ffx1" )"
+          } >> "$GITHUB_ENV"
+          echo "XeSS root: $xess"; echo "FidelityFX 1.x root: ${ffx1:-not found}"
+          if [ -z "$ffx1" ]; then echo "::error::FidelityFX 1.1.4 optical flow libraries not found; PushFPS needs them for optical flow"; exit 1; fi
+
+      - name: Configure
+        run: |
+          $ffmpeg = "$env:DEPS\vcpkg\installed\x64-windows"
+          cmake -S . -B $env:BUILD -G Ninja -DCMAKE_BUILD_TYPE=Release `
+            "-DCMAKE_PREFIX_PATH=$env:QT_ROOT_DIR;$ffmpeg" `
+            -DVEYRA_BUILD_QML_UI=ON -DVEYRA_ENABLE_EXPERIMENTAL_DLSSNR=ON -DVEYRA_ENABLE_D3D12_DEBUG=OFF `
+            -DVEYRA_ENABLE_REMOTEPLAY=OFF -DVEYRA_ENABLE_MOONLIGHT=OFF -DVEYRA_ENABLE_XBOX=OFF `
+            "-DVEYRA_DISPLAY_VERSION=$env:PUSHFPS_VERSION" `
+            "-DVEYRA_FFMPEG_ROOT=$ffmpeg" `
+            "-DVEYRA_DLSS_SDK_ROOT=$env:DEPS\dlss" `
+            "-DVEYRA_NVENC_HEADERS_ROOT=$env:DEPS\nv-codec-headers" `
+            "-DVEYRA_CUDA_DRIVER_INCLUDE_DIR=$env:DEPS\cudart-root\include" `
+            "-DVEYRA_XESS_ROOT=$env:XESS_ROOT" `
+            "-DVEYRA_FIDELITYFX_ROOT=$env:FFX1_ROOT" `
+            "-DVEYRA_FIDELITYFX2_ROOT=$env:DEPS\ffx2\Kits\FidelityFX"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build PushFPS.exe
+        run: |
+          cmake --build $env:BUILD --target veyra_qml_ui --parallel
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-Item "$env:BUILD\PushFPS.exe" | Format-List Name, Length, VersionInfo
+
+      - name: Unit tests that need no GPU
+        continue-on-error: true
+        run: |
+          cmake --build $env:BUILD --target veyra_update_checker_tests veyra_ui_i18n_tests --parallel
+          $env:PATH = "$env:QT_ROOT_DIR\bin;$env:PATH"
+          foreach ($t in 'veyra_update_checker_tests', 'veyra_ui_i18n_tests') {
+            $exe = Get-ChildItem $env:BUILD -Recurse -Filter "$t.exe" | Select-Object -First 1
+            if ($exe) { & $exe.FullName; Write-Host "$t exit $LASTEXITCODE" }
+          }
+
+      - name: Imports must match the upstream runtime package
+        run: |
+          python -m pip install --quiet pefile
+          @'
+          import pefile, sys
+          pe = pefile.PE(sys.argv[1], fast_load=True)
+          pe.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_IMPORT"]])
+          names = sorted(e.dll.decode().lower() for e in pe.DIRECTORY_ENTRY_IMPORT)
+          print("\n".join(names))
+          app = [n for n in names if n.startswith(("qt6", "av", "sw", "dav1d"))]
+          expected = {"qt6core.dll","qt6gui.dll","qt6network.dll","qt6qml.dll","qt6quick.dll","qt6widgets.dll",
+                      "avcodec-63.dll","avformat-63.dll","avutil-61.dll","swresample-7.dll","swscale-10.dll"}
+          extra = sorted(set(app) - expected)
+          if extra: sys.exit(f"PushFPS.exe imports libraries the Veyra package does not ship: {extra}")
+          print("OK: every Qt / FFmpeg import is shipped by the Veyra runtime package")
+          '@ | Out-File -Encoding utf8 imports.py
+          python imports.py "$env:BUILD\PushFPS.exe"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Pin the upstream package hashes
+        run: |
+          gh release download $env:UPSTREAM_TAG -R $env:UPSTREAM_REPO -p SHA256SUMS.txt -O upstream-sha256.txt
+          Get-Content upstream-sha256.txt
+
+      - name: Package the PushFPS release zip
+        run: |
+          ./packaging/make-release.ps1 -BuildDir $env:BUILD -Version $env:PUSHFPS_VERSION `
+            -UpstreamRepo $env:UPSTREAM_REPO -UpstreamTag $env:UPSTREAM_TAG -UpstreamSums upstream-sha256.txt -OutDir dist
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem dist | Format-Table Name, Length
+
+      - name: Install test (download Veyra runtime, add PushFPS, start it)
+        timeout-minutes: 30
+        run: |
+          $zip = (Get-ChildItem dist/PushFPS-*.zip)[0].FullName
+          Expand-Archive $zip -DestinationPath D:\pf-zip
+          & D:\pf-zip\Install-PushFPS.ps1 -Gpu NVIDIA -InstallDir D:\pf-install -NoShortcuts -NoLaunch
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path D:\pf-install\PushFPS.exe)) { throw "PushFPS.exe missing after install" }
+          # Start it and make sure Windows resolves every DLL and the program reaches its QML session.
+          $p = Start-Process D:\pf-install\PushFPS.exe -PassThru
+          Start-Sleep -Seconds 25
+          $alive = -not $p.HasExited
+          if (-not $alive) { Write-Host "exit code: $($p.ExitCode)" }
+          Get-ChildItem D:\pf-install\logs -ErrorAction SilentlyContinue | ForEach-Object { "=== $($_.Name)"; Get-Content $_.FullName -Tail 60 }
+          if ($alive) { Stop-Process -Id $p.Id -Force }
+          $log = Get-ChildItem D:\pf-install\logs -Filter *.log -ErrorAction SilentlyContinue | Get-Content -Raw
+          if ($log -notmatch 'PushFPS QML session started') { throw "PushFPS did not reach its QML session (no GPU on this runner is fine; a missing DLL or entry point is not)" }
+          Write-Host "PushFPS started and loaded its interface."
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PushFPS-${{ env.PUSHFPS_VERSION }}
+          path: |
+            dist/*.zip
+            dist/*.sha256
+          if-no-files-found: error

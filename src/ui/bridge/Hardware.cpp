@@ -3,6 +3,7 @@
 #include "veyra/pipeline/Rdna3NrBackend.h"
 #include "veyra/pipeline/AmdNrProvider.h"
 #include "veyra/pipeline/VfxSrBackend.h"
+#include "veyra/ngx/NvOfSession.h"
 
 namespace veyra::ui {
 
@@ -110,7 +111,12 @@ static QVariantMap scanEffectCapabilities() {
     add("fsr3", H::CrossVendor, fsrLoader && exists(fsr / "amd_fidelityfx_framegeneration_dx12.dll"), QObject::tr("需要支持 DirectX 12 的硬件显卡"));
     add("fsr4", H::Fsr4, fsrLoader && exists(fsr / "amd_fidelityfx_framegeneration_dx12.dll"), QObject::tr("需要 AMD RX 9000"));
     add("hdr", H::Nvidia, exists(nr / "nvngx_truehdr.dll"), QObject::tr("需要 NVIDIA RTX 显卡"));
-    add("flow0", H::Nvidia, true, QObject::tr("需要 NVIDIA RTX 显卡及 NVOF 驱动"));
+    // PushFPS: a build without the NVIDIA Optical Flow SDK reports NVOF unavailable, and the
+    // sanitizer then runs every chain on AMD FidelityFX optical flow (flow1).
+    if (ngx::NvOfSession::builtWithSdk())
+        add("flow0", H::Nvidia, true, QObject::tr("需要 NVIDIA RTX 显卡及 NVOF 驱动"));
+    else
+        out["flow0"] = QVariantMap{{"available", false}, {"reason", QObject::tr("此版本未包含 NVIDIA 光流，已改用 AMD FidelityFX 光流")}};
     add("flow1", H::CrossVendor, true, QObject::tr("需要支持 DirectX 12 的硬件显卡"));
     return out;
 }
