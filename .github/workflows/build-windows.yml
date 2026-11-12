@@ -13,6 +13,7 @@ name: build-windows
 on:
   push:
     branches: [main]
+    tags: ['v*']
     paths-ignore: ['**/*.md', 'docs/**', 'assets/**', '.github/workflows/checks.yml']
   pull_request:
   workflow_dispatch:
@@ -52,9 +53,11 @@ jobs:
         with:
           persist-credentials: false
 
+      # A release tag (v2.1.5) builds exactly that version; every other build is 2.1.5-pushfps.<run>.
       - name: Version
         run: |
-          $v = "2.1.5-pushfps.$env:GITHUB_RUN_NUMBER"
+          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.TrimStart('v') }
+          else { $v = "2.1.5-pushfps.$env:GITHUB_RUN_NUMBER" }
           "PUSHFPS_VERSION=$v" | Out-File -Append $env:GITHUB_ENV
           New-Item -ItemType Directory -Force $env:DEPS | Out-Null
           Write-Host "PushFPS $v"
@@ -238,3 +241,42 @@ jobs:
             dist/*.zip
             dist/*.sha256
           if-no-files-found: error
+
+  # Publishes a tagged build as a GitHub pre-release. It stays a pre-release (which the in-app update
+  # checker ignores) until someone has tested it on real hardware and marks it as the latest release.
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create the pre-release
+        run: |
+          ls -la dist
+          zip=$(ls dist/*.zip | head -1); sum=$(cat dist/*.sha256)
+          cat > notes.md <<NOTES
+          ## Install
+
+          1. Download **$(basename "$zip")** below and extract it.
+          2. Double-click **Install-PushFPS.cmd**.
+
+          The installer downloads Veyra's official runtime package (about 750 MB, NVIDIA or AMD to match your
+          graphics card) from Veyra's GitHub release, checks its SHA-256, and installs PushFPS with Start menu
+          and desktop shortcuts. No administrator rights needed.
+
+          **Preview build.** Built and start-tested automatically on Windows; not yet tested with a real
+          capture card and GPU. Please report what works and what doesn't in Issues.
+
+          SHA-256: \`$sum\`
+
+          PushFPS is free software (GPL-3.0), built on [Veyra](https://github.com/Likely7/Veyra-NRVideo) by Likely7.
+          NOTES
+          gh release create "$GITHUB_REF_NAME" dist/* -R "$GITHUB_REPOSITORY" --title "PushFPS $GITHUB_REF_NAME" \
+            --notes-file notes.md --prerelease --verify-tag

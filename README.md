@@ -36,12 +36,35 @@ Generated frames make motion smoother. They don't make the game react faster: th
 like the original 30 FPS, plus a few milliseconds for the capture card and processing.
 [More on latency](#latency).
 
-## Download
+## Download and install
+
+1. Download the latest **PushFPS-…-win64.zip** from [Releases](https://github.com/DosukaSOL/PushFPS/releases)
+   and extract it.
+2. Double-click **Install-PushFPS.cmd**.
+
+That's it. The installer picks the right package for your graphics card, installs PushFPS to your user
+folder (no administrator rights needed), adds Start menu and desktop shortcuts, and starts it.
+
+<details>
+<summary>What the installer does, step by step</summary>
+
+PushFPS runs on Veyra's official runtime package: Qt, FFmpeg and the NVIDIA, AMD and Intel components
+that Veyra's author distributes. The installer downloads that package (about 750 MB) directly from
+[Veyra's GitHub release](https://github.com/Likely7/Veyra-NRVideo/releases), checks its SHA-256 against
+the value pinned when the PushFPS release was built, unpacks it, and adds PushFPS on top. PushFPS itself
+never rehosts those files.
+
+- Install folder: `%LOCALAPPDATA%\Programs\PushFPS`
+- Update: run the newer installer; your settings are kept
+- Uninstall: `Install-PushFPS.cmd -Uninstall`, or delete the folder and shortcuts
+- Windows may warn about an unknown publisher (PushFPS isn't code signed yet). Choose *More info*, then
+  *Run anyway*, if you downloaded the zip from this repository.
+
+</details>
 
 > [!NOTE]
-> **The first PushFPS release is being prepared.** There is no PushFPS download yet. When it's ready it
-> will appear under [Releases](https://github.com/DosukaSOL/PushFPS/releases), and PushFPS will tell
-> you about every new version from then on.
+> Releases marked **Pre-release** are preview builds: built and start-tested automatically on Windows, but
+> not yet tested by a person with a capture card and GPU.
 
 ## What you need
 
