@@ -240,7 +240,9 @@ jobs:
           if ($alive) { Stop-Process -Id $p.Id -Force }
           $log = Get-ChildItem D:\pf-install\logs -Filter *.log -ErrorAction SilentlyContinue | Get-Content -Raw
           if ($log -notmatch 'PushFPS QML session started') { throw "PushFPS did not reach its QML session (no GPU on this runner is fine; a missing DLL or entry point is not)" }
-          Write-Host "PushFPS started and loaded its interface."
+          $qmlErrors = @(($log -split "`n") | Where-Object { $_ -match '\[ERROR\] \[qml\]' })
+          if ($qmlErrors.Count) { $qmlErrors | ForEach-Object { Write-Host "::error::$_" }; throw "The interface logged QML errors at startup" }
+          Write-Host "PushFPS started and loaded its interface with no QML errors."
 
       - uses: actions/upload-artifact@v4
         with:
