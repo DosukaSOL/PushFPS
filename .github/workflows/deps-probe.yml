@@ -26,10 +26,8 @@ jobs:
           gh release download v1.1.4 -R GPUOpen-LibrariesAndSDKs/FidelityFX-SDK -p '*.zip' -O ffx1.zip
           unzip -q ffx1.zip -d ffx1
           root=ffx1/sdk
-          echo "sdk root: $root"; ls "$root"; ls "$root/include" | head; ls "$root/bin" 2>/dev/null | head
-          find ffx1 -iname '*.bat' | head
-          grep -n -E 'option\(|FFX_API_BACKEND|set\(FFX_.*CACHE' "$root/CMakeLists.txt" | head -60
-          find "$root/src/components/opticalflow" -maxdepth 1 | head
-          grep -n -E 'add_library|OUTPUT_NAME|ffx_opticalflow' "$root/src/components/opticalflow/CMakeLists.txt" | head
-          grep -rn -E 'ARCHIVE_OUTPUT_DIRECTORY|bin/ffx_sdk|_x64' "$root/CMakeLists.txt" "$root/common.cmake" 2>/dev/null | head -20
-          find ffx1 -iname 'BuildFidelityFXSDK*' -exec sh -c 'echo "== $1"; head -60 "$1"' _ {} \;
+          echo "== BuildFidelityFXSDK.bat"; cat "$root/BuildFidelityFXSDK.bat" || true
+          echo "== options"; grep -n -E 'option\(|FFX_API_BACKEND|CACHE' "$root/CMakeLists.txt" | head -60 || true
+          echo "== output dirs"; grep -rn -E 'OUTPUT_DIRECTORY|bin/ffx_sdk|_x64|CMAKE_GENERATOR_PLATFORM' "$root/CMakeLists.txt" | head -30 || true
+          echo "== opticalflow"; grep -n -E 'add_library|OUTPUT_NAME|set_target' "$root/src/components/opticalflow/CMakeLists.txt" || true
+          echo "== dx12 backend"; grep -n -E 'add_library|OUTPUT_NAME' "$root/src/backends/dx12/CMakeLists.txt" || true
