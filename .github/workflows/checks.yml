@@ -1,0 +1,62 @@
+# Fast checks that need no Windows build or proprietary SDK, on every push and pull request:
+#  1. Translations: every Chinese source string has zh-TW / en / ja text and matching placeholders.
+#  2. QML syntax: Qt 6.8.3 (the version PushFPS ships with) parses every QML file. A file that does not
+#     parse would stop the app at startup, so this catches it before anyone runs a build.
+#  3. QML lint (informational): qmllint findings for the PushFPS-specific QML files.
+name: checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Translations complete
+        run: |
+          out=$(python3 -B scripts/i18n/extract.py --check)
+          echo "$out"
+          echo "$out" | grep -q "dropped=\[\] missing={'zh-TW': 0, 'en': 0, 'ja': 0} placeholder problems=0"
+          # --check never writes; also prove the catalog is exactly what extract.py would produce.
+          cp i18n/catalog.json /tmp/catalog.json
+          python3 -B scripts/i18n/extract.py > /dev/null
+          if ! cmp -s i18n/catalog.json /tmp/catalog.json; then
+            echo "::error file=i18n/catalog.json::catalog is not up to date; run python3 -B scripts/i18n/extract.py and commit"
+            exit 1
+          fi
+
+      - name: Install Qt 6.8.3 (QML tools only)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+          cache: true
+
+      - name: QML syntax (qmlformat parses every file)
+        run: |
+          status=0
+          for f in qml/Veyra/*.qml; do
+            if ! qmlformat "$f" > /dev/null 2> /tmp/qmlformat.err; then
+              echo "::error file=$f::QML does not parse"
+              cat /tmp/qmlformat.err
+              status=1
+            fi
+          done
+          exit $status
+
+      - name: QML lint for PushFPS files (informational)
+        continue-on-error: true
+        run: |
+          qmllint -I qml --unqualified disable qml/Veyra/PushQuickSetup.qml
