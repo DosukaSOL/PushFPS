@@ -1,0 +1,69 @@
+# Manual helper: checks where each third-party build dependency can be fetched from without a login, and
+# reports its layout and license. Read-only; nothing is published.
+name: deps-probe
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/deps-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: NVIDIA DLSS SDK (tags and layout)
+        run: |
+          git ls-remote --tags https://github.com/NVIDIA/DLSS.git | sed 's#.*refs/tags/##' | tail -25
+          gh api repos/NVIDIA/DLSS/releases --jq '.[0:8][] | "\(.tag_name)  assets=\([.assets[].name] | join(","))"'
+          GIT_LFS_SKIP_SMUDGE=1 git clone -q --depth 1 --filter=blob:none --sparse https://github.com/NVIDIA/DLSS.git dlss
+          cd dlss && git sparse-checkout set include lib/Windows_x86_64/x64 && git log -1 --format='%H %d %s'
+          ls include | head -30; ls -la lib/Windows_x86_64/x64 | head; head -c 300 lib/Windows_x86_64/x64/nvsdk_ngx_s.lib | od -c | head -3
+          grep -m3 -E 'NVSDK_NGX_VERSION_API_MACRO|define NVSDK_NGX_Version' include/nvsdk_ngx_defs.h || true
+
+      - name: NVIDIA Optical Flow interface headers
+        run: |
+          for repo in NVIDIA/NVIDIAOpticalFlowSDK; do
+            echo "== $repo"; gh api repos/$repo --jq '.full_name, .license.spdx_id, .pushed_at' || continue
+            git clone -q --depth 1 https://github.com/$repo.git nvof || continue
+            find nvof -iname 'nvOpticalFlow*.h' | head
+            f=$(find nvof -iname nvOpticalFlowD3D12.h | head -1); [ -n "$f" ] && head -40 "$f"
+            c=$(find nvof -iname nvOpticalFlowCommon.h | head -1); [ -n "$c" ] && grep -m3 -E 'NV_OF_API_VERSION|MAJOR_VERSION|MINOR_VERSION' "$c"
+          done
+
+      - name: nv-codec-headers n13.0.19.0
+        run: git ls-remote --tags https://github.com/FFmpeg/nv-codec-headers.git | grep -E 'n13\.0' | head
+
+      - name: Intel XeSS SDK
+        run: |
+          gh api repos/intel/xess/releases --jq '.[0:6][] | "\(.tag_name)  \([.assets[] | "\(.name)(\(.size))"] | join(", "))"'
+
+      - name: AMD FidelityFX SDK
+        run: |
+          gh api repos/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/releases --jq '.[0:10][] | "\(.tag_name)  \([.assets[] | "\(.name)(\(.size))"] | join(", "))"'
+          git ls-remote --tags https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK.git | sed 's#.*refs/tags/##' | tail -15
+
+      - name: CUDA driver header (cuda.h) from NVIDIA's redistributable index
+        run: |
+          curl -sSfL https://developer.download.nvidia.com/compute/cuda/redist/redistrib_12.9.1.json -o r.json && python -c "import json;d=json.load(open('r.json'));c=d['cuda_cudart'];print(c['version'],c['license'],c['windows-x86_64']['relative_path'])" || echo "12.9.1 index not found"
+          curl -sSfL https://developer.download.nvidia.com/compute/cuda/redist/ | grep -o 'redistrib_[0-9.]*\.json' | sort -uV | tail -5
+
+      - name: vcpkg FFmpeg at the pinned baseline
+        run: |
+          base=$(python -c "import json,urllib.request;print('30ef65cad98f08e7197c9a1656fbd871bcb72f2d')")
+          curl -sSfL "https://raw.githubusercontent.com/microsoft/vcpkg/$base/ports/ffmpeg/vcpkg.json" | head -12
+          echo "runner vcpkg: $VCPKG_INSTALLATION_ROOT"; git -C "$VCPKG_INSTALLATION_ROOT" log -1 --format='%H %cd' || true
+
+      - name: Veyra source archive layout
+        run: |
+          gh release download v2.1.5-sources -R Likely7/Veyra-NRVideo -p 'Veyra-2.1.5-source.zip' -D src
+          python -c "import zipfile;z=zipfile.ZipFile('src/Veyra-2.1.5-source.zip');n=z.namelist();print(len(n));import collections;print('\n'.join(sorted({'/'.join(x.split('/')[:2]) for x in n}))[:4000])"
