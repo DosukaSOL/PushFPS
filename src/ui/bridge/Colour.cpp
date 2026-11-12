@@ -440,7 +440,7 @@ bool QmlPlayerBridge::deleteColourLook(int index) {
 }
 void QmlPlayerBridge::importColourLookDialog() {
     const QString path = QFileDialog::getOpenFileName(nullptr, tr("导入颜色预设"), QString(),
-                                                      tr("Veyra 颜色预设 (*.vpcolor);;所有文件 (*.*)"));
+                                                      tr("PushFPS 颜色预设 (*.vpcolor);;所有文件 (*.*)"));
     if (!path.isEmpty()) importColourLook(path);
 }
 bool QmlPlayerBridge::importColourLook(const QString& path) {
@@ -455,7 +455,7 @@ bool QmlPlayerBridge::importColourLook(const QString& path) {
 }
 void QmlPlayerBridge::exportColourLookDialog(int index) {
     const QString path = QFileDialog::getSaveFileName(nullptr, tr("导出颜色预设"), QString(),
-                                                      tr("Veyra 颜色预设 (*.vpcolor)"));
+                                                      tr("PushFPS 颜色预设 (*.vpcolor)"));
     if (!path.isEmpty()) exportColourLook(index, path);
 }
 bool QmlPlayerBridge::exportColourLook(int index, const QString& path) {

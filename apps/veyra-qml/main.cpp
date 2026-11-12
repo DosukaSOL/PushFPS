@@ -50,6 +50,7 @@
 #include <format>
 #include <memory>
 
+#include "veyra/Brand.h"
 #include "veyra/Log.h"
 #include "veyra/RuntimePaths.h"
 #include "veyra/engine/EngineController.h"
@@ -666,9 +667,10 @@ static int runApplication(int argc, char** argv, QString& restartProgram, QStrin
     };
     static NoKeyMenuFilter noKeyMenu;
     app.installNativeEventFilter(&noKeyMenu);
-    app.setApplicationName(QStringLiteral("Veyra"));
-    app.setOrganizationName(QStringLiteral("Veyra"));
-    veyra::log::info("app", "Veyra QML session started");
+    app.setApplicationName(QString::fromLatin1(veyra::brand::kProductName));
+    app.setOrganizationName(QString::fromLatin1(veyra::brand::kProductName));
+    app.setApplicationDisplayName(QString::fromLatin1(veyra::brand::kProductName));
+    veyra::log::info("app", "PushFPS QML session started (based on Veyra)");
 
     engine::EngineController controller;
 
@@ -1158,7 +1160,7 @@ int main(int argc, char** argv) {
     if (result != 42) return result;
     // Player, QML engine and QApplication have all been destroyed.
     if (QProcess::startDetached(program, arguments)) return 0;
-    MessageBoxW(nullptr, L"设置已保存，但自动重启失败。请重新打开软件。\nSettings saved. Automatic restart failed; please reopen Veyra.",
-                L"Veyra", MB_OK | MB_ICONERROR);
+    MessageBoxW(nullptr, L"设置已保存，但自动重启失败。请重新打开软件。\nSettings saved. Automatic restart failed; please reopen PushFPS.",
+                veyra::brand::kProductNameW, MB_OK | MB_ICONERROR);
     return 1;
 }

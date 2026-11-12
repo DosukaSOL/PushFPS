@@ -73,7 +73,7 @@ VPage {
             spacing: 6
             Text {
                 Layout.alignment: Qt.AlignHCenter
-                text: "Veyra NR Video"
+                text: veyra.appName
                 color: Theme.t1
                 font.family: Theme.fontUi
                 font.pixelSize: Theme.fsH1

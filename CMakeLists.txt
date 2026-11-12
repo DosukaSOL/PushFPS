@@ -1257,6 +1257,9 @@ if(VEYRA_BUILD_QML_UI AND Qt6_FOUND)
   # around, which is not what a player should look like. Diagnostics still reach
   # the log file through the logger.
   add_executable(veyra_qml_ui WIN32 apps/veyra-qml/main.cpp src/ui/QmlDataDirectory.cpp src/ui/QmlDiskCache.cpp)
+  # PushFPS: the shipped program is PushFPS.exe. The target keeps Veyra's name so upstream
+  # CMake changes keep merging; the program finds itself through GetModuleFileNameW.
+  set_target_properties(veyra_qml_ui PROPERTIES OUTPUT_NAME PushFPS)
   # The QML copy is its own always-run step rather than a POST_BUILD of the link:
   # its two long E:/项目 paths on the link statement pushed that command past
   # CMake's response-file threshold, and link.exe reads response files in the
@@ -1805,7 +1808,7 @@ endif()
 set(VEYRA_RESOURCE_FILENAME "Veyra.exe")
 configure_file(apps/veyra/version.rc.in ${CMAKE_CURRENT_BINARY_DIR}/veyra-version.rc @ONLY)
 if(TARGET veyra_qml_ui)
-  set(VEYRA_RESOURCE_FILENAME "veyra_qml_ui.exe")
+  set(VEYRA_RESOURCE_FILENAME "PushFPS.exe")
   configure_file(apps/veyra/version.rc.in ${CMAKE_CURRENT_BINARY_DIR}/veyra-qml-version.rc @ONLY)
   target_sources(veyra_qml_ui PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/veyra-qml-version.rc)
 endif()

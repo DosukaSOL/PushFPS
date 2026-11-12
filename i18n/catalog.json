@@ -498,11 +498,11 @@
    "ja": "%1 は最大 %2 個です"
   },
   {
-   "zh": "%1 正在运行。它会同时挂接界面和视频两个画面，可能让 Veyra 卡死；开启兼容绘制需重启 Veyra，重启后界面改用软件绘制，它只作用在视频上。现在重启吗？当前播放或串流将停止。",
+   "zh": "%1 正在运行。它会同时挂接界面和视频两个画面，可能让 PushFPS 卡死；开启兼容绘制需重启 PushFPS，重启后界面改用软件绘制，它只作用在视频上。现在重启吗？当前播放或串流将停止。",
    "src": "qml/Main.qml",
-   "zh-TW": "%1 正在執行。它會同時掛接介面和影片兩個畫面，可能讓 Veyra 卡死；啟用相容繪製需重新啟動 Veyra，重新啟動後介面改用軟體繪製，它只作用在影片上。現在重新啟動嗎？目前的播放或串流將停止。",
-   "en": "%1 is running. It hooks both the interface and the video, which can freeze Veyra. Restart Veyra to enable compatible rendering: the interface is then drawn in software and %1 only affects the video. Restart now? Current playback or streaming will stop.",
-   "ja": "%1 が動作しています。インターフェースと映像の両方にフックするため、Veyra がフリーズすることがあります。互換描画を有効にするには Veyra を再起動してください。再起動後はインターフェースをソフトウェアで描画し、%1 は映像にだけ作用します。今すぐ再起動しますか？再生中の映像やストリーミングは停止します。"
+   "zh-TW": "%1 正在執行。它會同時掛接介面和影片兩個畫面，可能讓 PushFPS 卡死；啟用相容繪製需重新啟動 PushFPS，重新啟動後介面改用軟體繪製，它只作用在影片上。現在重新啟動嗎？目前的播放或串流將停止。",
+   "en": "%1 is running. It hooks both the interface and the video, which can freeze PushFPS. Restart PushFPS to enable compatible rendering: the interface is then drawn in software and %1 only affects the video. Restart now? Current playback or streaming will stop.",
+   "ja": "%1 が動作しています。インターフェースと映像の両方にフックするため、PushFPS がフリーズすることがあります。互換描画を有効にするには PushFPS を再起動してください。再起動後はインターフェースをソフトウェアで描画し、%1 は映像にだけ作用します。今すぐ再起動しますか？再生中の映像やストリーミングは停止します。"
   },
   {
    "zh": "%1 秒",
@@ -617,11 +617,11 @@
    "ja": "2 項目"
   },
   {
-   "zh": "2. 回到 Veyra，在“音频监听”选“Veyra 虚拟扬声器”，再连接采集。音频输出选真实耳机或音箱，即可使用音画同步。\n\n可选改名：在 Windows 声音的“播放”页打开 CABLE Input 的属性，在“常规”里改成“Veyra 采集音频”。",
+   "zh": "2. 回到 PushFPS，在“音频监听”选“PushFPS 虚拟扬声器”，再连接采集。音频输出选真实耳机或音箱，即可使用音画同步。\n\n可选改名：在 Windows 声音的“播放”页打开 CABLE Input 的属性，在“常规”里改成“PushFPS 采集音频”。",
    "src": "qml/CaptureSourceDialog.qml",
-   "zh-TW": "2. 回到 Veyra，在“音訊監聽”選“Veyra 虛擬揚聲器”，再連接擷取。音訊輸出選真實耳機或音箱，即可使用音畫同步。\n\n可選改名：在 Windows 聲音的“播放”頁開啟 CABLE Input 的屬性，在“常規”裡改成“Veyra 擷取音訊”。",
-   "en": "2. In Veyra, select Veyra Virtual Speaker under Audio monitoring, then connect the capture card. Select your physical headphones or speakers as the output to use audio/video sync.\n\nOptional rename: On the Playback tab in Windows Sound, open CABLE Input properties. On General, rename it to Veyra Capture Audio.",
-   "ja": "2. Veyra の「音声モニター」で「Veyra 仮想スピーカー」を選んでから接続します。出力先に実際のヘッドホンまたはスピーカーを選ぶと、映像と音声の同期を利用できます。\n\n名前を変更する場合は、Windows の「サウンド」の「再生」で CABLE Input のプロパティを開き、「全般」で Veyra キャプチャ音声に変更します。"
+   "zh-TW": "2. 回到 PushFPS，在“音訊監聽”選“PushFPS 虛擬揚聲器”，再連接擷取。音訊輸出選真實耳機或音箱，即可使用音畫同步。\n\n可選改名：在 Windows 聲音的“播放”頁開啟 CABLE Input 的屬性，在“常規”裡改成“PushFPS 擷取音訊”。",
+   "en": "2. In PushFPS, select PushFPS Virtual Speaker under Audio monitoring, then connect the capture card. Select your physical headphones or speakers as the output to use audio/video sync.\n\nOptional rename: On the Playback tab in Windows Sound, open CABLE Input properties. On General, rename it to PushFPS Capture Audio.",
+   "ja": "2. PushFPS の「音声モニター」で「PushFPS 仮想スピーカー」を選んでから接続します。出力先に実際のヘッドホンまたはスピーカーを選ぶと、映像と音声の同期を利用できます。\n\n名前を変更する場合は、Windows の「サウンド」の「再生」で CABLE Input のプロパティを開き、「全般」で PushFPS キャプチャ音声に変更します。"
   },
   {
    "zh": "203 = 中性；调高整体变亮，峰值不变",
@@ -1002,11 +1002,11 @@
    "ja": "DLSS モデル"
   },
   {
-   "zh": "DXGI 为显示器兼容方式，无鼠标指针；捕获显示器时不显示黄色边框，Veyra 自己也不会出现在截图和录屏里",
+   "zh": "DXGI 为显示器兼容方式，无鼠标指针；捕获显示器时不显示黄色边框，PushFPS 自己也不会出现在截图和录屏里",
    "src": "qml/ScreenSourceDialog.qml",
-   "zh-TW": "DXGI 為顯示器相容方式，無滑鼠指標；擷取顯示器時不顯示黃色邊框，Veyra 自己也不會出現在截圖和錄影裡",
-   "en": "DXGI is the display-compatible mode, without the mouse pointer. A display capture shows no yellow border, and Veyra itself stays out of screenshots and recordings",
-   "ja": "DXGI はディスプレイ互換モードで、マウスポインターは映りません。ディスプレイのキャプチャでは黄色い枠を表示せず、Veyra 自身もスクリーンショットや録画に映りません"
+   "zh-TW": "DXGI 為顯示器相容方式，無滑鼠指標；擷取顯示器時不顯示黃色邊框，PushFPS 自己也不會出現在截圖和錄影裡",
+   "en": "DXGI is the display-compatible mode, without the mouse pointer. A display capture shows no yellow border, and PushFPS itself stays out of screenshots and recordings",
+   "ja": "DXGI はディスプレイ互換モードで、マウスポインターは映りません。ディスプレイのキャプチャでは黄色い枠を表示せず、PushFPS 自身もスクリーンショットや録画に映りません"
   },
   {
    "zh": "Dolby / DTS 位流",
@@ -1989,6 +1989,69 @@
    "ja": "PSN アカウント"
   },
   {
+   "zh": "PushFPS 基于 Veyra 打造。Veyra 开源免费，也需要你的支持",
+   "src": "qml/SponsorPanel.qml",
+   "zh-TW": "PushFPS 基於 Veyra 打造。Veyra 開源免費，也需要你的支持",
+   "en": "PushFPS is built on Veyra. Veyra is free and open source, and it runs on your support",
+   "ja": "PushFPS は Veyra をベースにしています。Veyra は無料のオープンソース。皆さんの支援が支えです"
+  },
+  {
+   "zh": "PushFPS 本地诊断（复制前脱敏预览；不会上传）\n",
+   "src": "src/base/Log.cpp",
+   "zh-TW": "PushFPS 本地診斷（複製前脫敏預覽；不會上傳）\n",
+   "en": "PushFPS local diagnostics (redacted preview before copying; nothing is uploaded)\n",
+   "ja": "PushFPS ローカル診断（コピー前に匿名化してプレビュー。アップロードはしません）\n"
+  },
+  {
+   "zh": "PushFPS 虚拟扬声器",
+   "src": "qml/CaptureSourceDialog.qml",
+   "zh-TW": "PushFPS 虛擬揚聲器",
+   "en": "PushFPS Virtual Speaker",
+   "ja": "PushFPS 仮想スピーカー"
+  },
+  {
+   "zh": "PushFPS 虚拟扬声器 · %1",
+   "src": "src/ui/bridge/Capture.cpp",
+   "zh-TW": "PushFPS 虛擬揚聲器 · %1",
+   "en": "PushFPS Virtual Speaker · %1",
+   "ja": "PushFPS 仮想スピーカー · %1"
+  },
+  {
+   "zh": "PushFPS 虚拟扬声器使用说明",
+   "src": "qml/CaptureSourceDialog.qml",
+   "zh-TW": "PushFPS 虛擬揚聲器使用說明",
+   "en": "PushFPS Virtual Speaker instructions",
+   "ja": "PushFPS 仮想スピーカーの使い方"
+  },
+  {
+   "zh": "PushFPS 预设 (*.vpreset)",
+   "src": "src/ui/bridge/Preferences.cpp",
+   "zh-TW": "PushFPS 預設 (*.vpreset)",
+   "en": "PushFPS preset (*.vpreset)",
+   "ja": "PushFPS プリセット (*.vpreset)"
+  },
+  {
+   "zh": "PushFPS 预设 (*.vpreset);;所有文件 (*)",
+   "src": "src/ui/bridge/Preferences.cpp",
+   "zh-TW": "PushFPS 預設 (*.vpreset);;所有檔案 (*)",
+   "en": "PushFPS preset (*.vpreset);;All files (*)",
+   "ja": "PushFPS プリセット (*.vpreset);;すべてのファイル (*)"
+  },
+  {
+   "zh": "PushFPS 颜色预设 (*.vpcolor)",
+   "src": "src/ui/bridge/Colour.cpp",
+   "zh-TW": "PushFPS 顏色預設 (*.vpcolor)",
+   "en": "PushFPS color preset (*.vpcolor)",
+   "ja": "PushFPS カラープリセット (*.vpcolor)"
+  },
+  {
+   "zh": "PushFPS 颜色预设 (*.vpcolor);;所有文件 (*.*)",
+   "src": "src/ui/bridge/Colour.cpp",
+   "zh-TW": "PushFPS 顏色預設 (*.vpcolor);;所有檔案 (*.*)",
+   "en": "PushFPS color preset (*.vpcolor);;All files (*.*)",
+   "ja": "PushFPS カラープリセット (*.vpcolor);;すべてのファイル (*.*)"
+  },
+  {
    "zh": "RTX 30 VFG 为实验兼容，复用现有模型；支持 2X～8X，实际画质与速度需实卡验证",
    "src": "src/ui/bridge/FrameGeneration.cpp",
    "zh-TW": "RTX 30 VFG 為實驗相容，重用現有模型；支援 2X～8X，實際畫質與速度需實卡驗證",
@@ -2211,69 +2274,6 @@
    "zh-TW": "VFG 需要 NVIDIA RTX 30 / 40 / 50（30 系為實驗相容）",
    "en": "VFG requires NVIDIA RTX 30 / 40 / 50 (RTX 30 compatibility is experimental)",
    "ja": "VFG には NVIDIA RTX 30 / 40 / 50 が必要です（30 シリーズは実験的対応）"
-  },
-  {
-   "zh": "Veyra 开源免费，也需要你的支持",
-   "src": "qml/SponsorPanel.qml",
-   "zh-TW": "Veyra 開源免費，也需要你的支持",
-   "en": "Veyra is free and open source, and it runs on your support",
-   "ja": "Veyra は無料のオープンソース。皆さんの支援が支えです"
-  },
-  {
-   "zh": "Veyra 本地诊断（复制前脱敏预览；不会上传）\n",
-   "src": "src/base/Log.cpp",
-   "zh-TW": "Veyra 本地診斷（複製前脫敏預覽；不會上傳）\n",
-   "en": "Veyra local diagnostics (redacted preview before copying; nothing is uploaded)\n",
-   "ja": "Veyra ローカル診断（コピー前に匿名化してプレビュー。アップロードはしません）\n"
-  },
-  {
-   "zh": "Veyra 虚拟扬声器",
-   "src": "qml/CaptureSourceDialog.qml",
-   "zh-TW": "Veyra 虛擬揚聲器",
-   "en": "Veyra Virtual Speaker",
-   "ja": "Veyra 仮想スピーカー"
-  },
-  {
-   "zh": "Veyra 虚拟扬声器 · %1",
-   "src": "src/ui/bridge/Capture.cpp",
-   "zh-TW": "Veyra 虛擬揚聲器 · %1",
-   "en": "Veyra Virtual Speaker · %1",
-   "ja": "Veyra 仮想スピーカー · %1"
-  },
-  {
-   "zh": "Veyra 虚拟扬声器使用说明",
-   "src": "qml/CaptureSourceDialog.qml",
-   "zh-TW": "Veyra 虛擬揚聲器使用說明",
-   "en": "Veyra Virtual Speaker instructions",
-   "ja": "Veyra 仮想スピーカーの使い方"
-  },
-  {
-   "zh": "Veyra 预设 (*.vpreset)",
-   "src": "src/ui/bridge/Preferences.cpp",
-   "zh-TW": "Veyra 預設 (*.vpreset)",
-   "en": "Veyra preset (*.vpreset)",
-   "ja": "Veyra プリセット (*.vpreset)"
-  },
-  {
-   "zh": "Veyra 预设 (*.vpreset);;所有文件 (*)",
-   "src": "src/ui/bridge/Preferences.cpp",
-   "zh-TW": "Veyra 預設 (*.vpreset);;所有檔案 (*)",
-   "en": "Veyra preset (*.vpreset);;All files (*)",
-   "ja": "Veyra プリセット (*.vpreset);;すべてのファイル (*)"
-  },
-  {
-   "zh": "Veyra 颜色预设 (*.vpcolor)",
-   "src": "src/ui/bridge/Colour.cpp",
-   "zh-TW": "Veyra 顏色預設 (*.vpcolor)",
-   "en": "Veyra color preset (*.vpcolor)",
-   "ja": "Veyra カラープリセット (*.vpcolor)"
-  },
-  {
-   "zh": "Veyra 颜色预设 (*.vpcolor);;所有文件 (*.*)",
-   "src": "src/ui/bridge/Colour.cpp",
-   "zh-TW": "Veyra 顏色預設 (*.vpcolor);;所有檔案 (*.*)",
-   "en": "Veyra color preset (*.vpcolor);;All files (*.*)",
-   "ja": "Veyra カラープリセット (*.vpcolor);;すべてのファイル (*.*)"
   },
   {
    "zh": "VobSub 需要同名 .idx 和 .sub 文件，请加载 .idx",
@@ -2661,11 +2661,11 @@
    "ja": "前回"
   },
   {
-   "zh": "上次 Veyra 异常退出（崩溃在 %1）",
+   "zh": "上次 PushFPS 异常退出（崩溃在 %1）",
    "src": "src/ui/QmlPlayerBridge.cpp",
-   "zh-TW": "上次 Veyra 異常結束（當機於 %1）",
-   "en": "Veyra closed unexpectedly last time (crash in %1)",
-   "ja": "前回 Veyra が異常終了しました（%1 でクラッシュ）"
+   "zh-TW": "上次 PushFPS 異常結束（當機於 %1）",
+   "en": "PushFPS closed unexpectedly last time (crash in %1)",
+   "ja": "前回 PushFPS が異常終了しました（%1 でクラッシュ）"
   },
   {
    "zh": "上次的捕获目标「%1」已不在，请重新选择",
@@ -2836,11 +2836,11 @@
    "ja": "8 桁のペアリングコードではありません"
   },
   {
-   "zh": "不是 Veyra 预设文件",
+   "zh": "不是 PushFPS 预设文件",
    "src": "src/engine/PresetLibrary.cpp",
-   "zh-TW": "不是 Veyra 預設檔案",
-   "en": "Not a Veyra preset file",
-   "ja": "Veyra のプリセットファイルではありません"
+   "zh-TW": "不是 PushFPS 預設檔案",
+   "en": "Not a PushFPS preset file",
+   "ja": "PushFPS のプリセットファイルではありません"
   },
   {
    "zh": "不是有效的 .cube（尺寸/行数/数值校验失败）",
@@ -4370,11 +4370,11 @@
    "ja": "内部ダウンサンプリング · 出力サイズは変わりません"
   },
   {
-   "zh": "再串流时建议打开：Veyra 不在前台也继续转发。打开后在这台电脑上用别的程序时，手柄也会操作 PS5",
+   "zh": "再串流时建议打开：PushFPS 不在前台也继续转发。打开后在这台电脑上用别的程序时，手柄也会操作 PS5",
    "src": "qml/CaptureSourceDialog.qml",
-   "zh-TW": "再串流時建議打開：Veyra 不在前景也繼續轉發。打開後在這台電腦上用別的程式時，手把也會操作 PS5",
-   "en": "Recommended when re-streaming: input keeps going while Veyra is not in front. While on, the controller also drives the PS5 when you use other programs on this PC",
-   "ja": "再ストリーミングするときはオン推奨：Veyra が前面になくても転送を続けます。オンの間は、この PC で他のソフトを使っていてもコントローラーが PS5 を操作します"
+   "zh-TW": "再串流時建議打開：PushFPS 不在前景也繼續轉發。打開後在這台電腦上用別的程式時，手把也會操作 PS5",
+   "en": "Recommended when re-streaming: input keeps going while PushFPS is not in front. While on, the controller also drives the PS5 when you use other programs on this PC",
+   "ja": "再ストリーミングするときはオン推奨：PushFPS が前面になくても転送を続けます。オンの間は、この PC で他のソフトを使っていてもコントローラーが PS5 を操作します"
   },
   {
    "zh": "再次降低到",
@@ -4965,11 +4965,11 @@
    "ja": "映像をクリック"
   },
   {
-   "zh": "卸载 Veyra 虚拟扬声器",
+   "zh": "卸载 PushFPS 虚拟扬声器",
    "src": "qml/CaptureSourceDialog.qml",
-   "zh-TW": "解除安裝 Veyra 虛擬揚聲器",
-   "en": "Uninstall Veyra Virtual Speaker",
-   "ja": "Veyra 仮想スピーカーのアンインストール"
+   "zh-TW": "解除安裝 PushFPS 虛擬揚聲器",
+   "en": "Uninstall PushFPS Virtual Speaker",
+   "ja": "PushFPS 仮想スピーカーのアンインストール"
   },
   {
    "zh": "卸载…",
@@ -6036,6 +6036,13 @@
    "ja": "垂直同期：画面キュー制御は使用できません"
   },
   {
+   "zh": "基于开源项目 Veyra（GPL-3.0）打造，感谢原作者 Likely7",
+   "src": "qml/SettingsPage.qml",
+   "zh-TW": "基於開源專案 Veyra（GPL-3.0）打造，感謝原作者 Likely7",
+   "en": "Built on the open-source project Veyra (GPL-3.0). Thanks to its author, Likely7",
+   "ja": "オープンソースプロジェクト Veyra（GPL-3.0）をベースにしています。作者の Likely7 に感謝します"
+  },
+  {
    "zh": "基础设置",
    "src": "qml/ProDisplayPanel.qml",
    "zh-TW": "基礎設定",
@@ -6715,11 +6722,11 @@
    "ja": "範囲内"
   },
   {
-   "zh": "安装 Veyra 虚拟扬声器",
+   "zh": "安装 PushFPS 虚拟扬声器",
    "src": "qml/CaptureSourceDialog.qml",
-   "zh-TW": "安裝 Veyra 虛擬揚聲器",
-   "en": "Install Veyra Virtual Speaker",
-   "ja": "Veyra 仮想スピーカーのインストール"
+   "zh-TW": "安裝 PushFPS 虛擬揚聲器",
+   "en": "Install PushFPS Virtual Speaker",
+   "ja": "PushFPS 仮想スピーカーのインストール"
   },
   {
    "zh": "安装…",
@@ -7563,7 +7570,7 @@
   },
   {
    "zh": "已关闭当前硬件或包不支持的效果，参数仍保留：",
-   "src": "src/ui/bridge/Preferences.cpp",
+   "src": "src/ui/QmlPlayerBridge.cpp",
    "zh-TW": "已關閉目前硬體或套件不支援的效果，參數仍保留：",
    "en": "Unavailable effects have been disabled; their parameters are preserved: ",
    "ja": "非対応の効果を無効にしました。設定値は保持されています："
@@ -8304,10 +8311,10 @@
    "ja": "書き込み開始後、書き込み量から推定"
   },
   {
-   "zh": "开始后 Veyra 在这块屏幕上全屏，键鼠和手柄直接操作屏幕上的程序；%1 调整画面，%2 退出",
+   "zh": "开始后 PushFPS 在这块屏幕上全屏，键鼠和手柄直接操作屏幕上的程序；%1 调整画面，%2 退出",
    "src": "qml/ScreenSourceDialog.qml",
-   "zh-TW": "開始後 Veyra 在此螢幕全螢幕顯示，鍵鼠與手把直接操作螢幕上的程式；%1 調整畫面，%2 退出",
-   "en": "Veyra opens fullscreen on this display. Keyboard, mouse and controller operate its programs; %1 adjusts the picture and %2 exits.",
+   "zh-TW": "開始後 PushFPS 在此螢幕全螢幕顯示，鍵鼠與手把直接操作螢幕上的程式；%1 調整畫面，%2 退出",
+   "en": "PushFPS opens fullscreen on this display. Keyboard, mouse and controller operate its programs; %1 adjusts the picture and %2 exits.",
    "ja": "この画面で全画面表示し、キーボード・マウス・コントローラーで背後のアプリを操作します。%1 で画面調整、%2 で解除。"
   },
   {
@@ -11749,11 +11756,11 @@
    "ja": "Dolby Vision RPU を検出しましたが、ベースレイヤーの互換宣言がなく色を確認できないため停止しました"
   },
   {
-   "zh": "检测到 OBS 游戏采集和小飞机（RTSS）同时注入 Veyra。两者默认的挂钩方式冲突，OBS 游戏采集可能抓不到画面（任何 D3D12 程序都一样）。在 RTSS 里添加 veyra_qml_ui.exe，并在它的设置中勾选“Use Microsoft Detours API hooking”；或在 OBS 改用窗口采集（Windows 10 1903+）",
+   "zh": "检测到 OBS 游戏采集和小飞机（RTSS）同时注入 PushFPS。两者默认的挂钩方式冲突，OBS 游戏采集可能抓不到画面（任何 D3D12 程序都一样）。在 RTSS 里添加 PushFPS.exe，并在它的设置中勾选“Use Microsoft Detours API hooking”；或在 OBS 改用窗口采集（Windows 10 1903+）",
    "src": "src/ui/QmlPlayerBridge.cpp",
-   "zh-TW": "偵測到 OBS 遊戲擷取和小飛機（RTSS）同時注入 Veyra。兩者預設的掛鉤方式衝突，OBS 遊戲擷取可能抓不到畫面（任何 D3D12 程式都一樣）。在 RTSS 中新增 veyra_qml_ui.exe，並在它的設定中勾選「Use Microsoft Detours API hooking」；或在 OBS 改用視窗擷取（Windows 10 1903+）",
-   "en": "OBS game capture and RivaTuner (RTSS) are both injected into Veyra. Their default hooking conflicts, so OBS game capture may get no picture (true of any D3D12 program). Add veyra_qml_ui.exe in RTSS and tick \"Use Microsoft Detours API hooking\" in its settings, or use Window Capture in OBS (Windows 10 1903+)",
-   "ja": "OBS ゲームキャプチャと RivaTuner（RTSS）が両方とも Veyra に挿入されています。既定のフック方式が競合し、OBS ゲームキャプチャで映像が取れないことがあります（D3D12 のプログラムすべてで同じです）。RTSS に veyra_qml_ui.exe を追加して設定で「Use Microsoft Detours API hooking」をオンにするか、OBS でウィンドウキャプチャ（Windows 10 1903+）を使ってください"
+   "zh-TW": "偵測到 OBS 遊戲擷取和小飛機（RTSS）同時注入 PushFPS。兩者預設的掛鉤方式衝突，OBS 遊戲擷取可能抓不到畫面（任何 D3D12 程式都一樣）。在 RTSS 中新增 PushFPS.exe，並在它的設定中勾選「Use Microsoft Detours API hooking」；或在 OBS 改用視窗擷取（Windows 10 1903+）",
+   "en": "OBS game capture and RivaTuner (RTSS) are both injected into PushFPS. Their default hooking conflicts, so OBS game capture may get no picture (true of any D3D12 program). Add PushFPS.exe in RTSS and tick \"Use Microsoft Detours API hooking\" in its settings, or use Window Capture in OBS (Windows 10 1903+)",
+   "ja": "OBS ゲームキャプチャと RivaTuner（RTSS）が両方とも PushFPS に挿入されています。既定のフック方式が競合し、OBS ゲームキャプチャで映像が取れないことがあります（D3D12 のプログラムすべてで同じです）。RTSS に PushFPS.exe を追加して設定で「Use Microsoft Detours API hooking」をオンにするか、OBS でウィンドウキャプチャ（Windows 10 1903+）を使ってください"
   },
   {
    "zh": "检测到 RTSS 屏显服务",
@@ -11763,18 +11770,18 @@
    "ja": "RTSS オンスクリーン表示サービスを検出"
   },
   {
-   "zh": "检测到 RTSS 屏显服务正在运行。开启兼容绘制需重启 Veyra，重启后 OSD 仅显示在视频上。现在重启吗？当前播放或串流将停止。",
+   "zh": "检测到 RTSS 屏显服务正在运行。开启兼容绘制需重启 PushFPS，重启后 OSD 仅显示在视频上。现在重启吗？当前播放或串流将停止。",
    "src": "qml/Main.qml",
-   "zh-TW": "偵測到 RTSS 螢幕顯示服務正在執行。啟用相容繪製需重新啟動 Veyra，重新啟動後 OSD 僅顯示在影片上。現在重新啟動嗎？目前的播放或串流將停止。",
-   "en": "The RTSS on-screen display service is running. Restart Veyra to enable compatible rendering and show the OSD on the video only. Restart now? Current playback or streaming will stop.",
-   "ja": "RTSS オンスクリーン表示サービスが動作しています。互換描画を有効にするには Veyra を再起動してください。再起動後、OSD は映像にだけ表示されます。今すぐ再起動しますか？再生中の映像やストリーミングは停止します。"
+   "zh-TW": "偵測到 RTSS 螢幕顯示服務正在執行。啟用相容繪製需重新啟動 PushFPS，重新啟動後 OSD 僅顯示在影片上。現在重新啟動嗎？目前的播放或串流將停止。",
+   "en": "The RTSS on-screen display service is running. Restart PushFPS to enable compatible rendering and show the OSD on the video only. Restart now? Current playback or streaming will stop.",
+   "ja": "RTSS オンスクリーン表示サービスが動作しています。互換描画を有効にするには PushFPS を再起動してください。再起動後、OSD は映像にだけ表示されます。今すぐ再起動しますか？再生中の映像やストリーミングは停止します。"
   },
   {
-   "zh": "检测到 RivaTuner（小飞机 OSD）注入了 Veyra。请把 设置 → 监控软件兼容 设为“自动”并在小飞机运行时重启 Veyra：界面改用兼容绘制，OSD 只显示在视频上",
+   "zh": "检测到 RivaTuner（小飞机 OSD）注入了 PushFPS。请把 设置 → 监控软件兼容 设为“自动”并在小飞机运行时重启 PushFPS：界面改用兼容绘制，OSD 只显示在视频上",
    "src": "src/ui/QmlPlayerBridge_p.h",
-   "zh-TW": "偵測到 RivaTuner（小飛機 OSD）注入了 Veyra。請把 設定 → 監控軟體相容 設為「自動」，並在小飛機執行時重新啟動 Veyra：介面改用相容繪製，OSD 只顯示在影片上",
-   "en": "RivaTuner (RTSS OSD) is injected into Veyra. Set Settings → Monitoring overlay compatibility to Auto and restart Veyra while RTSS is running: the interface uses compatible drawing and the OSD shows on the video only",
-   "ja": "RivaTuner（RTSS OSD）が Veyra に挿入されています。設定 → モニタリングソフト互換 を「自動」にし、RTSS の実行中に Veyra を再起動してください。インターフェースが互換描画になり、OSD は映像にだけ表示されます"
+   "zh-TW": "偵測到 RivaTuner（小飛機 OSD）注入了 PushFPS。請把 設定 → 監控軟體相容 設為「自動」，並在小飛機執行時重新啟動 PushFPS：介面改用相容繪製，OSD 只顯示在影片上",
+   "en": "RivaTuner (RTSS OSD) is injected into PushFPS. Set Settings → Monitoring overlay compatibility to Auto and restart PushFPS while RTSS is running: the interface uses compatible drawing and the OSD shows on the video only",
+   "ja": "RivaTuner（RTSS OSD）が PushFPS に挿入されています。設定 → モニタリングソフト互換 を「自動」にし、RTSS の実行中に PushFPS を再起動してください。インターフェースが互換描画になり、OSD は映像にだけ表示されます"
   },
   {
    "zh": "检测到抖音直播伴侣：GPU 优先级暂时从“实时”降为“高”，避免两个程序争用显卡时卡死；直播伴侣退出后自动恢复",
@@ -13180,7 +13187,7 @@
    "zh": "画面引擎无响应，已记录诊断信息；如画面未恢复，请关闭软件后重新打开",
    "src": "include/veyra/engine/EngineWatchdog.h",
    "zh-TW": "畫面引擎無回應，已記錄診斷資訊；如畫面未恢復，請關閉軟體後重新開啟",
-   "en": "The picture engine stopped responding; diagnostics were recorded. If the picture does not recover, close and reopen Veyra.",
+   "en": "The picture engine stopped responding; diagnostics were recorded. If the picture does not recover, close and reopen PushFPS.",
    "ja": "映像エンジンが応答しません。診断情報を記録しました。映像が回復しない場合は、ソフトを閉じて開き直してください。"
   },
   {
@@ -13226,11 +13233,11 @@
    "ja": "画面が 3 秒以上応答しなかったため、ゲームモードを終了しました"
   },
   {
-   "zh": "界面始终用显卡绘制；小飞机 OSD 不在 Veyra 里显示；开着 NVIDIA 信息浮窗或游戏加加时可能卡死",
+   "zh": "界面始终用显卡绘制；小飞机 OSD 不在 PushFPS 里显示；开着 NVIDIA 信息浮窗或游戏加加时可能卡死",
    "src": "qml/SettingsPage.qml",
-   "zh-TW": "介面始終用顯示卡繪製；小飛機 OSD 不在 Veyra 中顯示；開著 NVIDIA 遊戲內覆疊或遊戲加加時可能卡死",
-   "en": "The interface always draws on the GPU; the RTSS OSD is not shown in Veyra; with NVIDIA's in-game overlay or GamePP running, Veyra may freeze",
-   "ja": "インターフェースは常に GPU で描画します。RTSS の OSD は Veyra に表示しません。NVIDIA オーバーレイや GamePP が動作しているとフリーズすることがあります"
+   "zh-TW": "介面始終用顯示卡繪製；小飛機 OSD 不在 PushFPS 中顯示；開著 NVIDIA 遊戲內覆疊或遊戲加加時可能卡死",
+   "en": "The interface always draws on the GPU; the RTSS OSD is not shown in PushFPS; with NVIDIA's in-game overlay or GamePP running, PushFPS may freeze",
+   "ja": "インターフェースは常に GPU で描画します。RTSS の OSD は PushFPS に表示しません。NVIDIA オーバーレイや GamePP が動作しているとフリーズすることがあります"
   },
   {
    "zh": "界面状态写入失败",
@@ -13674,11 +13681,11 @@
    "ja": "ウィンドウが切り取り範囲より小さいため、サイズが戻るのを待っています"
   },
   {
-   "zh": "窗口已关闭或属于 Veyra",
+   "zh": "窗口已关闭或属于 PushFPS",
    "src": "src/source/ScreenCaptureSource.cpp",
-   "zh-TW": "視窗已關閉或屬於 Veyra",
-   "en": "The window was closed or belongs to Veyra",
-   "ja": "ウィンドウが閉じられたか、Veyra のウィンドウです"
+   "zh-TW": "視窗已關閉或屬於 PushFPS",
+   "en": "The window was closed or belongs to PushFPS",
+   "ja": "ウィンドウが閉じられたか、PushFPS のウィンドウです"
   },
   {
    "zh": "窗口已最小化，等待恢复",
@@ -15669,11 +15676,11 @@
    "ja": "設定に失敗し、元のリソースも復元できなかったため停止しました"
   },
   {
-   "zh": "设置已保存，但自动重启失败。请重新打开软件。\nSettings saved. Automatic restart failed; please reopen Veyra.",
+   "zh": "设置已保存，但自动重启失败。请重新打开软件。\nSettings saved. Automatic restart failed; please reopen PushFPS.",
    "src": "apps/veyra-qml/main.cpp",
    "zh-TW": "設定已儲存，但自動重新啟動失敗。請重新開啟軟體。",
-   "en": "Settings saved. Automatic restart failed; please reopen Veyra.",
-   "ja": "設定は保存されましたが、自動再起動に失敗しました。Veyra を開き直してください。"
+   "en": "Settings saved. Automatic restart failed; please reopen PushFPS.",
+   "ja": "設定は保存されましたが、自動再起動に失敗しました。PushFPS を開き直してください。"
   },
   {
    "zh": "设置已保存，请等待导出结束后重启软件",

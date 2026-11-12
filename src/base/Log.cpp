@@ -226,7 +226,7 @@ void Logger::diagnosticContext(diagnostics::DiagnosticEvent event){threadDiagnos
 std::string Logger::latestProblem(){std::lock_guard lock(mutex_);return diagnostics::redact(latestProblem_);}
 void Logger::recordFrame(diagnostics::FrameTraceEvent event){std::lock_guard lock(traceMutex_);frameTrace_.add(event);}
 std::pair<size_t,uint64_t> Logger::frameTraceSize(){std::lock_guard lock(traceMutex_);return {frameTrace_.size(),frameTrace_.overwritten()};}
-std::string Logger::diagnosticReport(){std::ostringstream o;o<<"Veyra 本地诊断（复制前脱敏预览；不会上传）\n";
+std::string Logger::diagnosticReport(){std::ostringstream o;o<<"PushFPS 本地诊断（复制前脱敏预览；不会上传）\n";
     {std::lock_guard lock(mutex_);
     for(size_t i=0;i<diagnostics_.size();++i){const auto& e=diagnostics_.events()[i];const auto& r=e.resolution;
         auto code=[](std::optional<uint64_t> v){return v?std::format("0x{:X}",*v):std::string("未提供");};

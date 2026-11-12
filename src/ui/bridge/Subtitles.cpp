@@ -1,5 +1,6 @@
 // QML bridge: Subtitles responsibilities.
 #include "../QmlPlayerBridge_p.h"
+#include "veyra/Brand.h"
 
 namespace veyra::ui {
 // --- subtitles (P4-c) --------------------------------------------------------
@@ -336,7 +337,7 @@ void QmlPlayerBridge::setPreOpenHook(std::function<void()> hook) {
     impl_->preOpen = std::move(hook);
 }
 
-QString QmlPlayerBridge::appName() const { return QStringLiteral("Veyra"); }
+QString QmlPlayerBridge::appName() const { return QString::fromLatin1(veyra::brand::kProductName); }
 QString QmlPlayerBridge::version() const { return QStringLiteral(VEYRA_DISPLAY_VERSION); }
 
 // --- audio sync (1.4.4 声音补偿, #12) ------------------------------------------

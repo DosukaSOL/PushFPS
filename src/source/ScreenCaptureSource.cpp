@@ -300,7 +300,7 @@ bool ScreenCaptureSource::open(const SourceOpenDesc& desc){
     try{
         if(!ScreenCaptureOptions::parse(desc.path,p.options)||!desc.d3d12Device)throw winrt::hresult_error(E_INVALIDARG,L"屏幕采集参数无效");
         const auto& o=p.options;HWND window=o.kind==ScreenTargetKind::Window?reinterpret_cast<HWND>(o.target):nullptr;
-        if(window){GetWindowThreadProcessId(window,&p.targetPid);if(!IsWindow(window)||p.targetPid==GetCurrentProcessId())throw winrt::hresult_error(E_INVALIDARG,L"窗口已关闭或属于 Veyra");}
+        if(window){GetWindowThreadProcessId(window,&p.targetPid);if(!IsWindow(window)||p.targetPid==GetCurrentProcessId())throw winrt::hresult_error(E_INVALIDARG,L"窗口已关闭或属于 PushFPS");}
         HMONITOR monitor=window?MonitorFromWindow(window,MONITOR_DEFAULTTONEAREST):reinterpret_cast<HMONITOR>(o.target);
         p.displayHdr(monitor,p.hdr);p.format=p.hdr?DXGI_FORMAT_R16G16B16A16_FLOAT:DXGI_FORMAT_B8G8R8A8_UNORM;
         p.consumer=static_cast<ID3D12Device*>(desc.d3d12Device);

@@ -1,5 +1,6 @@
 // QML bridge: Recording responsibilities.
 #include "../QmlPlayerBridge_p.h"
+#include "veyra/Brand.h"
 
 namespace veyra::ui {
 // --- live recording of the processed picture --------------------------------
@@ -10,7 +11,7 @@ QString QmlPlayerBridge::recordingDirectory() const {
     const QString chosen = impl_->prefString("recordDir");
     if (!chosen.isEmpty()) return chosen;
     const QString videos = QStandardPaths::writableLocation(QStandardPaths::MoviesLocation);
-    return QDir(videos.isEmpty() ? QDir::homePath() : videos).filePath(QStringLiteral("Veyra"));
+    return QDir(videos.isEmpty() ? QDir::homePath() : videos).filePath(QString::fromLatin1(veyra::brand::kProductName));
 }
 // 0 = automatic from the picture size and frame rate (LiveRecorder).
 int QmlPlayerBridge::recordingBitrateMbps() const { return std::clamp(impl_->prefInt("recordBitrateMbps", 0), 0, 400); }

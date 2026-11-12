@@ -1,4 +1,5 @@
 #include "veyra/engine/LiveRecorder.h"
+#include "veyra/Brand.h"
 #include "veyra/pipeline/GpuPassUtils.h"
 #include "veyra/sink/MfLiveEncoder.h"
 #include "veyra/sink/NvencLiveEncoder.h"
@@ -761,7 +762,7 @@ bool LiveRecorder::start(const RecordingSettings& settings,std::wstring& error){
     }
     s.settings=settings;s.armed=true;s.failed=false;s.error.clear();s.note.clear();s.encoder.clear();
     s.framesBase=s.droppedBase=0;s.files=0;s.firstFrameUs=0;s.nextDueUs=0;s.lastSeconds=0;s.audioTrack=false;
-    s.baseName=L"Veyra-"+fileStamp();s.nextNumber=1;++s.started;
+    s.baseName=std::wstring(veyra::brand::kProductNameW)+L"-"+fileStamp();s.nextNumber=1;++s.started;
     veyra::log::info("live-recorder",std::format("armed directory={} bitrateMbps={} hevc={} fpsLimit={} audio={}",
         utf8(settings.directory),settings.bitrateMbps,settings.hevc,settings.fpsLimit,settings.audio));
     return true;

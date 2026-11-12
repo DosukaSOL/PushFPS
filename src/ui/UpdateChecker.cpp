@@ -45,7 +45,7 @@ void UpdateChecker::check(bool manual) {
     body_.clear(); failure_.clear();
     QNetworkRequest request(endpoint_);
     request.setRawHeader("Accept", "application/vnd.github+json");
-    request.setRawHeader("User-Agent", "Veyra-Update-Check");
+    request.setRawHeader("User-Agent", "PushFPS-Update-Check");
     request.setRawHeader("X-GitHub-Api-Version", "2022-11-28");
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     request.setMaximumRedirectsAllowed(3);
@@ -81,7 +81,7 @@ void UpdateChecker::finish() {
         const QUrl url(obj.value(QStringLiteral("html_url")).toString());
         const bool validUrl = url.scheme() == QStringLiteral("https") && url.host() == QStringLiteral("github.com")
             && url.userInfo().isEmpty() && url.port(-1) == -1 && !url.hasQuery() && !url.hasFragment()
-            && url.path() == QStringLiteral("/Likely7/Veyra-NRVideo/releases/tag/") + tag;
+            && url.path() == QString::fromLatin1(veyra::brand::kReleaseTagPathPrefix) + tag;
         if (error.error != QJsonParseError::NoError || !document.isObject()
             || !obj.value(QStringLiteral("draft")).isBool() || obj.value(QStringLiteral("draft")).toBool()
             || !obj.value(QStringLiteral("prerelease")).isBool() || obj.value(QStringLiteral("prerelease")).toBool()

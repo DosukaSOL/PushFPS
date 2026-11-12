@@ -851,7 +851,7 @@ VPage {
                                       ? qsTr("监控兼容绘制已启用：OSD 只显示在视频上；部分阴影与模糊简化")
                                       : automatic
                                         ? qsTr("启动时检测到小飞机（RTSS）、NVIDIA 信息浮窗或游戏加加就改用软件绘制界面，它们只显示在视频上")
-                                        : qsTr("界面始终用显卡绘制；小飞机 OSD 不在 Veyra 里显示；开着 NVIDIA 信息浮窗或游戏加加时可能卡死")
+                                        : qsTr("界面始终用显卡绘制；小飞机 OSD 不在 PushFPS 里显示；开着 NVIDIA 信息浮窗或游戏加加时可能卡死")
                             VSeg {
                                 objectName: "set-overlay-compat"
                                 options: [{ id: "auto", label: qsTr("自动") }, { id: "off", label: qsTr("关闭") }]
@@ -1104,9 +1104,16 @@ VPage {
                         }
                         ColumnLayout {
                             spacing: 4
-                            VH1 { text: "Veyra" }
+                            VH1 { text: veyra.appName }
                             Text {
                                 text: qsTr("版本 ") + veyra.version
+                                color: Theme.t2
+                                font.family: Theme.fontUi
+                                font.pixelSize: Theme.fsBody
+                            }
+                            Text {
+                                objectName: "about-upstream-credit"
+                                text: qsTr("基于开源项目 Veyra（GPL-3.0）打造，感谢原作者 Likely7")
                                 color: Theme.t2
                                 font.family: Theme.fontUi
                                 font.pixelSize: Theme.fsBody

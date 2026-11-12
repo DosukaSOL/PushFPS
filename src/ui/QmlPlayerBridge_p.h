@@ -153,7 +153,7 @@ inline QString lastFailurePath() {
 inline QString injectionAdvice(const QString& modules) {
     QStringList parts;
     if (modules.contains(QStringLiteral("RTSSHooks64.dll"), Qt::CaseInsensitive) && !qApp->property("veyraSoftwareUi").toBool())
-        parts << QCoreApplication::translate("QmlPlayerBridge", "检测到 RivaTuner（小飞机 OSD）注入了 Veyra。请把 设置 → 监控软件兼容 设为“自动”并在小飞机运行时重启 Veyra：界面改用兼容绘制，OSD 只显示在视频上");
+        parts << QCoreApplication::translate("QmlPlayerBridge", "检测到 RivaTuner（小飞机 OSD）注入了 PushFPS。请把 设置 → 监控软件兼容 设为“自动”并在小飞机运行时重启 PushFPS：界面改用兼容绘制，OSD 只显示在视频上");
     return parts.join(QStringLiteral("；"));
 }
 // Messages and fixed table labels shown to the user, in the interface language

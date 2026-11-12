@@ -1,5 +1,6 @@
 // QML bridge: Preferences responsibilities.
 #include "../QmlPlayerBridge_p.h"
+#include "veyra/Brand.h"
 
 namespace veyra::ui {
 // --- shell preferences -------------------------------------------------------
@@ -117,7 +118,7 @@ QVariantList QmlPlayerBridge::readComponentList() const {
 
 void QmlPlayerBridge::openProjectPage() {
     // 关于 → 交流群: the group QR codes are kept current in the project README.
-    if (!QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/Likely7/Veyra-NRVideo#readme"))))
+    if (!QDesktopServices::openUrl(QUrl(QString::fromLatin1(veyra::brand::kRepositoryUrl) + QStringLiteral("#readme"))))
         emit notice(tr("无法打开浏览器"), true);
 }
 
@@ -562,11 +563,11 @@ void QmlPlayerBridge::updateLiveCompanionCompat() {
 int QmlPlayerBridge::uiScaleActive() const { return qApp ? qApp->property("veyraUiScale").toInt() : 0; }
 void QmlPlayerBridge::openFeedbackPage() {
     copyDiagnostics();
-    QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/Likely7/Veyra-NRVideo/issues")));
+    QDesktopServices::openUrl(QUrl(QString::fromLatin1(veyra::brand::kIssuesUrl)));
     emit notice(tr("诊断信息已复制，可直接粘贴到反馈里"), false);
 }
 void QmlPlayerBridge::openReleasesPage() {
-    QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/Likely7/Veyra-NRVideo/releases")));
+    QDesktopServices::openUrl(QUrl(QString::fromLatin1(veyra::brand::kReleasesUrl)));
 }
 bool QmlPlayerBridge::openSponsorLink(const QString& id) {
     // The author's pages as the author gave them (2026-10-19); the page shows buttons,
@@ -662,7 +663,7 @@ QString QmlPlayerBridge::screenshotDirectory() const {
     const QString chosen = impl_->prefString("screenshotDir");
     if (!chosen.isEmpty()) return chosen;
     const QString pictures = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
-    return QDir(pictures.isEmpty() ? QDir::homePath() : pictures).filePath(QStringLiteral("Veyra"));
+    return QDir(pictures.isEmpty() ? QDir::homePath() : pictures).filePath(QString::fromLatin1(veyra::brand::kProductName));
 }
 QString QmlPlayerBridge::lastScreenshot() const { return impl_->lastScreenshot; }
 QString QmlPlayerBridge::dataDirectory() const { return QString::fromStdWString(impl_->dataDir.wstring()); }
@@ -926,7 +927,7 @@ QString QmlPlayerBridge::captureSignalText() const {
 
 void QmlPlayerBridge::importPresetDialog() {
     const QString path = QFileDialog::getOpenFileName(nullptr, tr("导入预设"), QString(),
-                                                      tr("Veyra 预设 (*.vpreset);;所有文件 (*)"));
+                                                      tr("PushFPS 预设 (*.vpreset);;所有文件 (*)"));
     if (!path.isEmpty()) importPreset(path);
 }
 bool QmlPlayerBridge::importPreset(const QString& path) {
@@ -944,7 +945,7 @@ void QmlPlayerBridge::exportPresetDialog(int index) {
     if (index < 0 || size_t(index) >= entries.size()) return;
     const QString path = QFileDialog::getSaveFileName(nullptr, tr("导出预设"),
                                                       utf8Of(entries[size_t(index)].name) + QStringLiteral(".vpreset"),
-                                                      tr("Veyra 预设 (*.vpreset)"));
+                                                      tr("PushFPS 预设 (*.vpreset)"));
     if (!path.isEmpty()) exportPreset(index, path);
 }
 bool QmlPlayerBridge::exportPreset(int index, const QString& path) {

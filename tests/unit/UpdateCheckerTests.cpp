@@ -12,7 +12,7 @@ using veyra::ui::UpdateChecker;
 namespace {
 QByteArray release(QString tag = QStringLiteral("v2.0.8"), bool prerelease = false, bool draft = false,
                    QString url = {}) {
-    if (url.isEmpty()) url = QStringLiteral("https://github.com/Likely7/Veyra-NRVideo/releases/tag/") + tag;
+    if (url.isEmpty()) url = QStringLiteral("https://github.com/DosukaSOL/PushFPS/releases/tag/") + tag;
     return QJsonDocument(QJsonObject{{"tag_name", tag}, {"draft", draft}, {"prerelease", prerelease},
                                     {"html_url", url}}).toJson();
 }
@@ -67,7 +67,7 @@ private slots:
         QTest::newRow("missing-fields") << QStringLiteral("2.0.7") << QByteArray("{\"tag_name\":\"v2.0.8\"}") << 200 << QStringLiteral("invalid-release");
         QTest::newRow("untrusted-link") << QStringLiteral("2.0.7") << release("v2.0.8", false, false, "https://example.com/update") << 200 << QStringLiteral("invalid-release");
         QTest::newRow("other-repo") << QStringLiteral("2.0.7") << release("v2.0.8", false, false, "https://github.com/other/repo/releases/tag/v2.0.8") << 200 << QStringLiteral("invalid-release");
-        QTest::newRow("mismatched-tag") << QStringLiteral("2.0.7") << release("v2.0.8", false, false, "https://github.com/Likely7/Veyra-NRVideo/releases/tag/v2.0.9") << 200 << QStringLiteral("invalid-release");
+        QTest::newRow("mismatched-tag") << QStringLiteral("2.0.7") << release("v2.0.8", false, false, "https://github.com/DosukaSOL/PushFPS/releases/tag/v2.0.9") << 200 << QStringLiteral("invalid-release");
         QTest::newRow("overflow") << QStringLiteral("2.0.7") << release("v2.0.2147483648") << 200 << QStringLiteral("invalid-release");
         QTest::newRow("unknown-local") << QStringLiteral("dev") << release() << 200 << QStringLiteral("invalid-release");
         QTest::newRow("404") << QStringLiteral("2.0.7") << release() << 404 << QStringLiteral("http-404-network-203");

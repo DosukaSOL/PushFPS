@@ -57,7 +57,7 @@ DialogLayer {
         VRow {
             label: qsTr("游戏模式")
             hint: screenDialog.o.kind === 1
-                  ? qsTr("开始后 Veyra 在这块屏幕上全屏，键鼠和手柄直接操作屏幕上的程序；%1 调整画面，%2 退出").arg(veyra.shortcuts.gamePanel).arg(veyra.shortcuts.gameExit)
+                  ? qsTr("开始后 PushFPS 在这块屏幕上全屏，键鼠和手柄直接操作屏幕上的程序；%1 调整画面，%2 退出").arg(veyra.shortcuts.gamePanel).arg(veyra.shortcuts.gameExit)
                   : qsTr("贴合原窗口时可精确穿透鼠标；填满或拉伸支持键盘和手柄，鼠标点击会被拦截以免错位。%1 调整画面，%2 退出；独占全屏请改为无边框窗口").arg(veyra.shortcuts.gamePanel).arg(veyra.shortcuts.gameExit)
             VSwitch {
                 objectName: "screen-game-mode"
@@ -70,7 +70,7 @@ DialogLayer {
     DialogGroup {
         VRow {
             label: qsTr("采集方式")
-            hint: screenDialog.o.kind === 1 ? qsTr("DXGI 为显示器兼容方式，无鼠标指针；捕获显示器时不显示黄色边框，Veyra 自己也不会出现在截图和录屏里") : qsTr("窗口只能用 Windows Graphics Capture")
+            hint: screenDialog.o.kind === 1 ? qsTr("DXGI 为显示器兼容方式，无鼠标指针；捕获显示器时不显示黄色边框，PushFPS 自己也不会出现在截图和录屏里") : qsTr("窗口只能用 Windows Graphics Capture")
             VSeg {
                 enabled: screenDialog.o.kind === 1
                 opacity: enabled ? 1 : 0.5

@@ -34,7 +34,7 @@ Window {
     flags: Qt.Window | Qt.FramelessWindowHint
            | (veyra.passthroughActive ? Qt.WindowTransparentForInput : 0)
            | (veyra.gameInputActive ? Qt.WindowDoesNotAcceptFocus : 0)
-    title: "Veyra " + veyra.version
+    title: veyra.appName + " " + veyra.version
 
     // Page ids match the prototype's PAGES keys so a design screenshot and an
     // app screenshot can be compared under the same name.
@@ -834,8 +834,8 @@ Window {
         readonly property string product: kind === "nvidia" ? qsTr("NVIDIA 信息浮窗") : qsTr("游戏加加（GamePP）")
         title: kind === "rtss" ? qsTr("检测到 RTSS 屏显服务") : qsTr("检测到 %1").arg(product)
         text: kind === "rtss"
-              ? qsTr("检测到 RTSS 屏显服务正在运行。开启兼容绘制需重启 Veyra，重启后 OSD 仅显示在视频上。现在重启吗？当前播放或串流将停止。")
-              : qsTr("%1 正在运行。它会同时挂接界面和视频两个画面，可能让 Veyra 卡死；开启兼容绘制需重启 Veyra，重启后界面改用软件绘制，它只作用在视频上。现在重启吗？当前播放或串流将停止。").arg(product)
+              ? qsTr("检测到 RTSS 屏显服务正在运行。开启兼容绘制需重启 PushFPS，重启后 OSD 仅显示在视频上。现在重启吗？当前播放或串流将停止。")
+              : qsTr("%1 正在运行。它会同时挂接界面和视频两个画面，可能让 PushFPS 卡死；开启兼容绘制需重启 PushFPS，重启后界面改用软件绘制，它只作用在视频上。现在重启吗？当前播放或串流将停止。").arg(product)
         acceptText: qsTr("重启")
         rejectText: qsTr("稍后")
         onAccepted: veyra.restartForOverlayCompatibility()

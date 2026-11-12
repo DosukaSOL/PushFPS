@@ -13,12 +13,12 @@ BEGIN
  BEGIN
   BLOCK "040904B0"
   BEGIN
-   VALUE "FileDescription", "Veyra Video Player"
+   VALUE "FileDescription", "PushFPS - console frame generation (based on Veyra)"
    VALUE "FileVersion", "@VEYRA_DISPLAY_VERSION@"
-   VALUE "ProductName", "Veyra"
+   VALUE "ProductName", "PushFPS"
    VALUE "ProductVersion", "@VEYRA_DISPLAY_VERSION@"
    VALUE "OriginalFilename", "@VEYRA_RESOURCE_FILENAME@"
-   VALUE "LegalCopyright", "Veyra contributors. GPL-3.0."
+   VALUE "LegalCopyright", "PushFPS and Veyra contributors. GPL-3.0."
   END
  END
  BLOCK "VarFileInfo"
