@@ -334,6 +334,7 @@ Window {
         locked: root.fullLocked
         forcedTip: root.test.tip !== undefined ? root.test.tip : ""
         opened: pinned
+        peekOnStart: Object.keys(root.test).length === 0
         // In fullscreen only the picture is on screen, so another page (专业 above all)
         // would change nothing visible: leave fullscreen first, as the pill's menu does.
         onRequestPage: p => {

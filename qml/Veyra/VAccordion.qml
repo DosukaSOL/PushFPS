@@ -70,7 +70,7 @@ Rectangle {
         anchors.fill: parent
         z: 10
         radius: acc.radius
-        color: Qt.rgba(1, 138 / 255, 61 / 255, 0.08 * acc.flashLevel)
+        color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.08 * acc.flashLevel)
         border.width: 2
         border.color: Theme.accent
         opacity: acc.flashLevel
@@ -156,7 +156,7 @@ Rectangle {
                         text: acc.summary
                         color: Theme.t3
                         font.family: Theme.fontUi
-                        font.pixelSize: 11
+                        font.pixelSize: Theme.fsHint
                         elide: Text.ElideRight
                     }
                 }

@@ -202,6 +202,56 @@ jobs:
           }
           if ($failed) { exit 1 }
 
+      - name: QML component tests (PushFPS quick setup, strict)
+        run: |
+          cmake --build $env:BUILD --target veyra_qml_quick_tests veyra_qml_easing_tests --parallel
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $stage = Join-Path $env:RUNNER_TEMP 'qml-tests-stage'
+          New-Item -ItemType Directory -Force $stage | Out-Null
+          foreach ($t in 'veyra_qml_quick_tests', 'veyra_qml_easing_tests') {
+            $exe = Get-ChildItem $env:BUILD -Recurse -Filter "$t.exe" | Select-Object -First 1
+            if (-not $exe) { Write-Host "::error::$t.exe not built"; exit 1 }
+            Copy-Item $exe.FullName $stage
+          }
+          Copy-Item -Recurse -Force qml (Join-Path $stage 'qml')
+          Copy-Item -Recurse -Force tests\qml\quick (Join-Path $stage 'qml-tests')
+          $env:PATH = "$env:QT_ROOT_DIR\bin;$env:PATH"
+          $env:QML_IMPORT_PATH = "$env:QT_ROOT_DIR\qml"
+          $env:QT_PLUGIN_PATH = "$env:QT_ROOT_DIR\plugins"
+          $env:QT_QUICK_BACKEND = 'software'
+          $env:QML_DISABLE_DISK_CACHE = '1'
+          Push-Location $stage
+          & .\veyra_qml_quick_tests.exe -platform offscreen -input qml-tests\tst_push_quick_setup.qml 2>&1 | Tee-Object push-quick.txt | Out-Host
+          $code = $LASTEXITCODE
+          Pop-Location
+          Write-Host "tst_push_quick_setup exit $code"
+          if ($code -ne 0) { exit 1 }
+
+      - name: QML component tests (whole Veyra suite, report)
+        continue-on-error: true
+        run: |
+          $stage = Join-Path $env:RUNNER_TEMP 'qml-tests-stage'
+          $env:PATH = "$env:QT_ROOT_DIR\bin;$env:PATH"
+          $env:QML_IMPORT_PATH = "$env:QT_ROOT_DIR\qml"
+          $env:QT_PLUGIN_PATH = "$env:QT_ROOT_DIR\plugins"
+          $env:QT_QUICK_BACKEND = 'software'
+          $env:QML_DISABLE_DISK_CACHE = '1'
+          Push-Location $stage
+          $env:VEYRA_QML_DIR = Join-Path $stage 'qml'
+          & .\veyra_qml_easing_tests.exe -platform offscreen 2>&1 | Out-Host
+          Write-Host "veyra_qml_easing_tests exit $LASTEXITCODE"
+          $failed = 0
+          foreach ($f in Get-ChildItem qml-tests -Filter 'tst_*.qml') {
+            $out = & .\veyra_qml_quick_tests.exe -platform offscreen -input "qml-tests\$($f.Name)" 2>&1
+            $code = $LASTEXITCODE
+            $totals = ($out | Select-String '^Totals:' | Select-Object -Last 1)
+            Write-Host ("{0,-34} exit {1}  {2}" -f $f.Name, $code, $totals)
+            if ($code -ne 0) { $failed++; $out | Select-String 'FAIL!|QWARN.*Error|ReferenceError|TypeError' | Select-Object -First 25 | Out-Host }
+          }
+          Pop-Location
+          Write-Host "files with failures: $failed"
+          if ($failed) { exit 1 }
+
       - name: Imports must match the upstream runtime package
         run: |
           python -m pip install --quiet pefile
@@ -263,11 +313,135 @@ jobs:
             dist/*.sha256
           if-no-files-found: error
 
+  # PushFPS for OBS Studio (obs-plugin/): built against OBS's public headers, then loaded into a
+  # real OBS Studio (latest release) with a scene that holds a PushFPS source, and the OBS log is
+  # checked for the plugin loading, the source being created and its capture child starting.
+  obs-plugin:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OBS_HEADERS_TAG: 31.0.0
+      OBS_PLUGIN_VERSION: 1.0.0
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: OBS headers (obs-studio ${{ env.OBS_HEADERS_TAG }}, libobs + frontend API only)
+        run: |
+          git clone -q --depth 1 --filter=blob:none --sparse --branch $env:OBS_HEADERS_TAG https://github.com/obsproject/obs-studio.git D:\obs-src
+          git -C D:\obs-src sparse-checkout set libobs UI/obs-frontend-api frontend/api
+          if (-not (Test-Path D:\obs-src\libobs\obs-module.h)) { throw 'libobs headers missing' }
+
+      - name: Build pushfps-obs.dll
+        run: |
+          cmake -S obs-plugin -B D:\obs-build -G "Visual Studio 17 2022" -A x64 "-DOBS_SOURCE_DIR=D:\obs-src"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build D:\obs-build --config Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Exports and imports
+        run: |
+          $dll = 'D:\obs-build\Release\pushfps-obs.dll'
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          $dumpbin = Get-ChildItem "$vs\VC\Tools\MSVC" -Recurse -Filter dumpbin.exe | Where-Object FullName -match 'Hostx64\\x64' | Select-Object -First 1
+          $exports = & $dumpbin.FullName /nologo /exports $dll | Out-String
+          $imports = & $dumpbin.FullName /nologo /imports $dll | Out-String
+          $exports; $imports
+          foreach ($e in 'obs_module_load', 'obs_module_ver', 'obs_module_set_pointer', 'obs_module_post_load', 'obs_module_name') {
+            if ($exports -notmatch "\b$e\b") { throw "missing export $e" }
+          }
+          foreach ($i in 'obs.dll', 'obs-frontend-api.dll') { if ($imports -notmatch [regex]::Escape($i)) { throw "missing import $i" } }
+
+      - name: Package
+        run: |
+          $root = "D:\obs-pkg\PushFPS-OBS-Plugin-$env:OBS_PLUGIN_VERSION-win64"
+          New-Item -ItemType Directory -Force "$root\pushfps-obs\bin\64bit" | Out-Null
+          Copy-Item D:\obs-build\Release\pushfps-obs.dll "$root\pushfps-obs\bin\64bit\"
+          Copy-Item obs-plugin\packaging\* $root
+          Copy-Item LICENSE "$root\LICENSE.txt"
+          New-Item -ItemType Directory -Force dist | Out-Null
+          $zip = "dist\PushFPS-OBS-Plugin-$env:OBS_PLUGIN_VERSION-win64.zip"
+          Compress-Archive -Path "$root\*" -DestinationPath $zip -Force
+          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+          "$hash  $(Split-Path $zip -Leaf)" | Set-Content "$zip.sha256" -Encoding ascii
+          Get-ChildItem dist | Format-Table Name, Length
+
+      - name: Load test in real OBS Studio
+        run: |
+          $rel = gh api repos/obsproject/obs-studio/releases/latest | ConvertFrom-Json
+          $asset = $rel.assets | Where-Object { $_.name -match 'Windows.*\.zip$' -and $_.name -notmatch 'PDB|arm64' } | Select-Object -First 1
+          if (-not $asset) { throw "no Windows zip in OBS $($rel.tag_name)" }
+          Write-Host "OBS Studio $($rel.tag_name): $($asset.name)"
+          curl.exe -sSL --fail -o D:\obs.zip $asset.browser_download_url
+          Expand-Archive D:\obs.zip D:\obs -Force
+          Remove-Item D:\obs\portable_mode*, D:\obs\obs_portable_mode* -ErrorAction SilentlyContinue
+          $obs = Get-ChildItem D:\obs -Recurse -Filter obs64.exe | Select-Object -First 1
+          if (-not $obs) { throw 'obs64.exe not in the zip' }
+          # Install with the real installer from the package.
+          $pkg = Get-ChildItem D:\obs-pkg -Directory | Select-Object -First 1
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$($pkg.FullName)\Install-PushFPS-OBS.ps1"
+          if ($LASTEXITCODE -ne 0) { throw "installer exit $LASTEXITCODE" }
+          if (-not (Test-Path "$env:ProgramData\obs-studio\plugins\pushfps-obs\bin\64bit\pushfps-obs.dll")) { throw 'installer did not place the dll' }
+          # A scene collection with one PushFPS source in the program scene.
+          $cfg = Join-Path $env:APPDATA 'obs-studio'
+          New-Item -ItemType Directory -Force "$cfg\basic\scenes" | Out-Null
+          $collection = @{
+            name = 'Untitled'; current_scene = 'Scene'; current_program_scene = 'Scene'
+            scene_order = @(@{ name = 'Scene' })
+            sources = @(
+              @{ id = 'pushfps_source'; versioned_id = 'pushfps_source'; name = 'PushFPS'; uuid = '6c1d6f52-0d55-4a45-9a70-6b2a3d6f0001'
+                 settings = @{}; enabled = $true; flags = 0; mixers = 0; volume = 1.0 },
+              @{ id = 'scene'; versioned_id = 'scene'; name = 'Scene'; uuid = '6c1d6f52-0d55-4a45-9a70-6b2a3d6f0002'
+                 settings = @{ id_counter = 1; items = @(@{ name = 'PushFPS'; source_uuid = '6c1d6f52-0d55-4a45-9a70-6b2a3d6f0001'
+                   visible = $true; id = 1; pos = @{ x = 0; y = 0 }; scale = @{ x = 1; y = 1 }; rot = 0; align = 5 }) } }
+            )
+          }
+          $collection | ConvertTo-Json -Depth 10 | Set-Content "$cfg\basic\scenes\Untitled.json" -Encoding utf8
+          $p = Start-Process $obs.FullName -WorkingDirectory $obs.DirectoryName -PassThru `
+            -ArgumentList '--disable-updater', '--disable-shutdown-check', '--disable-missing-files-check', '--multi'
+          $deadline = (Get-Date).AddSeconds(90); $log = ''
+          while ((Get-Date) -lt $deadline) {
+            Start-Sleep 5
+            $file = Get-ChildItem "$cfg\logs" -Filter *.txt -ErrorAction SilentlyContinue | Sort-Object LastWriteTime | Select-Object -Last 1
+            if ($file) { $log = Get-Content $file.FullName -Raw }
+            if ($log -match 'PushFPS is not running yet' -or $p.HasExited) { break }
+          }
+          Start-Sleep 3
+          if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
+          New-Item -ItemType Directory -Force D:\obs-logs | Out-Null
+          if ($file) { Copy-Item $file.FullName D:\obs-logs\ }
+          ($log -split "`n") | Where-Object { $_ -match 'pushfps|module|Loaded|video|adapter|error' } | Select-Object -First 120 | Out-Host
+          foreach ($want in '\[pushfps-obs\] loaded version', '\[pushfps-obs\] source created',
+                            '\[pushfps-obs\] capture method: game_capture', '\[pushfps-obs\] PushFPS is not running yet') {
+            if ($log -notmatch $want) { throw "OBS log is missing: $want" }
+          }
+          Write-Host 'OBS Studio loaded PushFPS for OBS, created the source and started its capture child.'
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: obs-load-test-log
+          path: D:\obs-logs
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PushFPS-OBS-Plugin
+          path: |
+            dist/*.zip
+            dist/*.sha256
+          if-no-files-found: error
+
   # Publishes a tagged build as a GitHub pre-release. It stays a pre-release (which the in-app update
   # checker ignores) until someone has tested it on real hardware and marks it as the latest release.
   release:
     if: startsWith(github.ref, 'refs/tags/v') || inputs.release_tag != ''
-    needs: build
+    needs: [build, obs-plugin]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -282,7 +456,8 @@ jobs:
       - name: Create the pre-release
         run: |
           ls -la dist
-          zip=$(ls dist/*.zip | head -1); sum=$(cat dist/*.sha256)
+          zip=$(ls dist/PushFPS-*-win64.zip | grep -v OBS-Plugin | head -1); sum=$(cat "$zip.sha256")
+          obszip=$(ls dist/PushFPS-OBS-Plugin-*.zip | head -1); obssum=$(cat "$obszip.sha256")
           cat > notes.md <<NOTES
           ## Install
 
@@ -297,6 +472,13 @@ jobs:
           capture card and GPU. Please report what works and what doesn't in Issues.
 
           SHA-256: \`$sum\`
+
+          ## OBS Studio plugin
+
+          **$(basename "$obszip")** adds a *PushFPS* source to OBS Studio 28+ (Windows): your PushFPS picture,
+          frame generation included, in any scene. Extract it and double-click **Install-PushFPS-OBS.cmd**.
+
+          SHA-256: \`$obssum\`
 
           PushFPS is free software (GPL-3.0), built on [Veyra](https://github.com/Likely7/Veyra-NRVideo) by Likely7.
           NOTES

@@ -67,6 +67,26 @@ QtObject {
     property int nvidiaLowLatency: 0
     property bool running: false
     property string presentationStatus: ""
+    // PushFPS quick setup (tst_push_quick_setup.qml): frame generation, output cap,
+    // NR and presets as the bridge exposes them. Frame generation follows the
+    // multiplier the way setFgMultiplier does (above 1 = on).
+    property bool fgEnabled: false
+    property int fgMultiplier: 1
+    property var fgMultiplierChoices: [{id:"1"},{id:"2"},{id:"3"},{id:"4"}]
+    property int outputRateMode: 0
+    property real outputCustomFps: 0
+    property bool presentationOwned: false
+    property real displayRefreshHz: 240
+    property bool nrAnyEnabled: false
+    property bool hasCaptureSession: false
+    property var presets: []
+    property string currentPresetName: "自定义"
+    property int lastAppliedPreset: -1
+    onFgMultiplierChanged: fgEnabled = fgMultiplier > 1
+    onFgEnabledChanged: if (!fgEnabled && fgMultiplier > 1) fgMultiplier = 1
+    function addEffect(type) { if (type === "nr") nrAnyEnabled = true }
+    function setAllNrEnabled(on) { nrAnyEnabled = on }
+    function applyPresetIndex(index) { lastAppliedPreset = index; return true }
     signal settingsChanged()
     signal chainChanged()
     signal snapshotChanged()

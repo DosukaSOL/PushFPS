@@ -25,7 +25,12 @@ QtObject {
     // --- text -------------------------------------------------------------
     readonly property color t1: "#F3F3F5"
     readonly property color t2: Qt.rgba(0.953, 0.953, 0.961, 0.62)
-    readonly property color t3: Qt.rgba(0.953, 0.953, 0.961, 0.38)
+    // PushFPS: secondary text a little brighter than the design's .38, so hints
+    // stay readable on the dark cards (contrast about 4.5:1 on card2).
+    readonly property color t3: Qt.rgba(0.953, 0.953, 0.961, 0.48)
+    // Row labels: between t1 and t2, so a label reads before its hint.
+    readonly property color tLabel: Qt.rgba(0.953, 0.953, 0.961, 0.88)
+    readonly property real fsHint: 11.5
 
     // --- accent and state -------------------------------------------------
     // 设置 → 强调色: PushFPS green (default) or the design's .accent-white variant.
@@ -127,7 +132,7 @@ QtObject {
 
     // --- component metrics from the CSS -----------------------------------
     readonly property int ctlHeight: 32      // .btn / .pill
-    readonly property int rowMinHeight: 38   // .row
+    readonly property int rowMinHeight: 40   // .row (PushFPS: 38 + room to breathe)
     readonly property int switchWidth: 34    // .sw
     readonly property int switchHeight: 20
     readonly property int switchKnob: 14

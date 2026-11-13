@@ -2,6 +2,9 @@
 #include "../QmlPlayerBridge_p.h"
 #include "veyra/Brand.h"
 
+#include <QJsonDocument>
+#include <QJsonParseError>
+
 namespace veyra::ui {
 // --- shell preferences -------------------------------------------------------
 bool QmlPlayerBridge::reducedMotion() const { return impl_->facade.reducedMotion(); }
@@ -185,6 +188,8 @@ bool QmlPlayerBridge::setPreference(const QString& key, const QVariant& value) {
         {"subtitleMargin", {0, 240}}, {"subtitleLines", {0, 8}},
         // 列表模式 parameter panel width (ProPage splitter); QML clamps it to the window.
         {"listInspectorWidth", {376, 4000}},
+        // PushFPS quick setup: the console game's own frame rate (30, 40 or 60).
+        {"pushGameFps", {30, 60}},
         // Network sources (#48): seconds to collect before the first picture; -1 follows the buffer level.
         {"networkPrebuffer", {-1, 60}},
         // Live recording: the target bitrate for the file, and the frame rate
@@ -261,6 +266,21 @@ bool QmlPlayerBridge::setPreference(const QString& key, const QVariant& value) {
         // What to do with pictures damaged by packet loss (network sources only).
         const QString v = value.toString();
         if (v != QLatin1String("conceal") && v != QLatin1String("keyframe")) return false;
+        stored = v;
+    } else if (key == QLatin1String("pushConsole")) {
+        // PushFPS quick setup: which console the profile is for.
+        const QString v = value.toString();
+        static const QStringList consoles{"ps5", "ps5pro", "xbox", "switch2", "other"};
+        if (!consoles.contains(v)) return false;
+        stored = v;
+    } else if (key == QLatin1String("pushProfiles")) {
+        // PushFPS console and game profiles: a JSON object written by PushQuickSetup.qml.
+        // Size-capped and parsed here, so a broken value never reaches the file.
+        const QString v = value.toString();
+        if (v.size() > 65536) return false;
+        QJsonParseError error{};
+        const QJsonDocument doc = QJsonDocument::fromJson(v.toUtf8(), &error);
+        if (error.error != QJsonParseError::NoError || !doc.isObject()) return false;
         stored = v;
     } else if (key == QLatin1String("rememberPosition") || key == QLatin1String("dockPinned")) {
         stored = value.toBool();

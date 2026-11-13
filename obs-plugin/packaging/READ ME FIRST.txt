@@ -1,0 +1,31 @@
+PushFPS for OBS Studio
+======================
+
+What it does
+  Adds a "PushFPS" source to OBS Studio (28 or newer, Windows 10/11 x64). The source shows
+  PushFPS's output - your console picture after frame generation and AI enhancement - in any
+  scene, at the frame rate PushFPS produces. It can also start PushFPS for you.
+
+  PushFPS itself does the processing; it must be installed (Install-PushFPS.cmd from the
+  PushFPS download). This plugin brings its picture into OBS.
+
+Install
+  1. Close OBS Studio.
+  2. Double-click Install-PushFPS-OBS.cmd. No administrator rights needed.
+  3. Start OBS Studio. In a scene, click + under Sources and pick "PushFPS".
+
+Using it
+  - "Open PushFPS" (in the source's properties, or Tools > Open PushFPS) starts PushFPS with
+    OBS game capture support, or brings it to the front when it already runs.
+  - Capture method "Game capture" receives every generated frame (recommended). If the source
+    stays empty, choose "Window capture". If you start PushFPS yourself, turn on
+    Settings > OBS Game Capture compatibility in PushFPS once and restart it.
+  - Sound: add an "Application Audio Capture" source and pick PushFPS.exe.
+  - PushFPS installed somewhere else: set "PushFPS.exe location" in the source's properties.
+
+Uninstall
+  Close OBS Studio and run:  Install-PushFPS-OBS.cmd -Uninstall
+
+PushFPS is free and open source (GPL-3.0), a fork of Veyra by Likely7:
+  https://github.com/DosukaSOL/PushFPS
+  https://github.com/Likely7/Veyra-NRVideo

@@ -65,17 +65,31 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
         anchors.topMargin: 5
-        width: dockRoot.opened ? 18 : 44
+        width: dockRoot.opened ? 18 : (handleHover.hovered ? 64 : 52)
         height: 4
         radius: 4
-        color: Qt.rgba(1, 1, 1, 0.28)
+        color: handleHover.hovered ? Qt.rgba(1, 1, 1, 0.6) : Qt.rgba(1, 1, 1, 0.38)
+        Behavior on color { ColorAnimation { duration: Theme.d(200) } }
         opacity: dockRoot.opened ? 0 : 1
         Behavior on width { NumberAnimation { duration: Theme.d(400); easing.bezierCurve: Theme.spring } }
         Behavior on opacity { NumberAnimation { duration: Theme.d(200) } }
-        HoverHandler { onHoveredChanged: if (hovered) dockRoot.open() }
+        HoverHandler { id: handleHover; onHoveredChanged: if (hovered) dockRoot.open() }
     }
 
     function open() { retract.stop(); if (!locked) opened = true }
+    // PushFPS: on a normal start the dock drops in once and retracts, so a first-time
+    // user sees where the pages and the window buttons are. Test runs (vyTest) skip it.
+    property bool peekOnStart: false
+    Timer {
+        interval: 700
+        running: dockRoot.peekOnStart && !dockRoot.pinned
+        onTriggered: { dockRoot.open(); peekRetract.start() }
+    }
+    Timer {
+        id: peekRetract
+        interval: 2600
+        onTriggered: if (!barHover.hovered) retract.restart()
+    }
     // Fullscreen lock (Ctrl+L): the pointer no longer brings the dock down.
     property bool locked: false
     // Retract 450ms after the pointer leaves, exactly like closeDock().

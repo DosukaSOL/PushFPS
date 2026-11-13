@@ -435,6 +435,13 @@
    "ja": "%1 / %2 形式"
   },
   {
+   "zh": "%1 FPS 游戏将以 %2 FPS 运行（%3× 补帧）",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "%1 FPS 遊戲將以 %2 FPS 執行（%3× 補幀）",
+   "en": "A %1 FPS game will run at %2 FPS (%3× frame generation)",
+   "ja": "%1 FPS のゲームが %2 FPS で動作（%3× 補間）"
+  },
+  {
    "zh": "%1 · 去重后约 %2 fps",
    "src": "src/ui/bridge/Status.cpp",
    "zh-TW": "%1 · 去重後約 %2 fps",
@@ -636,13 +643,6 @@
    "zh-TW": "2X 為原生路徑，3X / 4X 為實驗解鎖；失敗原因見診斷",
    "en": "2X is the native path; 3X / 4X are experimental unlocks. See diagnostics for failures",
    "ja": "2X はネイティブ動作、3X / 4X は実験的なアンロックです。失敗の理由は診断を参照してください"
-  },
-  {
-   "zh": "30 FPS 游戏将以 %1 FPS 运行（%2× 补帧）",
-   "src": "qml/PushQuickSetup.qml",
-   "zh-TW": "30 FPS 遊戲將以 %1 FPS 執行（%2× 補幀）",
-   "en": "A 30 FPS game runs at %1 FPS (%2× frame generation)",
-   "ja": "30 FPS のゲームが %1 FPS で動作します（%2× フレーム生成）"
   },
   {
    "zh": "4 项",
@@ -2220,6 +2220,13 @@
    "ja": "Sunshine ホスト"
   },
   {
+   "zh": "Switch 2 请放在底座上，输出 60 Hz。游戏没有 HDCP，可以直接采集。",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "Switch 2 請放在底座上，輸出 60 Hz。遊戲沒有 HDCP，可以直接擷取。",
+   "en": "Put the Switch 2 in its dock at 60 Hz. Games have no HDCP, so they capture as is.",
+   "ja": "Switch 2 はドックに置き、60 Hz で出力してください。ゲームには HDCP がないのでそのままキャプチャーできます。"
+  },
+  {
    "zh": "UI 修正 · 未证实",
    "src": "qml/NrLayerEditor.qml",
    "zh-TW": "UI 修正 · 未證實",
@@ -2456,6 +2463,13 @@
    "zh-TW": "Xbox 影片解碼連續失敗，恢復後仍無法顯示畫面。請重新連線，並保留日誌。",
    "en": "Xbox video decoding failed repeatedly and could not recover a picture. Reconnect and keep the logs.",
    "ja": "Xbox の映像デコードが連続して失敗し、復旧後も映像を表示できませんでした。再接続し、ログを保存してください。"
+  },
+  {
+   "zh": "Xbox 请在 设置 → 常规 → 电视和显示选项 中选择 60 Hz。游戏没有 HDCP，可以直接采集。",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "Xbox 請在 設定 → 一般 → 電視和顯示選項 中選擇 60 Hz。遊戲沒有 HDCP，可以直接擷取。",
+   "en": "On Xbox, choose 60 Hz in Settings → General → TV & display options. Games have no HDCP, so they capture as is.",
+   "ja": "Xbox は 設定 → 全般 → テレビとディスプレイのオプション で 60 Hz を選んでください。ゲームには HDCP がないのでそのままキャプチャーできます。"
   },
   {
    "zh": "Xbox 连接失败：",
@@ -3375,6 +3389,13 @@
    "ja": "現在ホストに接続できません（オフライン、スリープ中、またはアドレスが変わった）。電源を入れて「更新」を押してください。"
   },
   {
+   "zh": "主机画面经采集卡接入，由电脑补帧到 60 或 120 FPS",
+   "src": "qml/HomePage.qml",
+   "zh-TW": "主機畫面經擷取卡接入，由電腦補幀到 60 或 120 FPS",
+   "en": "Your console through a capture card, boosted to 60 or 120 FPS by your PC",
+   "ja": "コンソール映像をキャプチャーカードで取り込み、PC で 60 / 120 FPS に補間"
+  },
+  {
    "zh": "主机的回应无法识别（不是 Sunshine / GameStream 主机？）。",
    "src": "src/ui/MoonlightModel.cpp",
    "zh-TW": "主機的回應無法識別（不是 Sunshine / GameStream 主機？）。",
@@ -3401,6 +3422,13 @@
    "zh-TW": "主機請輸出 60 Hz。PlayStation 需在 設定 → 系統 → HDMI 中關閉 HDCP，否則擷取畫面為黑屏。",
    "en": "Set the console to 60 Hz output. On PlayStation, turn off HDCP in Settings → System → HDMI, or the capture picture stays black.",
    "ja": "コンソールは 60 Hz で出力してください。PlayStation は 設定 → システム → HDMI で HDCP をオフにしないと、キャプチャ映像が黒くなります。"
+  },
+  {
+   "zh": "主机请输出 60 Hz，并关闭 HDCP（如有此选项），否则采集画面可能为黑屏。",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "主機請輸出 60 Hz，並關閉 HDCP（如有此選項），否則擷取畫面可能為黑屏。",
+   "en": "Set the console to 60 Hz and turn off HDCP if it has that option, or the capture picture may stay black.",
+   "ja": "コンソールは 60 Hz で出力し、HDCP の設定があればオフにしてください。オンだとキャプチャー映像が黒くなることがあります。"
   },
   {
    "zh": "主机转换画面失败。开启 HDR 时，主机桌面分辨率与串流分辨率不兼容会这样。",
@@ -4265,6 +4293,13 @@
    "ja": "補正なし"
   },
   {
+   "zh": "其他主机",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "其他主機",
+   "en": "Other console",
+   "ja": "その他のコンソール"
+  },
+  {
    "zh": "兼容",
    "src": "qml/Ps5SourceDialog.qml",
    "zh-TW": "相容",
@@ -4788,6 +4823,13 @@
    "zh-TW": "刪除此層",
    "en": "Delete this layer",
    "ja": "この層を削除"
+  },
+  {
+   "zh": "删除此游戏配置",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "刪除此遊戲設定檔",
+   "en": "Delete this game profile",
+   "ja": "このゲームプロファイルを削除"
   },
   {
    "zh": "删除节点",
@@ -6575,6 +6617,13 @@
    "ja": "大きな画像のプレビューの初期化に失敗しました"
   },
   {
+   "zh": "大多数主机游戏为 30 FPS；性能模式选 60",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "大多數主機遊戲為 30 FPS；效能模式選 60",
+   "en": "Most console games run at 30 FPS; pick 60 for performance modes",
+   "ja": "多くのコンソールゲームは 30 FPS。パフォーマンスモードなら 60"
+  },
+  {
    "zh": "失败 · 点击重试",
    "src": "qml/ExportPage.qml",
    "zh-TW": "失敗 · 點擊重試",
@@ -6776,6 +6825,13 @@
    "zh-TW": "字幕：開",
    "en": "Subtitles: on",
    "ja": "字幕：オン"
+  },
+  {
+   "zh": "存为游戏配置",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "存為遊戲設定檔",
+   "en": "Save as a game profile",
+   "ja": "ゲームプロファイルとして保存"
   },
   {
    "zh": "安全",
@@ -8815,11 +8871,11 @@
    "ja": "現在の組み合わせ：内容 %1 · 環境 %2"
   },
   {
-   "zh": "当前补帧方式最高 %1×，30 FPS 游戏约为 %2 FPS",
+   "zh": "当前补帧方式最高 %1×，%2 FPS 游戏约为 %3 FPS",
    "src": "qml/PushQuickSetup.qml",
-   "zh-TW": "目前補幀方式最高 %1×，30 FPS 遊戲約為 %2 FPS",
-   "en": "This frame generation method stops at %1×, about %2 FPS for a 30 FPS game",
-   "ja": "現在のフレーム生成方式は最大 %1× で、30 FPS のゲームは約 %2 FPS になります"
+   "zh-TW": "目前補幀方式最高 %1×，%2 FPS 遊戲約為 %3 FPS",
+   "en": "This frame generation method goes up to %1×: a %2 FPS game reaches about %3 FPS",
+   "ja": "現在の補間方式は最大 %1×。%2 FPS のゲームは約 %3 FPS"
   },
   {
    "zh": "当前设备不能执行所选 NR，请选择此显卡可用的 NR 运行库",
@@ -9051,6 +9107,13 @@
    "zh-TW": "快速鍵儲存失敗",
    "en": "Could not save the shortcut",
    "ja": "ショートカットを保存できませんでした"
+  },
+  {
+   "zh": "快速设置",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "快速設定",
+   "en": "Quick setup",
+   "ja": "クイック設定"
   },
   {
    "zh": "性能",
@@ -9506,6 +9569,13 @@
    "zh-TW": "把當前設定另存為預設…",
    "en": "Save the current settings as a preset…",
    "ja": "現在の設定をプリセットとして保存…"
+  },
+  {
+   "zh": "把当前设置存为某个游戏的配置，之后一键切换",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "把目前設定存為某個遊戲的設定檔，之後一鍵切換",
+   "en": "Save these settings for a game, then switch to them in one click",
+   "ja": "今の設定をゲームごとに保存して、ワンクリックで切り替え"
   },
   {
    "zh": "把电脑手柄当作主机上的 Xbox 手柄（1 号）",
@@ -10266,7 +10336,7 @@
   },
   {
    "zh": "无",
-   "src": "qml/SettingsPage.qml",
+   "src": "qml/PushQuickSetup.qml",
    "zh-TW": "無",
    "en": "None",
    "ja": "なし"
@@ -11194,6 +11264,13 @@
    "zh-TW": "更改…",
    "en": "Change…",
    "ja": "変更…"
+  },
+  {
+   "zh": "更新或另存为游戏配置",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "更新或另存為遊戲設定檔",
+   "en": "Update or save as a game profile",
+   "ja": "ゲームプロファイルを更新または別名で保存"
   },
   {
    "zh": "最多 4 个保护区域，请先删除一个",
@@ -12848,11 +12925,32 @@
    "ja": "ゲームとプログラム · "
   },
   {
+   "zh": "游戏主机",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "遊戲主機",
+   "en": "Console",
+   "ja": "コンソール"
+  },
+  {
    "zh": "游戏加加（GamePP）",
    "src": "qml/Main.qml",
    "zh-TW": "遊戲加加（GamePP）",
    "en": "GamePP",
    "ja": "GamePP（游戏加加）"
+  },
+  {
+   "zh": "游戏名称",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "遊戲名稱",
+   "en": "Game name",
+   "ja": "ゲーム名"
+  },
+  {
+   "zh": "游戏帧率",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "遊戲幀率",
+   "en": "Game frame rate",
+   "ja": "ゲームのフレームレート"
   },
   {
    "zh": "游戏模式",
@@ -12902,6 +13000,13 @@
    "zh-TW": "遊戲模式：退出滑鼠穿透",
    "en": "Game mode: exit mouse passthrough",
    "ja": "ゲームモード：マウス透過を解除"
+  },
+  {
+   "zh": "游戏配置",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "遊戲設定檔",
+   "en": "Game profile",
+   "ja": "ゲームプロファイル"
   },
   {
    "zh": "游戏锁 30/40 帧、采集卡输出 60 帧时选“自动剔除重复帧”：只去掉与上一张完全相同的画面，补帧时间均匀；“采集 60→30”固定每两帧取一帧，稳定 30 帧",
@@ -17378,7 +17483,7 @@
   },
   {
    "zh": "连接",
-   "src": "qml/Ps5SourceDialog.qml",
+   "src": "qml/HomePage.qml",
    "zh-TW": "連接",
    "en": "Connect",
    "ja": "接続"

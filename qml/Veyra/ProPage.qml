@@ -431,9 +431,12 @@ VPage {
     // One geometry contract for this layout and Main's native video HWND.
     // These are available before the first layout pass when a source is opened.
     readonly property real videoColumnWidth: Math.max(1, root.width - root.inspectorWidth - 14 * 2 - 10)
+    // PushFPS: the three meter cards show only while something plays. With nothing
+    // open they were a wall of "Not measured"; the picture card takes the room.
+    readonly property bool metersShown: !root.overlay && veyra.hasSource
     readonly property real metersHeight: Math.max(172, meter3Content.implicitHeight + 28)
     readonly property real videoCardHeight: Math.max(transport.height + 1,
-        root.height - 14 * 2 - head.height - 10 - root.metersHeight - 10)
+        root.height - 14 * 2 - head.height - 10 - (root.metersShown ? root.metersHeight + 10 : 0))
     readonly property rect videoViewport: Qt.rect(14, 14 + head.height + 10,
         root.videoColumnWidth, root.videoCardHeight - transport.height)
 
@@ -511,13 +514,40 @@ VPage {
                          veyra.protectionDrawShape.length > 0
                 onActivated: veyra.beginProtectionDraw("")
             }
-            Text {
+            // Empty state: what to do next, not only a status line.
+            ColumnLayout {
+                objectName: "pro-empty-state"
                 anchors.centerIn: parent
                 visible: !veyra.hasSource
-                text: veyra.statusText
-                color: Theme.t3
-                font.family: Theme.fontUi
-                font.pixelSize: Theme.fsH3
+                spacing: 14
+                Rectangle {
+                    Layout.alignment: Qt.AlignHCenter
+                    implicitWidth: 52; implicitHeight: 52; radius: 16
+                    color: Theme.accentSoft
+                    VIcon { anchors.centerIn: parent; name: "video"; size: 22; color: Theme.accent }
+                }
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: veyra.statusText
+                    color: Theme.t2
+                    font.family: Theme.fontUi
+                    font.pixelSize: Theme.fsH3
+                }
+                RowLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    visible: veyra.liveOpeningText.length === 0
+                    spacing: 8
+                    VButton {
+                        objectName: "pro-empty-capture"
+                        text: qsTr("采集卡"); iconName: "video"; primary: true
+                        onClicked: veyra.openCaptureDialog()
+                    }
+                    VButton {
+                        objectName: "pro-empty-file"
+                        text: qsTr("打开视频"); iconName: "folder"
+                        onClicked: veyra.openFileDialog()
+                    }
+                }
             }
         }
 
@@ -681,7 +711,7 @@ VPage {
     // --- meters (at least 172px, three cards) -----------------------------
     RowLayout {
         id: meters
-        visible: !root.overlay
+        visible: root.metersShown
         anchors.left: vwrap.left
         anchors.top: vwrap.bottom
         anchors.topMargin: 10
@@ -1034,10 +1064,13 @@ VPage {
     // (field request 2026-10-05); the width is remembered, a double click on the
     // gap returns to the design's 376px. It never goes narrower than that, and
     // the picture keeps at least 640px, where the meters under it still read.
+    // PushFPS: 420 by default (the design's 376 squeezed every hint into a narrow
+    // column); 376 stays the minimum and the splitter still goes either way.
+    readonly property real inspectorDefault: Math.min(420, inspectorMax)
     readonly property real inspectorMax: Math.max(376, root.width - 14 * 2 - 10 - 640)
     property real inspectorDrag: -1
     readonly property real inspectorWidth: Math.max(376, Math.min(inspectorMax,
-        inspectorDrag >= 0 ? inspectorDrag : Number(veyra.preferences.listInspectorWidth || 376)))
+        inspectorDrag >= 0 ? inspectorDrag : Number(veyra.preferences.listInspectorWidth || root.inspectorDefault)))
     MouseArea {
         id: inspectorSplit
         objectName: "pro-inspector-split"
@@ -1066,7 +1099,7 @@ VPage {
             veyra.setPreference("listInspectorWidth", width)
         }
         onCanceled: root.inspectorDrag = -1
-        onDoubleClicked: veyra.setPreference("listInspectorWidth", 376)
+        onDoubleClicked: veyra.setPreference("listInspectorWidth", root.inspectorDefault)
         // A hairline handle while the pointer is on the gap.
         Rectangle {
             anchors.centerIn: parent
@@ -1232,23 +1265,24 @@ VPage {
                             delegate: Row {
                                 required property var modelData
                                 spacing: 2
-                                Text { text: "→"; color: Theme.t3; font.pixelSize: 10; anchors.verticalCenter: parent.verticalCenter }
+                                Text { text: "›"; color: Theme.t3; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+                                // PushFPS: a stage that is on is tinted green; one that is off is
+                                // a quiet outline (struck-through labels read as errors).
                                 Rectangle {
                                     width: chipLabel.implicitWidth + 18
                                     height: 24
                                     radius: 99
-                                    color: Theme.card3
+                                    color: modelData.enabled ? Theme.accentSoft : "transparent"
                                     border.width: 1
-                                    border.color: Theme.stroke
-                                    opacity: modelData.enabled ? 1.0 : 0.4
+                                    border.color: modelData.enabled ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.35) : Theme.stroke
+                                    Behavior on color { ColorAnimation { duration: Theme.d(200) } }
                                     Text {
                                         id: chipLabel
                                         anchors.centerIn: parent
                                         text: modelData.label
-                                        color: Theme.t1
+                                        color: modelData.enabled ? Theme.t1 : Theme.t3
                                         font.family: Theme.fontUi
                                         font.pixelSize: 12
-                                        font.strikeout: !modelData.enabled
                                     }
                                     HoverHandler { cursorShape: Qt.PointingHandCursor }
                                     TapHandler { gesturePolicy: TapHandler.WithinBounds; onTapped: root.locateNode(modelData) }
