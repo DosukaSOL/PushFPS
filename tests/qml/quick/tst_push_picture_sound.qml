@@ -79,7 +79,9 @@ Item {
             pic.setGamma(1.0)
             compare(veyra.colourState.curves[0].length, 2, "gamma 1 is the identity curve")
             pic.setGamma(5)
-            compare(pic.gamma, 1.6, "gamma clamps to 1.6")
+            compare(pic.gamma, 1.5, "gamma clamps to 1.5")
+            pic.setGamma(0.1)
+            compare(pic.gamma, 0.5, "gamma clamps to 0.5")
         }
         function test_hand_drawn_curve_is_custom() {
             veyra.setColourCurve(0, [{x: 0, y: 0}, {x: 0.5, y: 0.7}, {x: 1, y: 1}])

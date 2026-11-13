@@ -49,7 +49,7 @@ ColumnLayout {
     }
     function setGamma(g) {
         ensureOn()
-        g = Math.round(Math.max(0.6, Math.min(1.6, g)) * 100) / 100
+        g = Math.round(Math.max(0.5, Math.min(1.5, g)) * 100) / 100
         veyra.setColourCurve(0, Math.abs(g - 1) < 0.005 ? [{ x: 0, y: 0 }, { x: 1, y: 1 }] : gammaPoints(g))
     }
 
@@ -102,7 +102,8 @@ ColumnLayout {
             implicitWidth: 150
             enabledControl: row.usable
             from: row.from; to: row.to; stepSize: row.step
-            center: row.from < 0 && row.to > 0
+            // Fill from the middle when the neutral value sits in the middle of the range.
+            center: row.neutral > row.from && Math.abs((row.neutral - row.from) - (row.to - row.neutral)) < 1e-6
             valueFromModel: true
             value: row.current
             resettable: true; defaultValue: row.neutral
@@ -124,7 +125,7 @@ ColumnLayout {
     PicSlider {
         key: "gamma"; label: qsTr("伽马")
         hint: pic.gamma < 0 ? qsTr("专业模式中设置了自定义曲线；拖动会替换它") : qsTr("中间调亮度；黑色和白色保持不变")
-        from: 0.6; to: 1.6; step: 0.01; neutral: 1
+        from: 0.5; to: 1.5; step: 0.01; neutral: 1
         usable: pic.available; current: pic.gamma < 0 ? 1 : pic.gamma
         value: pic.gamma < 0 ? qsTr("自定义") : current.toFixed(2)
         onEdited: v => pic.setGamma(v)
