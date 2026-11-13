@@ -161,6 +161,7 @@ QmlPlayerBridge::QmlPlayerBridge(engine::EngineController& engine, std::filesyst
     applyPreference(QStringLiteral("language"));
     applyPreference(QStringLiteral("audioDevice"));
     applyPreference(QStringLiteral("audioForceStereo"));
+    applyPreference(QStringLiteral("soundPreset"));
     applyPreference(QStringLiteral("magewellLowLatency"));
     const bool presetsLoaded = impl_->facade.importLegacyStores();
     const auto presetNotice = uiText(impl_->facade.error());
@@ -371,6 +372,8 @@ QmlPlayerBridge::QmlPlayerBridge(engine::EngineController& engine, std::filesyst
             state["seconds"]=live.seconds;
             state["files"]=int(live.files);
             state["audio"]=live.audio;
+            // PushFPS: counts finished files, so the interface can offer to edit the newest one.
+            state["saved"]=QVariant::fromValue(qulonglong(live.saved));
             if(state!=impl_->recordingState){
                 const auto previous=impl_->recordingState;
                 impl_->recordingState=state;

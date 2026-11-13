@@ -1414,6 +1414,9 @@ public:
     // program, or the repository's copy when it is missing; and the source code page.
     Q_INVOKABLE void openLicense();
     Q_INVOKABLE void openSourcePage();
+    // PushFPS sound profile curve: the filters' gain in dB at `hz` for a preset
+    // (and the custom EQ gains), for the Audio tab's EQ preview.
+    Q_INVOKABLE double soundResponseDb(int preset, const QVariantList& eq, double hz) const;
     Q_INVOKABLE void copyDiagnostics();
     // Re-reads the runtime manifest (Settings → 组件与许可 calls it when shown).
     Q_INVOKABLE void refreshComponentList();

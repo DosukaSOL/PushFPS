@@ -2976,6 +2976,13 @@
    "ja": "プロモード"
   },
   {
+   "zh": "专业模式中设置了自定义曲线；拖动会替换它",
+   "src": "qml/PushPicture.qml",
+   "zh-TW": "專業模式中設定了自訂曲線；拖動會取代它",
+   "en": "A custom curve is set in Professional mode; dragging replaces it",
+   "ja": "プロモードでカスタムカーブが設定されています。ドラッグすると置き換わります"
+  },
+  {
    "zh": "专业页「GPU 占用」只统计这一块显卡",
    "src": "qml/SettingsPage.qml",
    "zh-TW": "專業頁「GPU 占用」只統計這一塊顯示卡",
@@ -3072,6 +3079,13 @@
    "zh-TW": "中間調",
    "en": "Midtones",
    "ja": "中間調"
+  },
+  {
+   "zh": "中间调亮度；黑色和白色保持不变",
+   "src": "qml/PushPicture.qml",
+   "zh-TW": "中間調亮度；黑色和白色保持不變",
+   "en": "Midtone brightness; black and white stay put",
+   "ja": "中間調の明るさ。黒と白は変わりません"
   },
   {
    "zh": "串流中断，正在重新连接（{}/3）…",
@@ -3473,6 +3487,13 @@
    "ja": "2回目の処理倍率"
   },
   {
+   "zh": "五段均衡器，每段 ±12 dB",
+   "src": "qml/PushSoundProfile.qml",
+   "zh-TW": "五段等化器，每段 ±12 dB",
+   "en": "5-band equalizer, ±12 dB per band",
+   "ja": "5 バンドイコライザー、各 ±12 dB"
+  },
+  {
    "zh": "交流群",
    "src": "qml/SettingsPage.qml",
    "zh-TW": "交流群",
@@ -3492,6 +3513,13 @@
    "zh-TW": "亮化變化",
    "en": "Brightness change",
    "ja": "明るさの変化"
+  },
+  {
+   "zh": "亮度",
+   "src": "qml/PushPicture.qml",
+   "zh-TW": "亮度",
+   "en": "Brightness",
+   "ja": "明るさ"
   },
   {
    "zh": "亮度上限",
@@ -3527,6 +3555,13 @@
    "zh-TW": "亮度差超過它才算邊緣；越低，處理的邊緣越多",
    "en": "A brightness step above this counts as an edge; lower values treat more edges",
    "ja": "輝度差がこれを超えるとエッジとみなします。低いほど多くのエッジを処理します"
+  },
+  {
+   "zh": "人声清晰",
+   "src": "qml/PushSoundProfile.qml",
+   "zh-TW": "人聲清晰",
+   "en": "Voice clarity",
+   "ja": "ボイスクリア"
   },
   {
    "zh": "人脸原画保护",
@@ -3662,6 +3697,13 @@
    "ja": "圧縮が必要"
   },
   {
+   "zh": "伽马",
+   "src": "qml/PushPicture.qml",
+   "zh-TW": "伽瑪",
+   "en": "Gamma",
+   "ja": "ガンマ"
+  },
+  {
    "zh": "位流优先",
    "src": "qml/CaptureSourceDialog.qml",
    "zh-TW": "位流優先",
@@ -3751,6 +3793,13 @@
    "zh-TW": "低延遲順序，僅預覽、全層同步",
    "en": "Low-latency order, preview only, all layers in sync",
    "ja": "低遅延の順序、プレビューのみ、全層同期"
+  },
+  {
+   "zh": "低音增强",
+   "src": "qml/PushSoundProfile.qml",
+   "zh-TW": "低音增強",
+   "en": "Bass boost",
+   "ja": "低音ブースト"
   },
   {
    "zh": "低频时域重建",
@@ -4972,11 +5021,25 @@
    "ja": "コピーの近くに空きがありません"
   },
   {
+   "zh": "加入导出",
+   "src": "qml/PushRecordingSaved.qml",
+   "zh-TW": "加入匯出",
+   "en": "Export",
+   "ja": "書き出しへ"
+  },
+  {
    "zh": "加入导出队列",
    "src": "src/ui/bridge/Chain.cpp",
    "zh-TW": "加入匯出佇列",
    "en": "Add to export queue",
    "ja": "書き出しキューに追加"
+  },
+  {
+   "zh": "加强细节和边缘（纹理）",
+   "src": "qml/PushPicture.qml",
+   "zh-TW": "加強細節和邊緣（紋理）",
+   "en": "Brings out detail and edges (texture)",
+   "ja": "ディテールとエッジを強調（テクスチャ）"
   },
   {
    "zh": "加载中",
@@ -5119,6 +5182,13 @@
    "ja": "ハイライトを抑える"
   },
   {
+   "zh": "压缩响亮和安静之间的差距，深夜不吵人",
+   "src": "qml/PushSoundProfile.qml",
+   "zh-TW": "壓縮響亮和安靜之間的差距，深夜不吵人",
+   "en": "Evens out loud and quiet parts, for late nights",
+   "ja": "大きな音と小さな音の差を縮め、深夜でも静かに"
+  },
+  {
    "zh": "压缩采集使用码流颜色信息；手动颜色和范围请选择原生采集格式。",
    "src": "src/source/CaptureCardSource.cpp",
    "zh-TW": "壓縮擷取使用碼流顏色資訊；手動顏色和範圍請選擇原生擷取格式。",
@@ -5131,6 +5201,13 @@
    "zh-TW": "原圖色彩保留",
    "en": "Source color retention",
    "ja": "元の色を保持"
+  },
+  {
+   "zh": "原声输出",
+   "src": "qml/PushSoundProfile.qml",
+   "zh-TW": "原聲輸出",
+   "en": "Original sound",
+   "ja": "元の音のまま"
   },
   {
    "zh": "原始 = 一个输出像素对一个屏幕像素",
@@ -6134,6 +6211,13 @@
    "ja": "バランス"
   },
   {
+   "zh": "均衡器归零",
+   "src": "qml/PushSoundProfile.qml",
+   "zh-TW": "等化器歸零",
+   "en": "Reset equalizer",
+   "ja": "イコライザーをリセット"
+  },
+  {
    "zh": "垂直同步",
    "src": "qml/NodePage.qml",
    "zh-TW": "垂直同步",
@@ -6351,6 +6435,13 @@
    "ja": "音声同期、音量、出力デバイス。"
   },
   {
+   "zh": "声音配置",
+   "src": "qml/PushSoundProfile.qml",
+   "zh-TW": "聲音設定檔",
+   "en": "Sound profile",
+   "ja": "サウンドプロファイル"
+  },
+  {
    "zh": "处理 CPU P95: %1 ms",
    "src": "src/ui/bridge/Export.cpp",
    "zh-TW": "處理 CPU P95: %1 ms",
@@ -6566,6 +6657,13 @@
    "zh-TW": "夜裡關燈看：柔和一點，同時保留暗部細節。",
    "en": "Softer viewing in a dark room while retaining shadow detail.",
    "ja": "暗い部屋でも見やすく、暗部の細部を保ちます。"
+  },
+  {
+   "zh": "夜间模式",
+   "src": "qml/PushSoundProfile.qml",
+   "zh-TW": "夜間模式",
+   "en": "Night mode",
+   "ja": "ナイトモード"
   },
   {
    "zh": "大",
@@ -7035,6 +7133,13 @@
    "zh-TW": "對照底圖",
    "en": "Reference base",
    "ja": "比較用ベース"
+  },
+  {
+   "zh": "对白和语音更清楚，去掉低频轰鸣",
+   "src": "qml/PushSoundProfile.qml",
+   "zh-TW": "對白和語音更清楚，去掉低頻轟鳴",
+   "en": "Clearer dialogue and voice chat, without low rumble",
+   "ja": "会話やボイスチャットを聞き取りやすく、低音のこもりを除去"
   },
   {
    "zh": "导入",
@@ -8150,6 +8255,13 @@
    "ja": "エンコード済み "
   },
   {
+   "zh": "已自定义",
+   "src": "qml/HomePage.qml",
+   "zh-TW": "已自訂",
+   "en": "Custom",
+   "ja": "カスタム"
+  },
+  {
    "zh": "已解锁全屏",
    "src": "qml/Main.qml",
    "zh-TW": "已解鎖全螢幕",
@@ -8759,6 +8871,13 @@
    "ja": "このパッケージに必要なランタイムがありません"
   },
   {
+   "zh": "当前处理链没有调色节点",
+   "src": "qml/PushPicture.qml",
+   "zh-TW": "目前處理鏈沒有調色節點",
+   "en": "The processing chain has no colour stage",
+   "ja": "処理チェーンにカラー調整がありません"
+  },
+  {
    "zh": "当前导出设备不能执行所选补帧后端，未替换后端或降低倍率",
    "src": "src/engine/VideoExportJob.cpp",
    "zh-TW": "目前匯出裝置無法執行所選補幀後端，未替換後端或降低倍率",
@@ -8969,6 +9088,13 @@
    "ja": "音声を録音"
   },
   {
+   "zh": "录制已保存",
+   "src": "qml/PushRecordingSaved.qml",
+   "zh-TW": "錄製已儲存",
+   "en": "Recording saved",
+   "ja": "録画を保存しました"
+  },
+  {
    "zh": "录制已保存：%1",
    "src": "src/ui/QmlPlayerBridge.cpp",
    "zh-TW": "錄製已儲存：%1",
@@ -8981,6 +9107,13 @@
    "zh-TW": "錄製已儲存：%1（%2）",
    "en": "Recording saved: %1 (%2)",
    "ja": "録画を保存しました：%1（%2）"
+  },
+  {
+   "zh": "录制已包含补帧。导出前请在专业模式中关闭补帧，以免重复补帧。",
+   "src": "qml/PushRecordingSaved.qml",
+   "zh-TW": "錄製已包含補幀。匯出前請在專業模式中關閉補幀，以免重複補幀。",
+   "en": "The recording already has generated frames. Turn frame generation off in Professional mode before exporting it, so frames are not generated twice.",
+   "ja": "録画には補間フレームが含まれています。二重に補間しないよう、書き出し前にプロモードでフレーム生成をオフにしてください。"
   },
   {
    "zh": "录制已在进行中",
@@ -9065,6 +9198,13 @@
    "zh-TW": "錄製轉換著色器載入失敗",
    "en": "Could not load the recording conversion shader",
    "ja": "録画変換シェーダーを読み込めません"
+  },
+  {
+   "zh": "影院",
+   "src": "qml/PushSoundProfile.qml",
+   "zh-TW": "影院",
+   "en": "Cinema",
+   "ja": "シネマ"
   },
   {
    "zh": "往返 ",
@@ -9429,6 +9569,13 @@
    "zh-TW": "開啟檔案…",
    "en": "Open file…",
    "ja": "ファイルを開く…"
+  },
+  {
+   "zh": "打开文件夹",
+   "src": "qml/PushRecordingSaved.qml",
+   "zh-TW": "開啟資料夾",
+   "en": "Show in folder",
+   "ja": "フォルダーを開く"
   },
   {
    "zh": "打开新文件时自动选第二条可用字幕",
@@ -10853,6 +11000,13 @@
    "ja": "時間方向のちらつき防止"
   },
   {
+   "zh": "明亮",
+   "src": "qml/PushPicture.qml",
+   "zh-TW": "明亮",
+   "en": "Bright",
+   "ja": "明るい"
+  },
+  {
    "zh": "明亮度",
    "src": "qml/ColourMixer.qml",
    "zh-TW": "明亮度",
@@ -11280,6 +11434,20 @@
    "ja": "カーブに応じてコンテンツ輝度のヒントを制限します。SDR 入力では手動指定がない限り送信しません。"
   },
   {
+   "zh": "更多调色选项",
+   "src": "qml/PushPicture.qml",
+   "zh-TW": "更多調色選項",
+   "en": "More colour controls",
+   "ja": "その他のカラー設定"
+  },
+  {
+   "zh": "更宽的低频和高频，轻度压缩",
+   "src": "qml/PushSoundProfile.qml",
+   "zh-TW": "更寬的低頻和高頻，輕度壓縮",
+   "en": "Fuller lows and highs, light compression",
+   "ja": "低音と高音を広げ、軽く圧縮"
+  },
+  {
    "zh": "更改…",
    "src": "qml/SettingsPage.qml",
    "zh-TW": "更改…",
@@ -11292,6 +11460,13 @@
    "zh-TW": "更新或另存為遊戲設定檔",
    "en": "Update or save as a game profile",
    "ja": "ゲームプロファイルを更新または別名で保存"
+  },
+  {
+   "zh": "更饱满的低频，适合动作场面",
+   "src": "qml/PushSoundProfile.qml",
+   "zh-TW": "更飽滿的低頻，適合動作場面",
+   "en": "Fuller bass, for action scenes",
+   "ja": "迫力ある低音。アクションシーン向け"
   },
   {
    "zh": "最多 4 个保护区域，请先删除一个",
@@ -13317,6 +13492,13 @@
    "ja": "旧プリセットからインポート"
   },
   {
+   "zh": "电影感",
+   "src": "qml/PushPicture.qml",
+   "zh-TW": "電影感",
+   "en": "Cinematic",
+   "ja": "シネマティック"
+  },
+  {
    "zh": "画圆形",
    "src": "qml/ProPage.qml",
    "zh-TW": "畫圓形",
@@ -13350,6 +13532,13 @@
    "zh-TW": "畫面上下翻轉",
    "en": "Flip vertically",
    "ja": "上下反転"
+  },
+  {
+   "zh": "画面与声音",
+   "src": "qml/HomePage.qml",
+   "zh-TW": "畫面與聲音",
+   "en": "Picture & sound",
+   "ja": "映像とサウンド"
   },
   {
    "zh": "画面中断，正在请求关键帧恢复…",
@@ -13448,6 +13637,13 @@
    "zh-TW": "畫面調控已接管時域穩定；關閉調控後恢復此設定",
    "en": "Image correction controls temporal stability; this setting returns when correction is off",
    "ja": "画質調整が時間方向の安定化を制御中。オフにするとこの設定に戻ります。"
+  },
+  {
+   "zh": "画面风格",
+   "src": "qml/PushPicture.qml",
+   "zh-TW": "畫面風格",
+   "en": "Picture style",
+   "ja": "映像スタイル"
   },
   {
    "zh": "界面卡住超过 3 秒，已退出游戏模式",
@@ -13889,6 +14085,13 @@
    "zh-TW": "空",
    "en": "Empty",
    "ja": "空"
+  },
+  {
+   "zh": "突出脚步和枪声等中高频，适合竞技游戏",
+   "src": "qml/PushSoundProfile.qml",
+   "zh-TW": "突出腳步和槍聲等中高頻，適合競技遊戲",
+   "en": "Brings out footsteps and gunfire, for competitive games",
+   "ja": "足音や銃声などの中高音を強調。対戦ゲーム向け"
   },
   {
    "zh": "窗口",
@@ -14395,6 +14598,13 @@
    "ja": "エンコーダーが不明なフレーム番号を返しました"
   },
   {
+   "zh": "编辑",
+   "src": "qml/PushRecordingSaved.qml",
+   "zh-TW": "編輯",
+   "en": "Edit",
+   "ja": "編集"
+  },
+  {
    "zh": "缺少此字幕格式的解码器",
    "src": "src/engine/Subtitles.cpp",
    "zh-TW": "缺少此字幕格式的解碼器",
@@ -14645,6 +14855,13 @@
    "zh-TW": "背景漸變強度",
    "en": "Background gradient strength",
    "ja": "背景グラデーションの強さ"
+  },
+  {
+   "zh": "脚步声",
+   "src": "qml/PushSoundProfile.qml",
+   "zh-TW": "腳步聲",
+   "en": "Footsteps",
+   "ja": "足音"
   },
   {
    "zh": "自动",
@@ -14948,6 +15165,13 @@
    "ja": "カスタム解像度"
   },
   {
+   "zh": "自定义均衡器",
+   "src": "qml/PushSoundProfile.qml",
+   "zh-TW": "自訂等化器",
+   "en": "Custom EQ",
+   "ja": "カスタム EQ"
+  },
+  {
    "zh": "自定义播放速度",
    "src": "qml/PlaybackRateDialog.qml",
    "zh-TW": "自訂播放速度",
@@ -14960,6 +15184,13 @@
    "zh-TW": "自訂：已用下面的滑桿微調過。",
    "en": "Custom: adjusted with the sliders below.",
    "ja": "カスタム：下のスライダーで調整済み。"
+  },
+  {
+   "zh": "自然",
+   "src": "qml/PushPicture.qml",
+   "zh-TW": "自然",
+   "en": "Natural",
+   "ja": "ナチュラル"
   },
   {
    "zh": "自然磨皮",
@@ -18189,6 +18420,13 @@
    "ja": "同じファイルを開き直すと前回の位置から再開"
   },
   {
+   "zh": "重置",
+   "src": "qml/PushPicture.qml",
+   "zh-TW": "重設",
+   "en": "Reset",
+   "ja": "リセット"
+  },
+  {
    "zh": "重置本页",
    "src": "qml/ProPage.qml",
    "zh-TW": "重置本頁",
@@ -18257,6 +18495,13 @@
    "zh-TW": "鎖定全螢幕控制條",
    "en": "Lock the fullscreen control bar",
    "ja": "全画面のコントロールバーをロック"
+  },
+  {
+   "zh": "锐度",
+   "src": "qml/PushPicture.qml",
+   "zh-TW": "銳利度",
+   "en": "Sharpness",
+   "ja": "シャープネス"
   },
   {
    "zh": "错误",
@@ -19582,6 +19827,13 @@
    "ja": "高品質ほど時間がかかります。混合：各元フレーム間の中央の 1 枚に前者、残りに後者を使います。"
   },
   {
+   "zh": "鲜艳",
+   "src": "qml/PushPicture.qml",
+   "zh-TW": "鮮豔",
+   "en": "Vivid",
+   "ja": "ビビッド"
+  },
+  {
    "zh": "黄色",
    "src": "qml/ColourMixer.qml",
    "zh-TW": "黃色",
@@ -19888,6 +20140,13 @@
    "zh-TW": "；當前：",
    "en": "; current: ",
    "ja": "；現在："
+  },
+  {
+   "zh": "；录制也会保留。杜比 / DTS 直通不受影响",
+   "src": "qml/PushSoundProfile.qml",
+   "zh-TW": "；錄製也會保留。杜比 / DTS 直通不受影響",
+   "en": ". Recordings keep it too. Dolby / DTS passthrough is not affected",
+   "ja": "。録画にも反映されます。Dolby / DTS パススルーには影響しません"
   },
   {
    "zh": "；本次导出使用 AMD FSR 超分",

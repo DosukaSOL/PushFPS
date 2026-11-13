@@ -48,6 +48,10 @@ ColumnLayout {
             }
         }
     }
+    // PushFPS sound profile and custom EQ.
+    VGroup {
+        PushSoundProfile { Layout.fillWidth: true }
+    }
     VEyebrow { text: qsTr("音轨") }
     Text {
         visible: veyra.audioTracks.length === 0

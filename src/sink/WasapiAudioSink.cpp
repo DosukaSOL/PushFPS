@@ -905,6 +905,17 @@ bool AudioRenderer::pumpOnce(AudioPcmSource& pipeline, double* firstWrittenPtsMs
     double firstPts = -1.0;
     const size_t got = pipeline.pull(chunk_.data(), avail, &firstPts);
     const auto endPts=pipeline.lastPullEndPtsMs();
+    // PushFPS sound profile, before the recording tap so recordings keep it.
+    // "Off" leaves the samples untouched.
+    if(got){
+        const uint64_t version=soundProfileVersion();
+        if(version!=soundVersion_||soundChannels_!=inputFormat_.channels){
+            sound_.configure(soundProfile(),inputFormat_.channels);
+            if(version!=soundVersion_)log::info("audio-sound-profile",std::format("preset={} channels={}",sound_.settings().preset,inputFormat_.channels));
+            soundVersion_=version;soundChannels_=inputFormat_.channels;
+        }
+        sound_.process(chunk_.data(),got);
+    }
     if (firstWrittenPtsMs) *firstWrittenPtsMs = firstPts;
     // Live recording: the source PCM before gain and mute, stamped with the
     // time its first frame plays. Once the stream runs that comes from the

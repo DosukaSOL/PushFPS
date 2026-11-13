@@ -3,6 +3,7 @@
 #include "veyra/Brand.h"
 
 #include <QJsonDocument>
+#include "veyra/sink/SoundProfile.h"
 #include <QJsonParseError>
 
 namespace veyra::ui {
@@ -133,6 +134,13 @@ void QmlPlayerBridge::openLicense() {
     if (!QDesktopServices::openUrl(url)) emit notice(tr("无法打开浏览器"), true);
 }
 
+double QmlPlayerBridge::soundResponseDb(int preset, const QVariantList& eq, double hz) const {
+    sink::SoundProfileSettings sound;
+    sound.preset = preset;
+    for (int i = 0; i < sink::kSoundEqBands && i < eq.size(); ++i) sound.customDb[std::size_t(i)] = float(eq[i].toDouble());
+    return sink::SoundProcessor::presetResponseDb(sound, std::clamp(hz, 20.0, 20000.0));
+}
+
 void QmlPlayerBridge::openSourcePage() {
     if (!QDesktopServices::openUrl(QUrl(QString::fromLatin1(veyra::brand::kRepositoryUrl))))
         emit notice(tr("无法打开浏览器"), true);
@@ -203,6 +211,8 @@ bool QmlPlayerBridge::setPreference(const QString& key, const QVariant& value) {
         {"listInspectorWidth", {376, 4000}},
         // PushFPS quick setup: the console game's own frame rate (30, 40 or 60).
         {"pushGameFps", {30, 60}},
+        // PushFPS sound profile (veyra::sink::SoundPreset): 0 off .. 6 custom EQ.
+        {"soundPreset", {0, 6}},
         // Network sources (#48): seconds to collect before the first picture; -1 follows the buffer level.
         {"networkPrebuffer", {-1, 60}},
         // Live recording: the target bitrate for the file, and the frame rate
@@ -280,6 +290,18 @@ bool QmlPlayerBridge::setPreference(const QString& key, const QVariant& value) {
         const QString v = value.toString();
         if (v != QLatin1String("conceal") && v != QLatin1String("keyframe")) return false;
         stored = v;
+    } else if (key == QLatin1String("soundEq")) {
+        // PushFPS custom EQ: five comma-separated gains in dB (60 Hz .. 14 kHz), -12..+12.
+        const QStringList parts = value.toString().split(QLatin1Char(','));
+        if (parts.size() != sink::kSoundEqBands) return false;
+        QStringList clean;
+        for (const QString& part : parts) {
+            bool ok = false;
+            const double db = part.trimmed().toDouble(&ok);
+            if (!ok || !std::isfinite(db) || db < -sink::kSoundEqMaxDb || db > sink::kSoundEqMaxDb) return false;
+            clean << QString::number(std::round(db * 10.0) / 10.0);
+        }
+        stored = clean.join(QLatin1Char(','));
     } else if (key == QLatin1String("pushConsole")) {
         // PushFPS quick setup: which console the profile is for.
         const QString v = value.toString();
@@ -348,6 +370,14 @@ void QmlPlayerBridge::applyPreference(const QString& key) {
     if(key==QLatin1String("captureShowAllFrameRates"))emit captureChanged();
     if (key == QLatin1String("audioDevice")) sink::setPreferredRenderEndpoint(impl_->prefString("audioDevice").toStdWString());
     else if (key == QLatin1String("audioForceStereo")) sink::setForceStereoDownmix(impl_->prefBool("audioForceStereo", false));
+    else if (key == QLatin1String("soundPreset") || key == QLatin1String("soundEq")) {
+        sink::SoundProfileSettings sound;
+        sound.preset = impl_->prefInt("soundPreset", 0);
+        const QStringList parts = impl_->prefString("soundEq").split(QLatin1Char(','));
+        if (parts.size() == sink::kSoundEqBands)
+            for (int i = 0; i < sink::kSoundEqBands; ++i) sound.customDb[std::size_t(i)] = parts[i].toFloat();
+        sink::setSoundProfile(sound);
+    }
     else if (key == QLatin1String("magewellLowLatency")) source::magewell::setLowLatencyPreference(impl_->prefBool("magewellLowLatency", false));
     else if (key == QLatin1String("blackmagicNativeCapture")) { if(impl_->captureListed)refreshCaptureDevices();emit captureChanged(); }
     else if (key == QLatin1String("language")) {

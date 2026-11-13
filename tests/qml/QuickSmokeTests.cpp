@@ -87,6 +87,30 @@ QtObject {
     function addEffect(type) { if (type === "nr") nrAnyEnabled = true }
     function setAllNrEnabled(on) { nrAnyEnabled = on }
     function applyPresetIndex(index) { lastAppliedPreset = index; return true }
+    // PushFPS picture editor, sound profile and recording card (tst_push_picture_sound.qml).
+    property var colourState: ({index: 0, enabled: false, exposure: 0, contrast: 0, highlights: 0, shadows: 0,
+        saturation: 0, vibrance: 0, texture: 0, temperature: 0,
+        curves: [[{x:0,y:0},{x:1,y:1}],[{x:0,y:0},{x:1,y:1}],[{x:0,y:0},{x:1,y:1}],[{x:0,y:0},{x:1,y:1}],[{x:0,y:0},{x:1,y:1}]]})
+    property bool colorEnabled: false
+    onColorEnabledChanged: { const s = Object.assign({}, colourState); s.enabled = colorEnabled; colourState = s }
+    property bool colourCanUndo: false
+    property int colourUndoCount: 0
+    function setColourParameter(name, value) { const s = Object.assign({}, colourState); s[name] = value; colourState = s; colourCanUndo = true; return true }
+    function setColourCurve(channel, points) {
+        const s = Object.assign({}, colourState); const c = s.curves.slice(); c[channel] = points.map(p => ({x: p.x, y: p.y}))
+        s.curves = c; colourState = s; return true
+    }
+    function colourUndo() { colourUndoCount++; return true }
+    function soundResponseDb(preset, eq, hz) { return preset === 0 ? 0 : 3 }
+    property var recordingState: ({saved: 0, active: false, path: ""})
+    signal recordingChanged()
+    signal navigate(string page)
+    property string lastOpenedPath: ""
+    property var lastExportFiles: []
+    property bool recordingFolderOpened: false
+    function openPath(path) { lastOpenedPath = path }
+    function addExportFiles(paths) { lastExportFiles = paths }
+    function openRecordingDirectory() { recordingFolderOpened = true }
     signal settingsChanged()
     signal chainChanged()
     signal snapshotChanged()

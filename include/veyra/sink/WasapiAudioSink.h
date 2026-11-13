@@ -1,4 +1,5 @@
 #pragma once
+#include "veyra/sink/SoundProfile.h"
 #include "veyra/media/DemuxSession.h"
 #include "veyra/media/NetworkInput.h"
 
@@ -295,6 +296,9 @@ private:
     bool timedPcm_=false;
     std::atomic<uint64_t> timelineWriteFrame_{0};
     std::atomic<float> gain_{1};float smoothedGain_=1,loggedGain_=-1;
+    // PushFPS sound profile (SoundProfile.h): applied to the rendered PCM before
+    // the recording tap. soundVersion_ follows soundProfileVersion().
+    SoundProcessor sound_;uint64_t soundVersion_=~uint64_t{0};unsigned soundChannels_=0;
     IMMDeviceEnumerator* enum_ = nullptr;
     // Default-endpoint change notification: flags the renderer as invalidated
     // so the existing recovery path rebuilds the endpoint promptly instead of

@@ -826,6 +826,15 @@ Window {
         }
     }
 
+    // PushFPS: after a recording is saved, offer to edit or export it.
+    PushRecordingSaved {
+        z: 31
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.margins: 24
+        goPage: p => root.goPage(p)
+    }
+
     // RivaTuner, NVIDIA's overlay or GamePP started after Veyra (QmlPlayerBridge): RTSS's
     // OSD is kept out until a restart; the other two cannot be, and froze 2.0 in the field.
     VConfirm {

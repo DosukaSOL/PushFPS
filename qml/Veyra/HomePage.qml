@@ -361,6 +361,25 @@ VPage {
                 Layout.topMargin: 22
             }
 
+            // PushFPS picture and sound: the everyday colour controls with presets and
+            // the sound profile, folded away until wanted.
+            VAccordion {
+                id: tuning
+                objectName: "home-picture-sound"
+                Layout.fillWidth: true
+                Layout.topMargin: 12
+                glyph: "sliders"
+                title: qsTr("画面与声音")
+                summary: {
+                    const p = homePicture.presets.find(x => x.id === homePicture.currentPreset)
+                    return (p ? p.label : qsTr("已自定义")) + " · " + homeSound.presets[homeSound.preset].label
+                }
+                enabledSwitch: false
+                PushPicture { id: homePicture; Layout.fillWidth: true }
+                Rectangle { Layout.fillWidth: true; Layout.topMargin: 8; Layout.bottomMargin: 2; implicitHeight: 1; color: Theme.stroke }
+                PushSoundProfile { id: homeSound; Layout.fillWidth: true; compact: true }
+            }
+
             // The lesser actions on one line.
             RowLayout {
                 id: moreActions
@@ -490,6 +509,7 @@ VPage {
     VRise { target: captureCard; d: 2 }
     VRise { target: resume; d: 2 }
     VRise { target: quickSetup; d: 8 }
+    VRise { target: tuning; d: 9 }
     VRise { target: moreActions; d: 9 }
     VRise { target: recent; d: 10 }
 }
