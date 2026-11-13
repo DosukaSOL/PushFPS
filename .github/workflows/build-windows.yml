@@ -384,6 +384,7 @@ jobs:
           Copy-Item D:\obs-build\Release\pushfps-obs.dll "$root\pushfps-obs\bin\64bit\"
           Copy-Item obs-plugin\packaging\* $root
           Copy-Item LICENSE "$root\LICENSE.txt"
+          Copy-Item NOTICE.md "$root\NOTICE.md"
           New-Item -ItemType Directory -Force dist | Out-Null
           $zip = "dist\PushFPS-OBS-Plugin-$env:OBS_PLUGIN_VERSION-win64.zip"
           Compress-Archive -Path "$root\*" -DestinationPath $zip -Force
@@ -500,7 +501,12 @@ jobs:
 
           SHA-256: \`$obssum\`
 
-          PushFPS is free software (GPL-3.0), built on [Veyra](https://github.com/Likely7/Veyra-NRVideo) by Likely7.
+          ## License and source
+
+          PushFPS is free software under the GNU GPL-3.0 and comes with no warranty. It is a modified version of
+          [Veyra](https://github.com/Likely7/Veyra-NRVideo) by Likely7 (see NOTICE.md). Corresponding source:
+          the **$TAG** tag of this repository (also attached by GitHub as *Source code*); the build recipe is
+          \`.github/workflows/build-windows.yml\` at that tag.
           NOTES
           # A manual run creates the tag on the commit it built; a tag push already has it.
           gh release create "$TAG" dist/* -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "PushFPS $TAG" \

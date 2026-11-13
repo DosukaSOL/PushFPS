@@ -125,6 +125,19 @@ void QmlPlayerBridge::openProjectPage() {
         emit notice(tr("无法打开浏览器"), true);
 }
 
+void QmlPlayerBridge::openLicense() {
+    const QString local = QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("LICENSE"));
+    const QUrl url = QFileInfo::exists(local)
+        ? QUrl::fromLocalFile(local)
+        : QUrl(QString::fromLatin1(veyra::brand::kRepositoryUrl) + QStringLiteral("/blob/main/LICENSE"));
+    if (!QDesktopServices::openUrl(url)) emit notice(tr("无法打开浏览器"), true);
+}
+
+void QmlPlayerBridge::openSourcePage() {
+    if (!QDesktopServices::openUrl(QUrl(QString::fromLatin1(veyra::brand::kRepositoryUrl))))
+        emit notice(tr("无法打开浏览器"), true);
+}
+
 void QmlPlayerBridge::copyDiagnostics() {
     if (auto* clipboard = QGuiApplication::clipboard()) {
         clipboard->setText(diagnosticsReport());

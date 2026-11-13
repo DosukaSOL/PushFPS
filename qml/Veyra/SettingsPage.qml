@@ -1121,6 +1121,39 @@ VPage {
                             }
                         }
                     }
+                    // GPL-3.0 appropriate legal notices: the licence, no warranty, the right to
+                    // redistribute, where to read the licence and where the source is.
+                    Text {
+                        objectName: "about-license-notice"
+                        Layout.fillWidth: true
+                        text: qsTr("PushFPS 是自由软件，是 Veyra 的修改版本，依据 GNU 通用公共许可证第 3 版（GPL-3.0）发布。你可以在该许可证的条款下使用、修改和再分发它。本软件不提供任何担保。")
+                        color: Theme.t3
+                        font.family: Theme.fontUi
+                        font.pixelSize: Theme.fsHint
+                        lineHeight: 1.1
+                        wrapMode: Text.WordWrap
+                    }
+                    VGroup {
+                        VRow {
+                            label: qsTr("许可证")
+                            hint: "GNU GPL-3.0"
+                            VButton {
+                                objectName: "about-open-license"
+                                text: qsTr("查看许可证")
+                                onClicked: veyra.openLicense()
+                            }
+                        }
+                        VRow {
+                            label: qsTr("源代码")
+                            hint: "github.com/DosukaSOL/PushFPS"
+                            VButton {
+                                objectName: "about-open-source"
+                                text: qsTr("打开源代码页")
+                                iconName: "external"
+                                onClicked: veyra.openSourcePage()
+                            }
+                        }
+                    }
                     VGroup {
                         VRow {
                             label: qsTr("检查更新")

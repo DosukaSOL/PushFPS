@@ -1073,3 +1073,11 @@ Only the recognized VFG runtime receives this experimental SM86 adaptation. RTX 
 
 Veyra Virtual Speaker uses the original VB-Audio VB-CABLE Pack46 for Windows. Builds configured with `VEYRA_VB_CABLE_PACKAGE` include the unmodified vendor ZIP for offline installation. Veyra opens the vendor setup only after the user confirms installation or removal. VB-CABLE is VB-Audio donationware. Users can support VB-Audio from the vendor site. See [VB-CABLE](https://vb-audio.com/Cable/) and [VB-Audio distribution terms](https://vb-audio.com/Services/licensing.htm).
 
+
+## OBS Studio headers (PushFPS for OBS, 2026-11-13)
+
+`obs-plugin/` is compiled against the public libobs and obs-frontend-api headers of OBS Studio 31.0.0
+(https://github.com/obsproject/obs-studio, GPL-2.0-or-later), checked out by CI at build time; no OBS file
+is committed or shipped. The plugin links to `obs.dll` and `obs-frontend-api.dll` of the user's own OBS
+installation through import libraries generated from `obs-plugin/cmake/*.def`. The plugin itself is
+GPL-3.0-or-later, which is compatible with OBS's GPL-2.0-or-later.

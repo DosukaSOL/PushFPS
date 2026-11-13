@@ -33,6 +33,8 @@ foreach ($gpu in 'NVIDIA', 'AMD') {
 }
 
 $name = "PushFPS-$Version-win64"
+# The exact source of this build: its release tag, else the commit CI built, else the main branch.
+$sourceRef = if ($Version -match '^\d+\.\d+\.\d+$') { "v$Version" } elseif ($env:GITHUB_SHA) { $env:GITHUB_SHA } else { 'main' }
 $stage = Join-Path $OutDir $name
 $files = Join-Path $stage 'PushFPS-files'
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
@@ -44,7 +46,7 @@ Copy-Item (Join-Path $repo 'qml') $files -Recurse
 $shaders = Join-Path $BuildDir 'shaders'
 if (-not (Test-Path $shaders)) { throw "Compiled shaders not found in $shaders" }
 Copy-Item $shaders $files -Recurse
-foreach ($doc in 'LICENSE', 'THIRD_PARTY_NOTICES.md') { Copy-Item (Join-Path $repo $doc) $files }
+foreach ($doc in 'LICENSE', 'NOTICE.md', 'THIRD_PARTY_NOTICES.md') { Copy-Item (Join-Path $repo $doc) $files }
 Copy-Item (Join-Path $repo 'README.md') (Join-Path $files 'PushFPS-README.md')
 Copy-Item (Join-Path $repo 'licenses') $files -Recurse
 
@@ -85,9 +87,11 @@ Pinned runtime package hashes (SHA-256)
   NVIDIA: $($hash['NVIDIA'])
   AMD:    $($hash['AMD'])
 
-PushFPS is free software under the GPL-3.0, based on Veyra by Likely7:
-https://github.com/Likely7/Veyra-NRVideo
-Source code of this release: https://github.com/DosukaSOL/PushFPS
+License
+  PushFPS is free software under the GNU GPL-3.0 and comes with ABSOLUTELY NO WARRANTY. It is a modified
+  version of Veyra by Likely7 (https://github.com/Likely7/Veyra-NRVideo). The license, the modification
+  notice and third-party notices are in PushFPS-files (LICENSE, NOTICE.md, THIRD_PARTY_NOTICES.md).
+  Source code of this release: https://github.com/DosukaSOL/PushFPS/tree/$sourceRef
 "@ | Set-Content -Path (Join-Path $stage 'READ ME FIRST.txt') -Encoding UTF8
 
 $zip = Join-Path $OutDir "$name.zip"

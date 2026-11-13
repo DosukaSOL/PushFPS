@@ -2010,6 +2010,13 @@
    "ja": "PushFPS は Veyra をベースにしています。Veyra は無料のオープンソース。皆さんの支援が支えです"
   },
   {
+   "zh": "PushFPS 是自由软件，是 Veyra 的修改版本，依据 GNU 通用公共许可证第 3 版（GPL-3.0）发布。你可以在该许可证的条款下使用、修改和再分发它。本软件不提供任何担保。",
+   "src": "qml/SettingsPage.qml",
+   "zh-TW": "PushFPS 是自由軟體，是 Veyra 的修改版本，依據 GNU 通用公共授權條款第 3 版（GPL-3.0）發布。你可以在該授權條款下使用、修改和再散布它。本軟體不提供任何擔保。",
+   "en": "PushFPS is free software, a modified version of Veyra, released under the GNU General Public License version 3 (GPL-3.0). You may use, modify and redistribute it under the terms of that license. It comes with ABSOLUTELY NO WARRANTY.",
+   "ja": "PushFPS は Veyra の改変版であるフリーソフトウェアで、GNU 一般公衆利用許諾書 第 3 版（GPL-3.0）で公開されています。このライセンスの条件の下で使用・改変・再配布できます。本ソフトウェアは無保証です。"
+  },
+  {
    "zh": "PushFPS 本地诊断（复制前脱敏预览；不会上传）\n",
    "src": "src/base/Log.cpp",
    "zh-TW": "PushFPS 本地診斷（複製前脫敏預覽；不會上傳）\n",
@@ -9438,6 +9445,13 @@
    "ja": "起動時に表示する画面"
   },
   {
+   "zh": "打开源代码页",
+   "src": "qml/SettingsPage.qml",
+   "zh-TW": "開啟原始碼頁面",
+   "en": "Open source page",
+   "ja": "ソースページを開く"
+  },
+  {
    "zh": "打开源轨道",
    "src": "src/engine/ExportStreams.cpp",
    "zh-TW": "開啟源軌道",
@@ -11812,6 +11826,13 @@
    "ja": "更新を見る"
   },
   {
+   "zh": "查看许可证",
+   "src": "qml/SettingsPage.qml",
+   "zh-TW": "檢視授權條款",
+   "en": "View license",
+   "ja": "ライセンスを表示"
+  },
+  {
    "zh": "标准",
    "src": "qml/ProDisplayPanel.qml",
    "zh-TW": "標準",
@@ -13028,6 +13049,13 @@
    "zh-TW": "源: %1x%2 旋轉 %3° 標稱 %4 fps",
    "en": "Source: %1x%2 rotated %3° nominal %4 fps",
    "ja": "ソース：%1x%2 回転 %3° 公称 %4 fps"
+  },
+  {
+   "zh": "源代码",
+   "src": "qml/SettingsPage.qml",
+   "zh-TW": "原始碼",
+   "en": "Source code",
+   "ja": "ソースコード"
   },
   {
    "zh": "源尺寸",
@@ -15765,6 +15793,13 @@
    "zh-TW": "記憶與自動化",
    "en": "Memory and automation",
    "ja": "記憶と自動化"
+  },
+  {
+   "zh": "许可证",
+   "src": "qml/SettingsPage.qml",
+   "zh-TW": "授權條款",
+   "en": "License",
+   "ja": "ライセンス"
   },
   {
    "zh": "设为启动默认",

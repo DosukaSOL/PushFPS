@@ -26,6 +26,9 @@ Using it
 Uninstall
   Close OBS Studio and run:  Install-PushFPS-OBS.cmd -Uninstall
 
-PushFPS is free and open source (GPL-3.0), a fork of Veyra by Likely7:
-  https://github.com/DosukaSOL/PushFPS
-  https://github.com/Likely7/Veyra-NRVideo
+License
+  PushFPS for OBS is free software under the GNU GPL, version 3 or (at your option) any later
+  version, and comes with ABSOLUTELY NO WARRANTY. See LICENSE.txt and NOTICE.md in this folder.
+  Source code: https://github.com/DosukaSOL/PushFPS (folder obs-plugin, at the tag of this release).
+  PushFPS is a modified version of Veyra by Likely7: https://github.com/Likely7/Veyra-NRVideo
+  OBS Studio is by the OBS Project (GPL-2.0-or-later); this plugin only uses its public API.

@@ -1410,6 +1410,10 @@ public:
     // never a summary written by hand.
     Q_INVOKABLE QString diagnosticsReport() const;
     Q_INVOKABLE void openProjectPage();
+    // 关于 → 许可 (GPL-3.0 appropriate legal notices): the LICENSE file shipped next to the
+    // program, or the repository's copy when it is missing; and the source code page.
+    Q_INVOKABLE void openLicense();
+    Q_INVOKABLE void openSourcePage();
     Q_INVOKABLE void copyDiagnostics();
     // Re-reads the runtime manifest (Settings → 组件与许可 calls it when shown).
     Q_INVOKABLE void refreshComponentList();

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 DosukaSOL and the PushFPS contributors. Part of PushFPS, a modified version of Veyra.
 // PushFPS: NvOfSession for builds made without the NVIDIA Optical Flow SDK headers.
 //
 // The SDK's D3D12 interface headers are only distributed behind an NVIDIA developer login, so the

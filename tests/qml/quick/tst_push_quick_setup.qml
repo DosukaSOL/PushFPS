@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 DosukaSOL and the PushFPS contributors. Part of PushFPS, a modified version of Veyra.
 // PushFPS quick setup: game frame rate, target frame rate, console and game
 // profiles. UI logic only, against the fixture bridge in QuickSmokeTests.cpp.
 import QtQuick

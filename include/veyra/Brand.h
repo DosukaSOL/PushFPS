@@ -1,4 +1,6 @@
 #pragma once
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 DosukaSOL and the PushFPS contributors. Part of PushFPS, a modified version of Veyra.
 // PushFPS product identity: the one place that names the product and its GitHub home.
 //
 // PushFPS is a fork of Veyra (https://github.com/Likely7/Veyra-NRVideo, GPL-3.0). Internal

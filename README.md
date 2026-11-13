@@ -307,12 +307,15 @@ Veyra keep merging cleanly. The PushFPS name and links live in
 
 ## Credits and license
 
-PushFPS is a fork of **[Veyra](https://github.com/Likely7/Veyra-NRVideo)** by
-**[Likely7](https://github.com/Likely7)**. Nearly all of the engine, the capture support and the frame
-generation integration is their work. If PushFPS helps you, consider
+PushFPS is a modified version of **[Veyra](https://github.com/Likely7/Veyra-NRVideo)** by
+**[Likely7](https://github.com/Likely7)**, forked on 2026-11-12. Nearly all of the engine, the capture
+support and the frame generation integration is their work. If PushFPS helps you, consider
 [supporting Veyra's author](https://www.patreon.com/cw/Likely7).
 
-- PushFPS and Veyra code: [GPL-3.0](LICENSE). The OBS plugin: GPL-3.0-or-later.
+- PushFPS and Veyra code: [GPL-3.0](LICENSE). Files written for PushFPS, including the OBS plugin, are
+  GPL-3.0-or-later. What PushFPS changed, and where each release's source is: [NOTICE.md](NOTICE.md).
+- PushFPS comes with absolutely no warranty, as the GPL-3.0 states. The app shows the license and a link to
+  this source under *Settings, About*.
 - The PS5 Remote Play part (Chiaki) is also under the AGPL-3.0 with an OpenSSL exception; see
   [licenses/remoteplay](licenses/remoteplay).
 - Third-party components and their licenses: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
