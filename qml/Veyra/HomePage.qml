@@ -13,6 +13,16 @@ VPage {
     signal requestPage(string page)
     // The coffee line under the title: Main opens 设置 → 赞助作者.
     signal requestSponsor()
+    // Opens 画面与声音 and scrolls it into view (the screenshot run's `--tab tuning`).
+    function showTuning() {
+        tuning.open = true
+        tuningScroll.restart()
+    }
+    Timer {
+        id: tuningScroll
+        interval: 450
+        onTriggered: content.contentY = Math.max(0, Math.min(tuning.mapToItem(column, 0, 0).y - 24, content.contentHeight - content.height))
+    }
 
     // PushFPS home, laid out for the console player: the capture card is the main
     // action, the other sources sit under it as smaller cards, then the quick setup,

@@ -69,7 +69,7 @@ jobs:
           $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
           $w = [Math]::Min(1440, $screen.Width - 40); $h = [Math]::Min(900, $screen.Height - 60)
           New-Item -ItemType Directory -Force shots | Out-Null
-          # 1-6 are the README screens; 7-9 check the layout at small window sizes and other pages.
+          # 1-6 and 10 are the README screens; 7-9 and 11 check the layout at small window sizes and other pages.
           $list = @(
             @{ name = '1-home';            args = @('--page', 'home', '--dock-pinned') },
             @{ name = '2-frame-generation'; args = @('--page', 'pro', '--tab', 'fg') },
@@ -79,7 +79,9 @@ jobs:
             @{ name = '6-settings';        args = @('--page', 'set') },
             @{ name = '7-home-small';      args = @('--page', 'home'); size = '1100x680' },
             @{ name = '8-pro-small';       args = @('--page', 'pro', '--tab', 'fg'); size = '1100x680' },
-            @{ name = '9-cinema';          args = @('--page', 'min', '--dock-pinned') }
+            @{ name = '9-cinema';          args = @('--page', 'min', '--dock-pinned') },
+            @{ name = '10-picture-sound';  args = @('--page', 'home', '--tab', 'tuning') },
+            @{ name = '11-pro-audio';      args = @('--page', 'pro', '--tab', 'audio') }
           )
           foreach ($s in $list) {
             $data = "D:\pfdata\$($s.name)"

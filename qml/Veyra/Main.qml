@@ -959,7 +959,8 @@ Window {
         // override a test passes on the command line.
         if (veyra.initialPage.length > 0)
             root.page = veyra.initialPage === "pro" && veyra.nodeMode === 1 ? "node" : veyra.initialPage
-        if (root.test.tab !== undefined) proPage.tab = root.test.tab
+        if (root.test.tab === "tuning") homePage.showTuning()
+        else if (root.test.tab !== undefined) proPage.tab = root.test.tab
         if (root.testAspect > 0) root.fitToFilm(root.testAspect)
         if (root.test.dialog !== undefined) dialogs.open(root.test.dialog)
         videoHost.syncRect()
