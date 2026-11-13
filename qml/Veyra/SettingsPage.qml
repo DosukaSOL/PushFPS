@@ -1133,6 +1133,18 @@ VPage {
                         lineHeight: 1.1
                         wrapMode: Text.WordWrap
                     }
+                    // NVIDIA RTX SDKs License, supplement 7.1(b): an application that incorporates the
+                    // DLSS / NGX SDK attributes it, with the NVIDIA marks, in its about box.
+                    Text {
+                        objectName: "about-sdk-attribution"
+                        Layout.fillWidth: true
+                        text: qsTr("PushFPS 使用 NVIDIA® DLSS SDK 与 NGX SDK、AMD FidelityFX™ SDK 和 Intel® XeSS SDK。NVIDIA、NVIDIA RTX™ 和 DLSS 是 NVIDIA Corporation 的商标；PushFPS 未获 NVIDIA、AMD 或 Intel 赞助或认可。各 SDK 的许可证随程序提供。")
+                        color: Theme.t3
+                        font.family: Theme.fontUi
+                        font.pixelSize: Theme.fsHint
+                        lineHeight: 1.1
+                        wrapMode: Text.WordWrap
+                    }
                     VGroup {
                         VRow {
                             label: qsTr("许可证")

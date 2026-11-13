@@ -2003,6 +2003,13 @@
    "ja": "PSN アカウント"
   },
   {
+   "zh": "PushFPS 使用 NVIDIA® DLSS SDK 与 NGX SDK、AMD FidelityFX™ SDK 和 Intel® XeSS SDK。NVIDIA、NVIDIA RTX™ 和 DLSS 是 NVIDIA Corporation 的商标；PushFPS 未获 NVIDIA、AMD 或 Intel 赞助或认可。各 SDK 的许可证随程序提供。",
+   "src": "qml/SettingsPage.qml",
+   "zh-TW": "PushFPS 使用 NVIDIA® DLSS SDK 與 NGX SDK、AMD FidelityFX™ SDK 和 Intel® XeSS SDK。NVIDIA、NVIDIA RTX™ 和 DLSS 是 NVIDIA Corporation 的商標；PushFPS 未獲 NVIDIA、AMD 或 Intel 贊助或認可。各 SDK 的授權條款隨程式提供。",
+   "en": "PushFPS uses the NVIDIA® DLSS SDK and NGX SDK, the AMD FidelityFX™ SDK and the Intel® XeSS SDK. NVIDIA, NVIDIA RTX™ and DLSS are trademarks of NVIDIA Corporation. PushFPS is not sponsored or endorsed by NVIDIA, AMD or Intel. The SDK licenses come with the program.",
+   "ja": "PushFPS は NVIDIA® DLSS SDK と NGX SDK、AMD FidelityFX™ SDK、Intel® XeSS SDK を使用しています。NVIDIA、NVIDIA RTX™、DLSS は NVIDIA Corporation の商標です。PushFPS は NVIDIA、AMD、Intel の後援や承認を受けていません。各 SDK のライセンスはプログラムに同梱されています。"
+  },
+  {
    "zh": "PushFPS 基于 Veyra 打造。Veyra 开源免费，也需要你的支持",
    "src": "qml/SponsorPanel.qml",
    "zh-TW": "PushFPS 基於 Veyra 打造。Veyra 開源免費，也需要你的支持",

@@ -25,7 +25,12 @@ and edits would conflict on every merge.
    (`.gitignore` covers `third_party_local/`, `runtime_local/`, `out/`, `build/`).
 5. **License.** Everything stays GPL-3.0 (the Chiaki remote-play part also AGPL-3.0). Credit Veyra and
    Likely7 wherever the product is described. Copy code from other projects only with a compatible license
-   and record it in `THIRD_PARTY_NOTICES.md`.
+   and record it in `THIRD_PARTY_NOTICES.md`. `NOTICE.md` holds the GPL-3.0 modification notice, the
+   section 7 additional permission for PushFPS's own code (linking with the NVIDIA/AMD/Intel SDKs) and the
+   NVIDIA SDK attribution (also in the About page, required by the NVIDIA RTX SDKs License). The installer
+   must never install NVIDIA files that are not NVIDIA-signed originals, nor NVIDIA's model runtimes on AMD
+   installs (`packaging/Install-PushFPS.ps1`; CI checks both). Marketing describes features, not NVIDIA
+   marks: no "DLSS" in headlines, no NVIDIA logos, never imply endorsement.
 6. **Be honest about verification.** Say what was built, run and tested, and on which hardware. A change
    that only passed static checks is "unverified on Windows".
 

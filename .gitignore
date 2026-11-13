@@ -35,3 +35,4 @@ CMakeUserPresets.json
 *.key
 *.snk
 secrets/
+licenses/sdk/

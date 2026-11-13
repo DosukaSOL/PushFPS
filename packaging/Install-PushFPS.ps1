@@ -119,6 +119,35 @@ try {
     if (-not $exe) { Fail 'The runtime package has an unexpected layout (veyra_qml_ui.exe not found).' }
     $runtimeRoot = $exe.DirectoryName
 
+    # Licensing. PushFPS installs only what NVIDIA's licence allows to be passed on:
+    #  - NVIDIA's runtime files only as NVIDIA ships them. A file that says it is from NVIDIA but is not
+    #    an original with a valid NVIDIA signature (for example a community-modified DLSS build) is left
+    #    out.
+    #  - NVIDIA's DLSS runtimes are licensed for systems with NVIDIA graphics only. The AMD package's
+    #    experimental AI enhancement folders run NVIDIA's model on Radeon cards, so they are left out of
+    #    AMD installs. FSR and XeSS frame generation are not affected.
+    # Anything left out is also removed if an earlier install placed it. Veyra reports a feature whose
+    # files are missing as unavailable.
+    $skipped = @()
+    if ($Gpu -eq 'AMD') {
+        foreach ($rel in 'runtime\amd-nr-rdna3', 'runtime\amd-nr') {
+            $dir = Join-Path $runtimeRoot $rel
+            if (Test-Path $dir) { Remove-Item $dir -Recurse -Force; $skipped += "$rel (NVIDIA model for non-NVIDIA graphics)" }
+            Remove-Item (Join-Path $InstallDir $rel) -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+    foreach ($f in Get-ChildItem $runtimeRoot -Recurse -File -Include *.dll, *.exe) {
+        if ($f.VersionInfo.CompanyName -notmatch 'NVIDIA') { continue }
+        $sig = Get-AuthenticodeSignature -FilePath $f.FullName
+        $signer = if ($sig.SignerCertificate) { $sig.SignerCertificate.Subject } else { '' }
+        if ($sig.Status -eq 'Valid' -and $signer -match 'NVIDIA') { continue }
+        $rel = $f.FullName.Substring($runtimeRoot.Length).TrimStart('\')
+        Remove-Item $f.FullName -Force
+        Remove-Item (Join-Path $InstallDir $rel) -Force -ErrorAction SilentlyContinue
+        $skipped += "$rel (not an original NVIDIA-signed file)"
+    }
+    foreach ($item in $skipped) { Info "Not installed: $item" }
+
     Step "Installing to $InstallDir"
     $running = Get-Process -Name 'PushFPS' -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path.StartsWith($InstallDir, [StringComparison]::OrdinalIgnoreCase) }
     if ($running) { Fail 'PushFPS is running. Close it, then run the installer again.' }
@@ -131,11 +160,12 @@ try {
     }
     # One program, one name: PushFPS.exe replaces Veyra's launcher in this folder.
     Remove-Item (Join-Path $InstallDir 'veyra_qml_ui.exe') -Force -ErrorAction SilentlyContinue
-    Set-Content -Path (Join-Path $InstallDir 'PushFPS-VERSION.txt') -Value @(
+    $versionLines = @(
         "PushFPS $PushFpsVersion",
         "Runtime: $asset from https://github.com/$UpstreamRepo/releases/tag/$UpstreamTag",
         "Runtime SHA-256: $expected"
-    ) -Encoding UTF8
+    ) + @($skipped | ForEach-Object { "Not installed: $_" })
+    Set-Content -Path (Join-Path $InstallDir 'PushFPS-VERSION.txt') -Value $versionLines -Encoding UTF8
 } finally {
     Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue
 }

@@ -282,6 +282,16 @@ jobs:
 
       - name: Package the PushFPS release zip
         run: |
+          # The licences of the SDK code built into PushFPS.exe travel with it (licenses\sdk in the zip).
+          $sdk = 'licenses\sdk'
+          New-Item -ItemType Directory -Force $sdk | Out-Null
+          Copy-Item "$env:DEPS\dlss\LICENSE.txt" "$sdk\NVIDIA_RTX_SDKs_LICENSE_DLSS_310.7.0.txt"
+          $ffx = Get-ChildItem "$env:DEPS\ffx1" -Recurse -File -Filter 'LICENSE*' | Select-Object -First 1
+          if ($ffx) { Copy-Item $ffx.FullName "$sdk\AMD_FidelityFX_SDK_1.1.4_LICENSE.txt" }
+          $xess = Get-ChildItem "$env:DEPS\xess" -Recurse -File | Where-Object Name -match '^(LICENSE|license)' | Select-Object -First 1
+          if ($xess) { Copy-Item $xess.FullName "$sdk\Intel_XeSS_SDK_3.0.2_LICENSE$($xess.Extension)" }
+          Get-ChildItem $sdk | Format-Table Name, Length
+          if (-not (Test-Path "$sdk\NVIDIA_RTX_SDKs_LICENSE_DLSS_310.7.0.txt")) { throw 'DLSS SDK licence missing' }
           ./packaging/make-release.ps1 -BuildDir $env:BUILD -Version $env:PUSHFPS_VERSION `
             -UpstreamRepo $env:UPSTREAM_REPO -UpstreamTag $env:UPSTREAM_TAG -UpstreamSums upstream-sha256.txt -OutDir dist
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -295,6 +305,21 @@ jobs:
           & D:\pf-zip\Install-PushFPS.ps1 -Gpu NVIDIA -InstallDir D:\pf-install -NoShortcuts -NoLaunch
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if (-not (Test-Path D:\pf-install\PushFPS.exe)) { throw "PushFPS.exe missing after install" }
+          # Licensing check: every installed file that says it is from NVIDIA is an NVIDIA-signed original.
+          $bad = Get-ChildItem D:\pf-install -Recurse -File -Include *.dll, *.exe | Where-Object { $_.VersionInfo.CompanyName -match 'NVIDIA' } |
+            Where-Object { $sig = Get-AuthenticodeSignature $_.FullName; -not ($sig.Status -eq 'Valid' -and $sig.SignerCertificate.Subject -match 'NVIDIA') }
+          if ($bad) { $bad | ForEach-Object { Write-Host "::error::not an NVIDIA-signed original: $($_.FullName)" }; throw 'modified NVIDIA files were installed' }
+          Get-Content D:\pf-install\PushFPS-VERSION.txt | Out-Host
+          # AMD package: installs, and carries no NVIDIA AI-enhancement runtime (licensed for NVIDIA graphics only).
+          & D:\pf-zip\Install-PushFPS.ps1 -Gpu AMD -InstallDir D:\pf-install-amd -NoShortcuts -NoLaunch
+          if ($LASTEXITCODE -ne 0) { throw "AMD install exit $LASTEXITCODE" }
+          if (-not (Test-Path D:\pf-install-amd\PushFPS.exe)) { throw 'PushFPS.exe missing after the AMD install' }
+          foreach ($d in 'runtime\amd-nr-rdna3', 'runtime\amd-nr') { if (Test-Path "D:\pf-install-amd\$d") { throw "AMD install still has $d" } }
+          $nv = Get-ChildItem D:\pf-install-amd -Recurse -File -Include *.dll, *.exe | Where-Object { $_.VersionInfo.CompanyName -match 'NVIDIA' } |
+            Where-Object { $sig = Get-AuthenticodeSignature $_.FullName; -not ($sig.Status -eq 'Valid' -and $sig.SignerCertificate.Subject -match 'NVIDIA') }
+          if ($nv) { throw 'AMD install has modified NVIDIA files' }
+          Get-Content D:\pf-install-amd\PushFPS-VERSION.txt | Out-Host
+          Remove-Item D:\pf-install-amd -Recurse -Force
           # Start it and make sure Windows resolves every DLL and the program reaches its QML session.
           $p = Start-Process D:\pf-install\PushFPS.exe -PassThru
           Start-Sleep -Seconds 25

@@ -13,7 +13,7 @@ Nothing changes on the console or in the game: you need a capture card and a gra
 
 [![Download for Windows](https://img.shields.io/badge/Download-Windows%2011-89F52A?style=for-the-badge&logo=windows&logoColor=0D1A04&labelColor=89F52A)](https://github.com/DosukaSOL/PushFPS/releases)
 &nbsp;
-[![OBS Studio plugin](https://img.shields.io/badge/OBS%20Studio-plugin-1b1b20?style=for-the-badge&logo=obsstudio&logoColor=white)](#obs-studio-plugin)
+[![OBS Studio plugin](https://img.shields.io/badge/OBS%20Studio-plugin-1b1b20?style=for-the-badge)](#obs-studio-plugin)
 
 [![Latest release](https://img.shields.io/github/v/release/DosukaSOL/PushFPS?include_prereleases&style=flat-square&color=89F52A&label=release)](https://github.com/DosukaSOL/PushFPS/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/DosukaSOL/PushFPS/build-windows.yml?branch=main&style=flat-square&label=build)](https://github.com/DosukaSOL/PushFPS/actions/workflows/build-windows.yml)
@@ -49,8 +49,8 @@ switch back in one click.
 <td width="33%" valign="top">
 
 **Frame generation, with or without AI enhancement**<br>
-Generate frames only, or also run every frame through NVIDIA's neural renderer (DLSS 5 neural rendering)
-for a sharper picture.
+Generate frames only, or also run every frame through AI picture enhancement for a sharper picture
+(NVIDIA RTX cards).
 
 </td>
 </tr>
@@ -152,7 +152,8 @@ never rehosts those files.
 | **Connection** | USB 3 port directly on the PC (no hub) | USB 3.2 Gen 2 or a PCIe card |
 | **Console** | Any console with HDMI out | Set to 60 Hz output |
 
-AMD Radeon cards can use FSR frame generation (2× only, so 60 FPS from a 30 FPS game).
+AMD Radeon cards can use FSR frame generation (2× only, so 60 FPS from a 30 FPS game). AI picture
+enhancement needs an NVIDIA RTX card.
 
 <details>
 <summary>Which frame generation methods your PC offers</summary>
@@ -182,7 +183,7 @@ AMD Radeon cards can use FSR frame generation (2× only, so 60 FPS from a 30 FPS
    | **Game profile** | Optional: save the current settings under a game's name, switch to them later in one click |
    | **Game frame rate** | 30 for most games (GTA VI), 40 for 40 FPS modes, 60 for performance modes |
    | **Target frame rate** | Off, 60 FPS, 120 FPS or Match monitor. PushFPS picks the frame generation multiplier |
-   | **AI picture enhancement** | Off: frame generation only. On: every frame also goes through NVIDIA's neural renderer (uses a lot more GPU, so start with it off) |
+   | **AI picture enhancement** | Off: frame generation only. On: every frame also goes through AI enhancement, NVIDIA RTX only (uses a lot more GPU, so start with it off) |
 
 5. **Click Connect** on the capture card. Choose your card, its resolution, 60 FPS and the card's audio input.
 6. Press **F11** (or Alt+Enter), or double-click the picture, for fullscreen.
@@ -314,6 +315,10 @@ support and the frame generation integration is their work. If PushFPS helps you
 
 - PushFPS and Veyra code: [GPL-3.0](LICENSE). Files written for PushFPS, including the OBS plugin, are
   GPL-3.0-or-later. What PushFPS changed, and where each release's source is: [NOTICE.md](NOTICE.md).
+- PushFPS.exe incorporates the NVIDIA DLSS SDK and NGX SDK under the NVIDIA RTX SDKs License, and uses the
+  AMD FidelityFX SDK and the Intel XeSS SDK; their licenses ship in `licenses/sdk` of every release. For the
+  code written for PushFPS, its authors grant an additional permission (GPL-3.0 section 7) to combine it with
+  these SDKs; see [NOTICE.md](NOTICE.md), which also lists what the installer leaves out for licensing reasons.
 - PushFPS comes with absolutely no warranty, as the GPL-3.0 states. The app shows the license and a link to
   this source under *Settings, About*.
 - The PS5 Remote Play part (Chiaki) is also under the AGPL-3.0 with an OpenSSL exception; see

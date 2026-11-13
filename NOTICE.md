@@ -35,6 +35,47 @@ for more details.
 The PS5 Remote Play part (Chiaki) is also under the AGPL-3.0 with an OpenSSL exception; see
 [licenses/remoteplay](licenses/remoteplay). PushFPS release builds leave that part out.
 
+## Additional permission under GNU GPL version 3 section 7
+
+This permission is given by the copyright holders of the parts written for PushFPS (DosukaSOL and the
+PushFPS contributors). It applies to those parts only; it does not change the terms of the parts written
+by Veyra's authors (see below).
+
+If you modify PushFPS, or any covered work, by linking or combining it with any of the following, containing
+parts covered by the terms of their own licenses: the NVIDIA RTX SDKs (DLSS SDK and NGX SDK), the NVIDIA
+Video Effects and Video Frame Generation SDKs, the NVIDIA Optical Flow SDK, the NVIDIA CUDA driver API
+headers, the Intel XeSS SDK, the AMD FidelityFX SDK, or the unmodified runtime libraries and models these SDKs
+provide (together, "the SDKs"), the licensors of PushFPS grant you additional permission to convey the
+resulting work. Corresponding Source for a non-source form of such a combination does not need to include
+the source code of the parts of the SDKs used, but shall include the source code of PushFPS. The SDKs remain
+under their own licenses, and nothing here places them under the GPL.
+
+**Veyra's code.** PushFPS.exe also contains code written by Veyra's authors, which they license under
+GPL-3.0. Veyra's author builds and distributes Veyra with the same SDKs, and PushFPS distributes the same
+combination. A permission like the one above for Veyra's code can only come from Veyra's copyright holders.
+
+## NVIDIA SDK attribution
+
+PushFPS.exe incorporates the NVIDIA DLSS SDK and NGX SDK (version 310.7.0) under the NVIDIA RTX SDKs License,
+whose text is in `licenses/sdk` of every release. NVIDIA, NVIDIA RTX and DLSS are trademarks of NVIDIA
+Corporation. PushFPS is not sponsored or endorsed by NVIDIA. The app shows this attribution under
+*Settings, About*.
+
+## What the installer leaves out
+
+The installer downloads Veyra's runtime package from Veyra's own release and installs only files that may
+be passed on under their vendors' terms:
+
+- Files that say they are from NVIDIA but are not originals with a valid NVIDIA signature (for example a
+  community-modified DLSS build) are not installed.
+- On AMD installs, the experimental AI enhancement runtimes that run NVIDIA's model on Radeon cards
+  (`runtime\amd-nr-rdna3`, `runtime\amd-nr`) are not installed: NVIDIA licenses its DLSS runtimes for
+  systems with NVIDIA graphics only. FSR and XeSS frame generation are not affected.
+
+The installer lists anything it left out in `PushFPS-VERSION.txt` in the install folder, and CI fails a build
+whose test install contains such a file. `.github/workflows/audit-runtime.yml` produces a full report of the
+runtime package (publisher, version and signature of every program file).
+
 ## Source code
 
 The Corresponding Source of every PushFPS release is the Git tag of the same name in
