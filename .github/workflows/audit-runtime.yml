@@ -1,0 +1,82 @@
+# License audit of what the PushFPS installer brings onto a PC: Veyra's official runtime package
+# (UPSTREAM_TAG) and the PushFPS overlay. Lists every program file with its publisher, version and
+# Authenticode signature, flags NVIDIA files that are not NVIDIA-signed originals, and lists the license
+# files the package carries. The report goes to the `audit` branch (runtime-audit.md).
+name: audit-runtime
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: windows-2022
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      GH_TOKEN: ${{ github.token }}
+      UPSTREAM_REPO: Likely7/Veyra-NRVideo
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Download Veyra's runtime packages
+        run: |
+          $tag = (Select-String -Path .github/workflows/build-windows.yml -Pattern 'UPSTREAM_TAG:\s*(\S+)').Matches[0].Groups[1].Value
+          "UPSTREAM_TAG=$tag" | Out-File -Append $env:GITHUB_ENV
+          New-Item -ItemType Directory -Force D:\rt | Out-Null
+          gh release view $tag -R $env:UPSTREAM_REPO --json assets --jq '.assets[] | "\(.name) \(.size)"'
+          gh release download $tag -R $env:UPSTREAM_REPO -p '*.zip' -D D:\rt
+          gh release download $tag -R $env:UPSTREAM_REPO -p 'SHA256SUMS.txt' -D D:\rt
+          Get-ChildItem D:\rt | Format-Table Name, Length
+
+      - name: Audit
+        run: |
+          $out = New-Object System.Collections.Generic.List[string]
+          $out.Add("# Runtime audit: Veyra $env:UPSTREAM_TAG")
+          $out.Add('')
+          $out.Add("Generated $(Get-Date -Format u) by .github/workflows/audit-runtime.yml.")
+          foreach ($zip in Get-ChildItem D:\rt -Filter *.zip) {
+            $dir = Join-Path D:\rt ($zip.BaseName)
+            Expand-Archive $zip.FullName $dir -Force
+            $out.Add(''); $out.Add("## $($zip.Name)"); $out.Add('')
+            $out.Add('### License and notice files'); $out.Add('')
+            Get-ChildItem $dir -Recurse -File | Where-Object { $_.Name -match 'licen|notice|eula|copying|terms' } |
+              ForEach-Object { $out.Add("- ``$($_.FullName.Substring($dir.Length + 1))``") }
+            $out.Add(''); $out.Add('### Program files'); $out.Add('')
+            $out.Add('| File | Size | Publisher | Version | Signature | Signer |')
+            $out.Add('|---|---|---|---|---|---|')
+            $flags = New-Object System.Collections.Generic.List[string]
+            foreach ($f in Get-ChildItem $dir -Recurse -File -Include *.dll, *.exe, *.bin, *.sys | Sort-Object FullName) {
+              $rel = $f.FullName.Substring($dir.Length + 1)
+              $vi = $f.VersionInfo
+              $sig = Get-AuthenticodeSignature $f.FullName
+              $signer = if ($sig.SignerCertificate) { ($sig.SignerCertificate.Subject -replace '^CN=([^,]+).*', '$1') } else { '' }
+              $out.Add("| ``$rel`` | $($f.Length) | $($vi.CompanyName) | $($vi.FileVersion) | $($sig.Status) | $signer |")
+              $nvidia = ($vi.CompanyName -match 'NVIDIA') -or ($f.Name -match '^nv')
+              if ($nvidia -and ($sig.Status -ne 'Valid' -or $signer -notmatch 'NVIDIA')) {
+                $flags.Add("- ``$rel``: publisher '$($vi.CompanyName)', signature $($sig.Status), signer '$signer'")
+              }
+            }
+            $out.Add(''); $out.Add('### NVIDIA files that are not valid NVIDIA-signed originals'); $out.Add('')
+            if ($flags.Count) { $flags | ForEach-Object { $out.Add($_) } } else { $out.Add('None.') }
+          }
+          $out | Set-Content runtime-audit.md -Encoding utf8
+          Get-Content runtime-audit.md | Select-String -Pattern 'NVIDIA files that are not|^- `|^## ' | Out-Host
+
+      - name: Publish the report to the audit branch
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@users.noreply.github.com
+          Copy-Item runtime-audit.md $env:RUNNER_TEMP\runtime-audit.md
+          git checkout --orphan audit
+          git rm -rf --quiet .
+          Copy-Item $env:RUNNER_TEMP\runtime-audit.md runtime-audit.md
+          git add runtime-audit.md
+          git commit -q -m "Runtime audit $env:UPSTREAM_TAG"
+          git push -f origin audit
