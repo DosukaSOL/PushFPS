@@ -106,6 +106,10 @@ like the original 30 FPS, plus a few milliseconds for the capture card and proce
 <td width="50%"><img src="assets/screenshots/picture.png" alt="Professional mode, picture quality tab"><br><sub><b>Picture.</b> Super resolution, AI enhancement layers, HDR.</sub></td>
 <td width="50%"><img src="assets/screenshots/settings.png" alt="Settings"><br><sub><b>Settings.</b> Interface, playback, performance, shortcuts.</sub></td>
 </tr>
+<tr>
+<td width="50%"><img src="assets/screenshots/picture-sound.png" alt="Home screen, picture and sound panel"><br><sub><b>Picture &amp; sound.</b> Picture styles, gamma, sharpness and sound profiles on the home screen.</sub></td>
+<td width="50%"></td>
+</tr>
 </table>
 
 <sub>Screenshots of the real app, taken automatically on a build machine without a graphics card, so
