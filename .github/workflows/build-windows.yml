@@ -473,6 +473,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: dist
+          pattern: PushFPS-*
           merge-multiple: true
       - name: Create the pre-release
         run: |
