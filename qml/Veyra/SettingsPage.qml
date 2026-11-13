@@ -38,6 +38,7 @@ VPage {
         }
     }
 
+    // PushFPS: sections for features this build leaves out (PS5 streaming) are not listed.
     readonly property var sections: [
         { id: "look",   label: qsTr("外观"), icon: "palette" },
         { id: "window", label: qsTr("启动与窗口"), icon: "appwin" },
@@ -51,7 +52,7 @@ VPage {
         { id: "about", label: qsTr("关于"), icon: "info" },
         // The one entry with a coloured icon, so it can be found.
         { id: "sponsor", label: qsTr("赞助作者"), icon: "heart", tint: "#FF6B81" }
-    ]
+    ].filter(s => s.id !== "ps5" || (!!veyra.ps5 && veyra.ps5.available === true))
 
     // --- nav ---------------------------------------------------------------
     Rectangle {
@@ -179,7 +180,7 @@ VPage {
                                 objectName: "set-accent"
                                 spacing: 10
                                 Repeater {
-                                    model: [{ id: "orange", c: "#FF8A3D", tip: qsTr("橙色") }, { id: "white", c: "#F3F3F5", tip: qsTr("白色光晕") }]
+                                    model: [{ id: "orange", c: "#89F52A", tip: qsTr("PushFPS 绿") }, { id: "white", c: "#F3F3F5", tip: qsTr("白色光晕") }]
                                     delegate: Rectangle {
                                         required property var modelData
                                         readonly property bool on: (veyra.preferences.accent || "orange") === modelData.id

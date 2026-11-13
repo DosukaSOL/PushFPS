@@ -7,12 +7,14 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Release to install
-        default: v2.1.5
+        description: Release to install; leave empty to use the latest successful build of main
+        default: ''
+        required: false
 
 # contents: write only to push the images to the `screenshots` branch (replaced on every run).
 permissions:
   contents: write
+  actions: read
 
 jobs:
   shots:
@@ -31,9 +33,16 @@ jobs:
           Add-Type -AssemblyName System.Windows.Forms
           [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
 
-      - name: Install the release
+      - name: Install PushFPS
         run: |
-          gh release download $env:RELEASE_TAG -R $env:GITHUB_REPOSITORY -p 'PushFPS-*-win64.zip' -O pf.zip
+          if ($env:RELEASE_TAG) {
+            gh release download $env:RELEASE_TAG -R $env:GITHUB_REPOSITORY -p 'PushFPS-*-win64.zip' -O pf.zip
+          } else {
+            $run = gh run list -R $env:GITHUB_REPOSITORY -w build-windows -b main -s success -L 1 --json databaseId -q '.[0].databaseId'
+            Write-Host "Using build run $run"
+            gh run download $run -R $env:GITHUB_REPOSITORY -p 'PushFPS-*' -D art
+            Move-Item (Get-ChildItem art -Recurse -Filter 'PushFPS-*-win64.zip' | Select-Object -First 1).FullName pf.zip
+          }
           Expand-Archive pf.zip -DestinationPath pf
           & .\pf\Install-PushFPS.ps1 -Gpu NVIDIA -InstallDir D:\pf -NoShortcuts -NoLaunch
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -89,7 +98,7 @@ jobs:
           Set-Location shots
           git init -q -b screenshots
           git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com add *.png
-          git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com commit -q -m "Screenshots of $env:RELEASE_TAG"
+          git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com commit -q -m "PushFPS screenshots"
           git push -q --force "https://x-access-token:$env:GH_TOKEN@github.com/$env:GITHUB_REPOSITORY.git" screenshots
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

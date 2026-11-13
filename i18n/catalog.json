@@ -2017,6 +2017,13 @@
    "ja": "PushFPS ローカル診断（コピー前に匿名化してプレビュー。アップロードはしません）\n"
   },
   {
+   "zh": "PushFPS 绿",
+   "src": "qml/SettingsPage.qml",
+   "zh-TW": "PushFPS 綠",
+   "en": "PushFPS green",
+   "ja": "PushFPS グリーン"
+  },
+  {
    "zh": "PushFPS 虚拟扬声器",
    "src": "qml/CaptureSourceDialog.qml",
    "zh-TW": "PushFPS 虛擬揚聲器",
@@ -4949,6 +4956,13 @@
    "zh-TW": "包含",
    "en": "Includes",
    "ja": "含む"
+  },
+  {
+   "zh": "匹配显示器",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "配合顯示器",
+   "en": "Match monitor",
+   "ja": "モニターに合わせる"
   },
   {
    "zh": "区域 · Esc 取消",

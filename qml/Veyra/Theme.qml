@@ -28,13 +28,15 @@ QtObject {
     readonly property color t3: Qt.rgba(0.953, 0.953, 0.961, 0.38)
 
     // --- accent and state -------------------------------------------------
-    // 设置 → 强调色: orange (default) or the design's .accent-white variant.
+    // 设置 → 强调色: PushFPS green (default) or the design's .accent-white variant.
+    // The saved preference value stays "orange" (Veyra's name for the default) so
+    // existing settings files keep working; PushFPS draws it in its brand green.
     property string accentName: "orange"
     readonly property bool accentWhite: accentName === "white"
-    readonly property color accent: accentWhite ? "#F3F3F5" : "#FF8A3D"
-    readonly property color accentInk: accentWhite ? "#0B0B0E" : "#1B0E04"
-    readonly property color accentSoft: accentWhite ? Qt.rgba(1, 1, 1, 0.1) : Qt.rgba(1, 0.541, 0.239, 0.14)
-    readonly property color accentGlow: accentWhite ? Qt.rgba(1, 1, 1, 0.35) : Qt.rgba(1, 0.541, 0.239, 0.35)
+    readonly property color accent: accentWhite ? "#F3F3F5" : "#89F52A"
+    readonly property color accentInk: accentWhite ? "#0B0B0E" : "#0D1A04"
+    readonly property color accentSoft: accentWhite ? Qt.rgba(1, 1, 1, 0.1) : Qt.rgba(0.537, 0.961, 0.165, 0.14)
+    readonly property color accentGlow: accentWhite ? Qt.rgba(1, 1, 1, 0.35) : Qt.rgba(0.537, 0.961, 0.165, 0.35)
     // 设置 → 背景渐变强度: 0 none, 1 light (the design default), 2 medium.
     property int backdropLevel: 1
     readonly property color ok: "#3DDC84"

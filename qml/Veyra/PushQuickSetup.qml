@@ -88,6 +88,8 @@ VGroup {
     Text {
         visible: !quick.compact
         Layout.fillWidth: true
+        Layout.topMargin: 10
+        Layout.bottomMargin: 4
         text: qsTr("为主机游戏选好帧率和画面，其他细节在专业模式里")
         color: Theme.t3
         font.family: Theme.fontUi
@@ -99,7 +101,8 @@ VGroup {
         objectName: "pushfps-setup-tip"
         visible: quick.showSetupTip && !veyra.hasCaptureSession
         Layout.fillWidth: true
-        Layout.topMargin: 8
+        Layout.topMargin: 10
+        Layout.bottomMargin: 4
         text: qsTr("主机请输出 60 Hz。PlayStation 需在 设置 → 系统 → HDMI 中关闭 HDCP，否则采集画面为黑屏。")
         color: Theme.t3
         font.family: Theme.fontUi
@@ -118,7 +121,7 @@ VGroup {
             enabled: quick.fgPossible
             opacity: enabled ? 1 : 0.4
             options: [{ id: "off", label: qsTr("关闭", "off") }, { id: "60", label: "60 FPS" },
-                      { id: "120", label: "120 FPS" }, { id: "monitor", label: qsTr("跟随显示器") }]
+                      { id: "120", label: "120 FPS" }, { id: "monitor", label: qsTr("匹配显示器") }]
             current: quick.currentTarget
             onPicked: id => quick.applyTarget(id)
         }
