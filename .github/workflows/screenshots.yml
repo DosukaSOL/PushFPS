@@ -7,8 +7,12 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Release to install; leave empty to use the latest successful build of main
+        description: Release to install; leave empty to use the latest successful build of the branch below
         default: ''
+        required: false
+      branch:
+        description: Branch whose latest successful build-windows run is used when no release is given
+        default: main
         required: false
 
 # contents: write only to push the images to the `screenshots` branch (replaced on every run).
@@ -26,6 +30,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       RELEASE_TAG: ${{ inputs.release_tag }}
+      BUILD_BRANCH: ${{ inputs.branch || 'main' }}
     steps:
       - name: Screen resolution
         run: |
@@ -38,8 +43,9 @@ jobs:
           if ($env:RELEASE_TAG) {
             gh release download $env:RELEASE_TAG -R $env:GITHUB_REPOSITORY -p 'PushFPS-*-win64.zip' -O pf.zip
           } else {
-            $run = gh run list -R $env:GITHUB_REPOSITORY -w build-windows -b main -s success -L 1 --json databaseId -q '.[0].databaseId'
-            Write-Host "Using build run $run"
+            $run = gh run list -R $env:GITHUB_REPOSITORY -w build-windows -b $env:BUILD_BRANCH -s success -L 1 --json databaseId -q '.[0].databaseId'
+            if (-not $run) { throw "no successful build-windows run on $env:BUILD_BRANCH" }
+            Write-Host "Using build run $run ($env:BUILD_BRANCH)"
             gh run download $run -R $env:GITHUB_REPOSITORY -p 'PushFPS-*' -D art
             Move-Item (Get-ChildItem art -Recurse -Filter 'PushFPS-*-win64.zip' | Select-Object -First 1).FullName pf.zip
           }
@@ -63,17 +69,22 @@ jobs:
           $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
           $w = [Math]::Min(1440, $screen.Width - 40); $h = [Math]::Min(900, $screen.Height - 60)
           New-Item -ItemType Directory -Force shots | Out-Null
+          # 1-6 are the README screens; 7-9 check the layout at small window sizes and other pages.
           $list = @(
-            @{ name = '1-home';            args = @('--page', 'home') },
+            @{ name = '1-home';            args = @('--page', 'home', '--dock-pinned') },
             @{ name = '2-frame-generation'; args = @('--page', 'pro', '--tab', 'fg') },
             @{ name = '3-capture-card';    args = @('--page', 'home', '--dialog', 'capture') },
             @{ name = '4-picture';         args = @('--page', 'pro', '--tab', 'quality') },
             @{ name = '5-display';         args = @('--page', 'pro', '--tab', 'display') },
-            @{ name = '6-settings';        args = @('--page', 'set') }
+            @{ name = '6-settings';        args = @('--page', 'set') },
+            @{ name = '7-home-small';      args = @('--page', 'home'); size = '1100x680' },
+            @{ name = '8-pro-small';       args = @('--page', 'pro', '--tab', 'fg'); size = '1100x680' },
+            @{ name = '9-cinema';          args = @('--page', 'min', '--dock-pinned') }
           )
           foreach ($s in $list) {
             $data = "D:\pfdata\$($s.name)"
-            $a = $s.args + @('--size', "${w}x${h}", '--data-dir', $data, '--reduced-motion')
+            $size = if ($s.size) { $s.size } else { "${w}x${h}" }
+            $a = $s.args + @('--size', $size, '--data-dir', $data, '--reduced-motion')
             $p = Start-Process D:\pf\PushFPS.exe -ArgumentList $a -PassThru
             Start-Sleep -Seconds 14
             $p.Refresh()
@@ -93,11 +104,19 @@ jobs:
           }
           Get-ChildItem shots | Format-Table Name, Length
 
+      - name: Interface errors and warnings during the screenshot runs
+        run: |
+          $lines = Get-ChildItem D:\pf\logs -Filter *.log -ErrorAction SilentlyContinue | Get-Content |
+            Where-Object { $_ -match '\[qml\]' -and $_ -match 'ERROR|TypeError|ReferenceError|Binding loop|Cannot assign|Unable to assign|is not a function|undefined' }
+          $lines | Select-Object -Unique | Set-Content shots\qml-report.txt
+          if ($lines) { Write-Host "::warning::$(@($lines).Count) interface warnings, see qml-report.txt"; $lines | Select-Object -Unique -First 80 | Out-Host }
+          else { 'No QML errors or warnings in any screenshot run.' | Set-Content shots\qml-report.txt; Write-Host 'No QML errors or warnings.' }
+
       - name: Publish to the screenshots branch
         run: |
           Set-Location shots
           git init -q -b screenshots
-          git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com add *.png
+          git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com add *.png qml-report.txt
           git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com commit -q -m "PushFPS screenshots"
           git push -q --force "https://x-access-token:$env:GH_TOKEN@github.com/$env:GITHUB_REPOSITORY.git" screenshots
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -105,5 +124,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: pushfps-screenshots
-          path: shots/*.png
+          path: shots/*
           if-no-files-found: error

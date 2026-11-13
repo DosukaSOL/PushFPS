@@ -3,21 +3,79 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/pushfps-logo.png">
   <source media="(prefers-color-scheme: light)" srcset="assets/pushfps-logo-light.png">
-  <img src="assets/pushfps-logo.png" alt="PushFPS" width="520">
+  <img src="assets/pushfps-logo.png" alt="PushFPS" width="480">
 </picture>
 
 ### Play 30 FPS console games at 60 or 120 FPS on your PC monitor.
 
-PushFPS takes the picture from your capture card and adds AI-generated frames in real time.
-No changes to the console or the game, just a capture card and a graphics card.
+PushFPS takes the picture from your capture card and adds AI-generated frames in real time.<br>
+Nothing changes on the console or in the game: you need a capture card and a graphics card.
 
-[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-6DDC2E?style=flat-square)](LICENSE)
-[![Platform: Windows 11](https://img.shields.io/badge/platform-Windows%2011%20x64-6DDC2E?style=flat-square)](#what-you-need)
-[![Based on Veyra](https://img.shields.io/badge/based%20on-Veyra-6DDC2E?style=flat-square)](https://github.com/Likely7/Veyra-NRVideo)
+[![Download for Windows](https://img.shields.io/badge/Download-Windows%2011-89F52A?style=for-the-badge&logo=windows&logoColor=0D1A04&labelColor=89F52A)](https://github.com/DosukaSOL/PushFPS/releases)
+&nbsp;
+[![OBS Studio plugin](https://img.shields.io/badge/OBS%20Studio-plugin-1b1b20?style=for-the-badge&logo=obsstudio&logoColor=white)](#obs-studio-plugin)
+
+[![Latest release](https://img.shields.io/github/v/release/DosukaSOL/PushFPS?include_prereleases&style=flat-square&color=89F52A&label=release)](https://github.com/DosukaSOL/PushFPS/releases)
+[![Build](https://img.shields.io/github/actions/workflow/status/DosukaSOL/PushFPS/build-windows.yml?branch=main&style=flat-square&label=build)](https://github.com/DosukaSOL/PushFPS/actions/workflows/build-windows.yml)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-89F52A?style=flat-square)](LICENSE)
+[![Based on Veyra](https://img.shields.io/badge/based%20on-Veyra%20by%20Likely7-89F52A?style=flat-square)](https://github.com/Likely7/Veyra-NRVideo)
+
+<br>
+
+<img src="assets/screenshots/home.png" alt="PushFPS home screen: capture card, quick setup with console and game profiles" width="860">
 
 </div>
 
 ---
+
+## Why PushFPS
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+**Smoother console games**<br>
+A 30 FPS game becomes 60 or 120 FPS, or matches your monitor. PushFPS finds the real frames inside the
+60 Hz signal and generates the ones in between on your GPU.
+
+</td>
+<td width="33%" valign="top">
+
+**Set up in a minute**<br>
+Pick your console, your game's frame rate and the frame rate you want. Save it as a game profile and
+switch back in one click.
+
+</td>
+<td width="33%" valign="top">
+
+**Frame generation, with or without AI enhancement**<br>
+Generate frames only, or also run every frame through NVIDIA's neural renderer (DLSS 5 neural rendering)
+for a sharper picture.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+**Any capture card, any RTX card**<br>
+Works with capture cards that Windows sees as a camera, from 1080p60 USB sticks to 4K PCIe cards.
+RTX 30, 40 and 50 series; AMD Radeon gets 2× with FSR.
+
+</td>
+<td valign="top">
+
+**Streams too**<br>
+The OBS Studio plugin puts the PushFPS picture, generated frames included, straight into your scenes.
+
+</td>
+<td valign="top">
+
+**Free and open source**<br>
+GPL-3.0, no account needed. Built on Veyra, the open-source video enhancer by Likely7.
+
+</td>
+</tr>
+</table>
 
 ## How it works
 
@@ -26,6 +84,7 @@ flowchart LR
     A[Console<br/>30 FPS game] -- HDMI --> B[Capture card]
     B -- USB / PCIe --> C[PushFPS on your PC<br/>frame generation]
     C --> D[Monitor<br/>60 / 120 FPS]
+    C -. optional .-> E[OBS Studio<br/>stream or record]
 ```
 
 Your console sends its picture to a capture card. PushFPS reads every frame, notices that a 30 FPS game
@@ -36,14 +95,30 @@ Generated frames make motion smoother. They don't make the game react faster: th
 like the original 30 FPS, plus a few milliseconds for the capture card and processing.
 [More on latency](#latency).
 
+## Screenshots
+
+<table>
+<tr>
+<td width="50%"><img src="assets/screenshots/frame-generation.png" alt="Professional mode, frame generation tab"><br><sub><b>Frame generation.</b> Quick setup on top, every detail below.</sub></td>
+<td width="50%"><img src="assets/screenshots/capture-card.png" alt="Capture card dialog"><br><sub><b>Capture card.</b> Device, format, frame rate, colour and audio in one dialog.</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="assets/screenshots/picture.png" alt="Professional mode, picture quality tab"><br><sub><b>Picture.</b> Super resolution, AI enhancement layers, HDR.</sub></td>
+<td width="50%"><img src="assets/screenshots/settings.png" alt="Settings"><br><sub><b>Settings.</b> Interface, playback, performance, shortcuts.</sub></td>
+</tr>
+</table>
+
+<sub>Screenshots of the real app, taken automatically on a build machine without a graphics card, so
+NVIDIA-only controls show as unavailable. On an RTX PC they are active.</sub>
+
 ## Download and install
 
 1. Download the latest **PushFPS-…-win64.zip** from [Releases](https://github.com/DosukaSOL/PushFPS/releases)
    and extract it.
 2. Double-click **Install-PushFPS.cmd**.
 
-That's it. The installer picks the right package for your graphics card, installs PushFPS to your user
-folder (no administrator rights needed), adds Start menu and desktop shortcuts, and starts it.
+The installer picks the right package for your graphics card, installs PushFPS to your user folder (no
+administrator rights needed), adds Start menu and desktop shortcuts, and starts it.
 
 <details>
 <summary>What the installer does, step by step</summary>
@@ -55,7 +130,7 @@ the value pinned when the PushFPS release was built, unpacks it, and adds PushFP
 never rehosts those files.
 
 - Install folder: `%LOCALAPPDATA%\Programs\PushFPS`
-- Update: run the newer installer; your settings are kept
+- Update: run the newer installer; your settings and profiles are kept
 - Uninstall: `Install-PushFPS.cmd -Uninstall`, or delete the folder and shortcuts
 - Windows may warn about an unknown publisher (PushFPS isn't code signed yet). Choose *More info*, then
   *Run anyway*, if you downloaded the zip from this repository.
@@ -64,7 +139,8 @@ never rehosts those files.
 
 > [!NOTE]
 > Releases marked **Pre-release** are preview builds: built and start-tested automatically on Windows, but
-> not yet tested by a person with a capture card and GPU.
+> not yet tested by a person with a capture card and GPU. Reports from real setups are very welcome in
+> [Issues](https://github.com/DosukaSOL/PushFPS/issues).
 
 ## What you need
 
@@ -78,7 +154,8 @@ never rehosts those files.
 
 AMD Radeon cards can use FSR frame generation (2× only, so 60 FPS from a 30 FPS game).
 
-Which frame generation methods your PC offers:
+<details>
+<summary>Which frame generation methods your PC offers</summary>
 
 | Method | Graphics cards | Most frames per real frame |
 |---|---|---|
@@ -87,52 +164,70 @@ Which frame generation methods your PC offers:
 | Intel XeSS Frame Generation (experimental) | DirectX 12 cards; Veyra tested it on NVIDIA | 4× |
 | AMD FSR Frame Generation | DirectX 12 cards (FSR 4 needs a Radeon RX 9000) | 2× |
 
+</details>
+
 ## Get started
 
 1. **Connect everything.** Console HDMI out goes into the capture card's input. The card's USB or PCIe
    connection goes into the PC. If the card has an HDMI passthrough, you can leave a TV on it.
-2. **PlayStation only: turn HDCP off.** Settings, System, HDMI, turn off *Enable HDCP*. With HDCP on,
-   the capture card only shows black.
-3. **Set the console to 60 Hz.** Even for 30 FPS games, consoles send a 60 Hz signal. 1080p is enough for
+2. **Set the console to 60 Hz.** Even for 30 FPS games, consoles send a 60 Hz signal. 1080p is enough for
    most cards; use 4K if your card captures 4K60.
-4. **Open PushFPS** and pick **Capture card** on the home screen. Choose your card, its resolution, 60 FPS,
-   and the card's audio input.
-5. **Choose your target frame rate** in the quick setup on the home screen or under Professional,
-   Frame generation:
+3. **PlayStation only: turn HDCP off.** Settings, System, HDMI, turn off *Enable HDCP*. With HDCP on, the
+   capture card only shows black. Xbox and Switch games are not HDCP protected.
+4. **Open PushFPS and fill in the quick setup** on the home screen:
 
-   | Choice | What happens |
+   | Setting | What to pick |
    |---|---|
-   | **Off** | You see the console's own frame rate |
-   | **60 FPS** | A 30 FPS game gets one generated frame between real frames (2×) |
-   | **120 FPS** | A 30 FPS game gets three generated frames between real frames (4×) |
-   | **Match monitor** | As many frames as your monitor can show |
+   | **Console** | PlayStation 5, PS5 Pro, Xbox Series X\|S, Nintendo Switch 2 or Other. Each console remembers its own choices |
+   | **Game profile** | Optional: save the current settings under a game's name, switch to them later in one click |
+   | **Game frame rate** | 30 for most games (GTA VI), 40 for 40 FPS modes, 60 for performance modes |
+   | **Target frame rate** | Off, 60 FPS, 120 FPS or Match monitor. PushFPS picks the frame generation multiplier |
+   | **AI picture enhancement** | Off: frame generation only. On: every frame also goes through NVIDIA's neural renderer (uses a lot more GPU, so start with it off) |
 
-6. **Choose the picture.** With *AI picture enhancement* off, PushFPS only generates frames. Turn it on
-   to also run every frame through NVIDIA's neural renderer for a sharper picture. That costs a lot more
-   GPU power, so start with it off.
-7. Press **F11** (or Alt+Enter), or double-click the picture, for fullscreen.
+5. **Click Connect** on the capture card. Choose your card, its resolution, 60 FPS and the card's audio input.
+6. Press **F11** (or Alt+Enter), or double-click the picture, for fullscreen.
 
 > [!TIP]
 > Close other apps that use the capture card (OBS, the card's own software) before connecting.
-> Only one program can use a capture card at a time.
+> Only one program can use a capture card at a time. To show PushFPS in OBS, use the
+> [OBS Studio plugin](#obs-studio-plugin) instead.
 
-## What PushFPS adds to Veyra
+## Profiles
 
-PushFPS is built on [Veyra](https://github.com/Likely7/Veyra-NRVideo), an excellent open-source video
-enhancer by Likely7. Veyra does far more than console frame generation: video files, streaming, export,
-up to four layers of neural enhancement, a node editor. PushFPS focuses on one job, making console games
-smoother, and makes that job simple.
+**Console profiles.** Switching the console in the quick setup keeps what you set for the previous console
+and brings back what you set for the new one: game frame rate, target frame rate, AI enhancement and
+NVIDIA Low Latency. The setup tip on the home screen follows the console too.
 
-- **Quick setup.** Target frame rate, AI enhancement and low latency in three controls, on the home screen
-  and above the detailed settings. Everything stays adjustable in Professional mode.
-- **Frame generation on its own.** Use frame generation without the neural picture enhancement, or with it.
-- **English-first.** English as the main language of the docs, alongside Veyra's Chinese, Traditional
-  Chinese and Japanese interface.
-- **Its own updates.** PushFPS checks this repository for new versions, so it never offers a Veyra release
-  in place of a PushFPS one.
+**Game profiles.** Click **+** next to *Game profile*, type a name (for example *GTA VI*) and confirm. The
+profile stores the console, game frame rate, target, AI enhancement and low latency. If the Professional
+settings currently match a saved preset, the profile remembers that preset as well and applies it first, so
+a game profile can carry every detail. Pick the game from the list to switch; the bin removes it.
 
-Everything Veyra can do is still there: HDR capture, VRR, NVIDIA Low Latency, super resolution, colour
-tools, PS5 Remote Play, Xbox and PC streaming, screenshots (F7) and recording (F8).
+## OBS Studio plugin
+
+The plugin adds a **PushFPS** source to OBS Studio 28 or newer on Windows. It shows the PushFPS picture,
+generated frames included, in any scene, and can start PushFPS for you.
+
+1. Download **PushFPS-OBS-Plugin-…-win64.zip** from [Releases](https://github.com/DosukaSOL/PushFPS/releases)
+   and extract it.
+2. Close OBS Studio and double-click **Install-PushFPS-OBS.cmd** (no administrator rights needed).
+3. Start OBS Studio. Under *Sources*, click **+** and pick **PushFPS**.
+
+| In the source's properties | What it does |
+|---|---|
+| **Open PushFPS** | Starts PushFPS with OBS game capture support, or brings it to the front (also under *Tools*) |
+| **Capture method** | *Game capture* receives every generated frame (recommended). *Window capture* is the fallback |
+| **Start PushFPS when this source is shown** | On by default |
+| **PushFPS.exe location** | Only needed if PushFPS isn't in its default folder |
+
+For sound, add an *Application Audio Capture* source and pick `PushFPS.exe`. If you start PushFPS yourself
+instead of from OBS, turn on *Settings, Compatible, OBS Game Capture compatibility* in PushFPS once and
+restart it. Uninstall: `Install-PushFPS-OBS.cmd -Uninstall`.
+
+<sub>How it works: PushFPS keeps doing the processing on your GPU; the plugin drives OBS's own game capture
+(or window capture) pointed at the PushFPS window. Every build is loaded into the latest OBS Studio on
+GitHub Actions, which opens a scene with a PushFPS source, lets it start PushFPS and checks that it finds
+the window.</sub>
 
 ## Tune it for your setup
 
@@ -148,16 +243,16 @@ tools, PS5 Remote Play, Xbox and PC streaming, screenshots (F7) and recording (F
 ## Latency
 
 To place a frame between two real frames, PushFPS has to wait for the second one. With a 30 FPS game that
-adds up to one frame (about 33 ms) on top of the capture card's own delay, which depends on the card. Generated frames make motion look like 120 FPS, but your inputs still take effect at
-the game's own pace.
+adds up to one frame (about 33 ms) on top of the capture card's own delay, which depends on the card.
+Generated frames make motion look like 120 FPS, but your inputs still take effect at the game's own pace.
 
 For fast competitive games, use **Off** and play on the console's own display path.
 
 ## FAQ
 
 **Does it work with games that already run at 60 FPS?**
-Yes. PushFPS detects the real frame rate. A 60 FPS game with a 120 FPS target gets one generated frame in
-between.
+Yes. Set *Game frame rate* to 60 and pick 120 FPS or Match monitor: a 60 FPS game gets one generated frame
+in between (two on a 240 Hz monitor).
 
 **Does it change the console or the game?**
 No. PushFPS only processes the video coming out of the capture card. Nothing is installed on the console.
@@ -169,18 +264,18 @@ Yes. PushFPS is free and open source under the GPL-3.0, like Veyra.
 Not yet. The frame generation in PushFPS runs on NVIDIA, AMD and Intel graphics through DirectX 12 on
 Windows. A macOS version needs a separate engine and is planned for later.
 
-**Can I use PushFPS inside OBS Studio?**
-Not as an OBS plugin yet; it is on the roadmap. Today you can capture the PushFPS window in OBS with
-*Window Capture*, or turn on *Settings, General & appearance, OBS Game Capture compatibility* and use
-*Game Capture*.
+**Where are my settings and profiles stored?**
+In your user folder, next to Veyra's settings. Updating PushFPS keeps them.
 
 ## Roadmap
 
 - [x] PushFPS name, logo and update channel
 - [x] Quick setup: target frame rate, frame generation with or without AI enhancement
-- [ ] First Windows release with automated, reproducible builds
-- [ ] Per-console and per-game profiles
-- [ ] OBS Studio plugin
+- [x] Windows release with automated, reproducible builds
+- [x] Per-console and per-game profiles
+- [x] OBS Studio plugin
+- [x] Cleaner interface: capture card first, less text, aligned controls
+- [ ] Tested settings for popular capture cards, from real-hardware reports
 - [ ] macOS version
 
 ## Build from source
@@ -189,16 +284,23 @@ Every push builds PushFPS on GitHub Actions ([build-windows.yml](.github/workflo
 that workflow is the build recipe: Visual Studio 2022, CMake with Ninja, Qt 6.8.3, FFmpeg 9.0.1 from vcpkg
 at the pinned baseline, the NVIDIA DLSS SDK 310.7.0, nv-codec-headers, the CUDA driver header, Intel XeSS
 3.0.2 and AMD FidelityFX 1.1.4 and 2.3.0. All of them are downloaded from their official public sources at
-pinned versions; none is committed. The workflow then checks that `PushFPS.exe` links exactly the Qt and
-FFmpeg libraries in Veyra's runtime package, installs it with the real installer and starts it.
+pinned versions; none is committed. The workflow then runs the unit and interface tests, checks that
+`PushFPS.exe` links exactly the Qt and FFmpeg libraries in Veyra's runtime package, installs it with the real
+installer and opens every main page, failing on any interface error.
 
 The NVIDIA Optical Flow SDK needs a developer login, so release builds leave it out and use AMD FidelityFX
 optical flow for motion estimation instead (it runs on any DirectX 12 GPU). NVIDIA Video Frame Generation
 has its own optical flow and is not affected. If you build locally with the Optical Flow SDK in
 `third_party_local/nvidia/Optical_Flow_SDK_5.0.7`, NVIDIA optical flow is available as in Veyra.
 
-More background: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md), [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+The OBS plugin ([obs-plugin/](obs-plugin)) is a small C module built against OBS's public headers:
 
+```
+cmake -S obs-plugin -B build-obs -A x64 -DOBS_SOURCE_DIR=<obs-studio checkout>
+cmake --build build-obs --config Release
+```
+
+More background: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md), [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 Inside the code, PushFPS keeps Veyra's names (namespaces, targets, the `qml/Veyra` module) so fixes from
 Veyra keep merging cleanly. The PushFPS name and links live in
 [`include/veyra/Brand.h`](include/veyra/Brand.h).
@@ -210,11 +312,12 @@ PushFPS is a fork of **[Veyra](https://github.com/Likely7/Veyra-NRVideo)** by
 generation integration is their work. If PushFPS helps you, consider
 [supporting Veyra's author](https://www.patreon.com/cw/Likely7).
 
-- PushFPS and Veyra code: [GPL-3.0](LICENSE).
+- PushFPS and Veyra code: [GPL-3.0](LICENSE). The OBS plugin: GPL-3.0-or-later.
 - The PS5 Remote Play part (Chiaki) is also under the AGPL-3.0 with an OpenSSL exception; see
   [licenses/remoteplay](licenses/remoteplay).
 - Third-party components and their licenses: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-PushFPS is not affiliated with or endorsed by NVIDIA, AMD, Intel, Sony, Microsoft or any game publisher.
-NVIDIA, RTX and DLSS are trademarks of NVIDIA Corporation. PlayStation is a trademark of Sony Interactive
-Entertainment. Xbox is a trademark of Microsoft.
+PushFPS is not affiliated with or endorsed by NVIDIA, AMD, Intel, Sony, Microsoft, Nintendo, the OBS Project
+or any game publisher. NVIDIA, RTX and DLSS are trademarks of NVIDIA Corporation. PlayStation is a trademark
+of Sony Interactive Entertainment. Xbox is a trademark of Microsoft. Nintendo Switch is a trademark of
+Nintendo. OBS Studio is a trademark of the OBS Project.

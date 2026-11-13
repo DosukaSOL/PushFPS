@@ -664,7 +664,7 @@ Item {
             compare(findChild(mixer,"colour-mixer-mode-row").label,"模式")
             const hueRow=findChild(mixer,"colour-mixer-row-mixerHue")
             const satRow=findChild(mixer,"colour-mixer-row-mixerSaturation")
-            compare(satRow.y-hueRow.y,38)
+            compare(satRow.y-hueRow.y,Theme.rowMinHeight)
             const band=findChild(mixer,"colour-mixer-band-5")
             mouseClick(band,band.width/2,band.height/2);compare(mixer.band,5)
             const sat=findChild(mixer,"colour-mixer-mixerSaturation")

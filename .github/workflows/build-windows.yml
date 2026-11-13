@@ -221,8 +221,10 @@ jobs:
           $env:QT_QUICK_BACKEND = 'software'
           $env:QML_DISABLE_DISK_CACHE = '1'
           Push-Location $stage
-          & .\veyra_qml_quick_tests.exe -platform offscreen -input qml-tests\tst_push_quick_setup.qml 2>&1 | Tee-Object push-quick.txt | Out-Host
+          & .\veyra_qml_quick_tests.exe -platform offscreen -input qml-tests\tst_push_quick_setup.qml -o push-quick.txt,txt 2>&1 | Out-Host
           $code = $LASTEXITCODE
+          Get-Content push-quick.txt -ErrorAction SilentlyContinue | Out-Host
+          if ((Get-Content push-quick.txt -Raw -ErrorAction SilentlyContinue) -notmatch 'Totals: [1-9]\d* passed, 0 failed') { $code = 1 }
           Pop-Location
           Write-Host "tst_push_quick_setup exit $code"
           if ($code -ne 0) { exit 1 }
@@ -242,11 +244,13 @@ jobs:
           Write-Host "veyra_qml_easing_tests exit $LASTEXITCODE"
           $failed = 0
           foreach ($f in Get-ChildItem qml-tests -Filter 'tst_*.qml') {
-            $out = & .\veyra_qml_quick_tests.exe -platform offscreen -input "qml-tests\$($f.Name)" 2>&1
+            $res = "result-$($f.BaseName).txt"
+            & .\veyra_qml_quick_tests.exe -platform offscreen -input "qml-tests\$($f.Name)" -o "$res,txt" 2>&1 | Out-Null
             $code = $LASTEXITCODE
-            $totals = ($out | Select-String '^Totals:' | Select-Object -Last 1)
+            $out = Get-Content $res -ErrorAction SilentlyContinue
+            $totals = ($out | Select-String '^Totals:' | Select-Object -Last 1).Line
             Write-Host ("{0,-34} exit {1}  {2}" -f $f.Name, $code, $totals)
-            if ($code -ne 0) { $failed++; $out | Select-String 'FAIL!|QWARN.*Error|ReferenceError|TypeError' | Select-Object -First 25 | Out-Host }
+            if ($code -ne 0) { $failed++; $out | Select-String -Context 0,3 'FAIL!' | Select-Object -First 15 | Out-Host }
           }
           Pop-Location
           Write-Host "files with failures: $failed"
@@ -304,6 +308,23 @@ jobs:
           $qmlErrors = @(($log -split "`n") | Where-Object { $_ -match '\[ERROR\] \[qml\]' })
           if ($qmlErrors.Count) { $qmlErrors | ForEach-Object { Write-Host "::error::$_" }; throw "The interface logged QML errors at startup" }
           Write-Host "PushFPS started and loaded its interface with no QML errors."
+          # Every main page and the capture dialog, each in a fresh profile: no QML errors either.
+          $pages = @(@('--page', 'pro', '--tab', 'fg'), @('--page', 'pro', '--tab', 'quality'), @('--page', 'pro', '--tab', 'display'),
+                     @('--page', 'set'), @('--page', 'min'), @('--page', 'exp'), @('--page', 'home', '--dialog', 'capture'))
+          $i = 0
+          foreach ($pa in $pages) {
+            $i++
+            $env:VEYRA_LOG_FILE = "D:\pf-pages\page-$i.log"
+            New-Item -ItemType Directory -Force D:\pf-pages | Out-Null
+            $q = Start-Process D:\pf-install\PushFPS.exe -PassThru -ArgumentList ($pa + @('--data-dir', "D:\pf-pages\data-$i", '--exit-after', '12000'))
+            if (-not $q.WaitForExit(40000)) { Stop-Process -Id $q.Id -Force }
+            $plog = Get-Content "D:\pf-pages\page-$i.log" -Raw -ErrorAction SilentlyContinue
+            if ($plog -notmatch 'PushFPS QML session started') { throw "$($pa -join ' '): no QML session" }
+            $errs = @(($plog -split "`n") | Where-Object { $_ -match '\[ERROR\] \[qml\]' })
+            if ($errs.Count) { $errs | ForEach-Object { Write-Host "::error::$($pa -join ' '): $_" }; throw "QML errors on $($pa -join ' ')" }
+            Write-Host "$($pa -join ' '): no QML errors"
+          }
+          Remove-Item Env:VEYRA_LOG_FILE
 
       - uses: actions/upload-artifact@v4
         with:
@@ -373,54 +394,10 @@ jobs:
 
       - name: Load test in real OBS Studio
         run: |
-          $rel = gh api repos/obsproject/obs-studio/releases/latest | ConvertFrom-Json
-          $asset = $rel.assets | Where-Object { $_.name -match 'Windows.*\.zip$' -and $_.name -notmatch 'PDB|arm64' } | Select-Object -First 1
-          if (-not $asset) { throw "no Windows zip in OBS $($rel.tag_name)" }
-          Write-Host "OBS Studio $($rel.tag_name): $($asset.name)"
-          curl.exe -sSL --fail -o D:\obs.zip $asset.browser_download_url
-          Expand-Archive D:\obs.zip D:\obs -Force
-          Remove-Item D:\obs\portable_mode*, D:\obs\obs_portable_mode* -ErrorAction SilentlyContinue
-          $obs = Get-ChildItem D:\obs -Recurse -Filter obs64.exe | Select-Object -First 1
-          if (-not $obs) { throw 'obs64.exe not in the zip' }
-          # Install with the real installer from the package.
-          $pkg = Get-ChildItem D:\obs-pkg -Directory | Select-Object -First 1
-          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$($pkg.FullName)\Install-PushFPS-OBS.ps1"
-          if ($LASTEXITCODE -ne 0) { throw "installer exit $LASTEXITCODE" }
-          if (-not (Test-Path "$env:ProgramData\obs-studio\plugins\pushfps-obs\bin\64bit\pushfps-obs.dll")) { throw 'installer did not place the dll' }
-          # A scene collection with one PushFPS source in the program scene.
-          $cfg = Join-Path $env:APPDATA 'obs-studio'
-          New-Item -ItemType Directory -Force "$cfg\basic\scenes" | Out-Null
-          $collection = @{
-            name = 'Untitled'; current_scene = 'Scene'; current_program_scene = 'Scene'
-            scene_order = @(@{ name = 'Scene' })
-            sources = @(
-              @{ id = 'pushfps_source'; versioned_id = 'pushfps_source'; name = 'PushFPS'; uuid = '6c1d6f52-0d55-4a45-9a70-6b2a3d6f0001'
-                 settings = @{}; enabled = $true; flags = 0; mixers = 0; volume = 1.0 },
-              @{ id = 'scene'; versioned_id = 'scene'; name = 'Scene'; uuid = '6c1d6f52-0d55-4a45-9a70-6b2a3d6f0002'
-                 settings = @{ id_counter = 1; items = @(@{ name = 'PushFPS'; source_uuid = '6c1d6f52-0d55-4a45-9a70-6b2a3d6f0001'
-                   visible = $true; id = 1; pos = @{ x = 0; y = 0 }; scale = @{ x = 1; y = 1 }; rot = 0; align = 5 }) } }
-            )
-          }
-          $collection | ConvertTo-Json -Depth 10 | Set-Content "$cfg\basic\scenes\Untitled.json" -Encoding utf8
-          $p = Start-Process $obs.FullName -WorkingDirectory $obs.DirectoryName -PassThru `
-            -ArgumentList '--disable-updater', '--disable-shutdown-check', '--disable-missing-files-check', '--multi'
-          $deadline = (Get-Date).AddSeconds(90); $log = ''
-          while ((Get-Date) -lt $deadline) {
-            Start-Sleep 5
-            $file = Get-ChildItem "$cfg\logs" -Filter *.txt -ErrorAction SilentlyContinue | Sort-Object LastWriteTime | Select-Object -Last 1
-            if ($file) { $log = Get-Content $file.FullName -Raw }
-            if ($log -match 'PushFPS is not running yet' -or $p.HasExited) { break }
-          }
-          Start-Sleep 3
-          if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
-          New-Item -ItemType Directory -Force D:\obs-logs | Out-Null
-          if ($file) { Copy-Item $file.FullName D:\obs-logs\ }
-          ($log -split "`n") | Where-Object { $_ -match 'pushfps|module|Loaded|video|adapter|error' } | Select-Object -First 120 | Out-Host
-          foreach ($want in '\[pushfps-obs\] loaded version', '\[pushfps-obs\] source created',
-                            '\[pushfps-obs\] capture method: game_capture', '\[pushfps-obs\] PushFPS is not running yet') {
-            if ($log -notmatch $want) { throw "OBS log is missing: $want" }
-          }
-          Write-Host 'OBS Studio loaded PushFPS for OBS, created the source and started its capture child.'
+          $pkg = (Get-ChildItem D:\obs-pkg -Directory | Select-Object -First 1).FullName
+          ./obs-plugin/ci/obs-load-test.ps1 -PackageDir $pkg -StopWhen 'capture method' `
+            -Expect '\[pushfps-obs\] loaded version', '\[pushfps-obs\] source created',
+                    '\[pushfps-obs\] capture method: game_capture', '\[pushfps-obs\] PushFPS is not running yet'
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -436,6 +413,50 @@ jobs:
             dist/*.zip
             dist/*.sha256
           if-no-files-found: error
+
+  # End to end: PushFPS installed in its default folder, the OBS plugin installed, OBS opens a scene with a
+  # PushFPS source, the source starts PushFPS itself (--obs-game-capture), finds its window and hands it to
+  # OBS game capture. No GPU here, so there is no picture to receive; the steps up to the hook are checked.
+  obs-integration:
+    needs: [build, obs-plugin]
+    runs-on: windows-2022
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          path: art
+      - name: Install PushFPS (default folder) and unpack the plugin
+        run: |
+          $zip = Get-ChildItem art -Recurse -Filter 'PushFPS-*-win64.zip' | Where-Object Name -notmatch 'OBS-Plugin' | Select-Object -First 1
+          $obsZip = Get-ChildItem art -Recurse -Filter 'PushFPS-OBS-Plugin-*.zip' | Select-Object -First 1
+          Expand-Archive $zip.FullName D:\pf-zip
+          & D:\pf-zip\Install-PushFPS.ps1 -Gpu NVIDIA -NoShortcuts -NoLaunch
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path "$env:LOCALAPPDATA\Programs\PushFPS\PushFPS.exe")) { throw 'PushFPS.exe not in the default folder' }
+          Expand-Archive $obsZip.FullName D:\obs-pkg
+      - name: OBS starts PushFPS and captures it
+        run: |
+          ./obs-plugin/ci/obs-load-test.ps1 -PackageDir D:\obs-pkg -Seconds 150 -StopWhen 'found the PushFPS window' `
+            -Expect '\[pushfps-obs\] source created', '\[pushfps-obs\] auto start: started', '\[pushfps-obs\] found the PushFPS window'
+          $pf = Get-Process PushFPS -ErrorAction SilentlyContinue
+          $plog = Get-Content "$env:LOCALAPPDATA\Programs\PushFPS\logs\veyra-qml.log" -Raw -ErrorAction SilentlyContinue
+          ($plog -split "`n") | Where-Object { $_ -match 'obs|OBS|renderer|session started' } | Select-Object -First 30 | Out-Host
+          if ($pf) { $pf | Stop-Process -Force }
+          if ($plog -notmatch 'PushFPS QML session started') { throw 'PushFPS (started by OBS) did not reach its QML session' }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: obs-integration-log
+          path: D:\obs-logs
+          if-no-files-found: ignore
 
   # Publishes a tagged build as a GitHub pre-release. It stays a pre-release (which the in-app update
   # checker ignores) until someone has tested it on real hardware and marks it as the latest release.

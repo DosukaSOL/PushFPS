@@ -9,3 +9,4 @@ packaging/*.cmd text eol=crlf
 packaging/*.ps1 text eol=crlf
 obs-plugin/packaging/*.cmd text eol=crlf
 obs-plugin/packaging/*.ps1 text eol=crlf
+obs-plugin/ci/*.ps1 text eol=crlf

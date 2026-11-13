@@ -1,5 +1,7 @@
 <div align="center">
   <img src="assets/pushfps-logo.png" alt="PushFPS" width="420">
+  <br><br>
+  <img src="assets/screenshots/home.png" alt="PushFPS" width="760">
 </div>
 
 # PushFPS
@@ -12,6 +14,9 @@ PushFPS 基于开源项目 [Veyra](https://github.com/Likely7/Veyra-NRVideo)（�
 
 - **快速设置**：目标帧率（关闭 / 60 FPS / 120 FPS / 跟随显示器）、AI 画面增强、英伟达低延迟，三个控件即可完成；详细参数仍在专业模式中。
 - **可以只补帧**：AI 画面增强（NVIDIA 神经渲染）可单独开关。
+- **主机与游戏配置**：选择主机（PS5、PS5 Pro、Xbox Series X|S、Switch 2），每台主机记住自己的设置；可把当前设置存为某个游戏的配置，一键切换。
+- **更清爽的界面**：首页以采集卡为主，提示文字更少，控件对齐。
+- **OBS Studio 插件**：在 OBS 中添加 “PushFPS” 来源，直接显示补帧后的画面，见 [英文 README](README.md#obs-studio-plugin)。
 - **独立更新**：PushFPS 只检查本仓库的新版本。
 
 完整说明（安装、硬件要求、设置建议、延迟说明、常见问题）见 [英文 README](README.md)。
