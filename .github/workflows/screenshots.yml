@@ -1,0 +1,90 @@
+# Manual helper: installs a PushFPS release on a Windows runner, opens each main screen with the program's
+# own startup options (--page / --tab / --dialog / --size) and saves a screenshot of the real window.
+# The runner has no GPU, so NVIDIA-only controls show as unavailable, exactly as on a PC without one.
+name: screenshots
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Release to install
+        default: v2.1.5
+
+permissions:
+  contents: read
+
+jobs:
+  shots:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
+    steps:
+      - name: Screen resolution
+        run: |
+          try { Set-DisplayResolution -Width 1920 -Height 1080 -Force -ErrorAction Stop } catch { Write-Host "Set-DisplayResolution: $_" }
+          Add-Type -AssemblyName System.Windows.Forms
+          [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+
+      - name: Install the release
+        run: |
+          gh release download $env:RELEASE_TAG -R $env:GITHUB_REPOSITORY -p 'PushFPS-*-win64.zip' -O pf.zip
+          Expand-Archive pf.zip -DestinationPath pf
+          & .\pf\Install-PushFPS.ps1 -Gpu NVIDIA -InstallDir D:\pf -NoShortcuts -NoLaunch
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Take screenshots
+        run: |
+          Add-Type -AssemblyName System.Drawing, System.Windows.Forms
+          Add-Type @'
+          using System; using System.Runtime.InteropServices;
+          public static class W {
+            [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L, T, R, B; }
+            [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
+            [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+            [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
+          }
+          '@
+          [W]::SetProcessDPIAware() | Out-Null
+          $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $w = [Math]::Min(1440, $screen.Width - 40); $h = [Math]::Min(900, $screen.Height - 60)
+          New-Item -ItemType Directory -Force shots | Out-Null
+          $list = @(
+            @{ name = '1-home';            args = @('--page', 'home') },
+            @{ name = '2-frame-generation'; args = @('--page', 'pro', '--tab', 'fg') },
+            @{ name = '3-capture-card';    args = @('--page', 'home', '--dialog', 'capture') },
+            @{ name = '4-picture';         args = @('--page', 'pro', '--tab', 'quality') },
+            @{ name = '5-display';         args = @('--page', 'pro', '--tab', 'display') },
+            @{ name = '6-settings';        args = @('--page', 'set') }
+          )
+          foreach ($s in $list) {
+            $data = "D:\pfdata\$($s.name)"
+            $a = $s.args + @('--size', "${w}x${h}", '--data-dir', $data, '--reduced-motion')
+            $p = Start-Process D:\pf\PushFPS.exe -ArgumentList $a -PassThru
+            Start-Sleep -Seconds 14
+            $p.Refresh()
+            $hwnd = $p.MainWindowHandle
+            if ($p.HasExited -or $hwnd -eq [IntPtr]::Zero) { Write-Host "::warning::$($s.name): no window"; if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }; continue }
+            [W]::SetForegroundWindow($hwnd) | Out-Null; Start-Sleep -Milliseconds 800
+            $r = New-Object W+RECT; [W]::GetWindowRect($hwnd, [ref]$r) | Out-Null
+            $bw = $r.R - $r.L; $bh = $r.B - $r.T
+            $bmp = New-Object System.Drawing.Bitmap $bw, $bh
+            $g = [System.Drawing.Graphics]::FromImage($bmp)
+            $g.CopyFromScreen($r.L, $r.T, 0, 0, $bmp.Size)
+            $bmp.Save("shots\$($s.name).png", [System.Drawing.Imaging.ImageFormat]::Png)
+            $g.Dispose(); $bmp.Dispose()
+            Write-Host "$($s.name): ${bw}x${bh}"
+            Stop-Process -Id $p.Id -Force
+            Start-Sleep -Seconds 2
+          }
+          Get-ChildItem shots | Format-Table Name, Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pushfps-screenshots
+          path: shots/*.png
+          if-no-files-found: error

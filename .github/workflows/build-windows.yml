@@ -14,7 +14,8 @@ on:
   push:
     branches: [main]
     tags: ['v*']
-    paths-ignore: ['**/*.md', 'docs/**', 'assets/**', '.github/workflows/checks.yml']
+    paths-ignore: ['**/*.md', 'docs/**', 'assets/**', '.github/workflows/checks.yml', '.github/workflows/screenshots.yml',
+                   '.github/workflows/deps-probe.yml', '.github/workflows/upstream-inspect.yml']
   pull_request:
   workflow_dispatch:
     inputs:
