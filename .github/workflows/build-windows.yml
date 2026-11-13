@@ -302,7 +302,7 @@ jobs:
         run: |
           $zip = (Get-ChildItem dist/PushFPS-*.zip)[0].FullName
           Expand-Archive $zip -DestinationPath D:\pf-zip
-          & D:\pf-zip\Install-PushFPS.ps1 -Gpu NVIDIA -InstallDir D:\pf-install -NoShortcuts -NoLaunch
+          & D:\pf-zip\Install-PushFPS.ps1 -Gpu NVIDIA -InstallDir D:\pf-install -NoShortcuts -NoLaunch -ExperimentalExtras No
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if (-not (Test-Path D:\pf-install\PushFPS.exe)) { throw "PushFPS.exe missing after install" }
           # Licensing check: every installed file that says it is from NVIDIA is an NVIDIA-signed original.
@@ -311,7 +311,7 @@ jobs:
           if ($bad) { $bad | ForEach-Object { Write-Host "::error::not an NVIDIA-signed original: $($_.FullName)" }; throw 'modified NVIDIA files were installed' }
           Get-Content D:\pf-install\PushFPS-VERSION.txt | Out-Host
           # AMD package: installs, and carries no NVIDIA AI-enhancement runtime (licensed for NVIDIA graphics only).
-          & D:\pf-zip\Install-PushFPS.ps1 -Gpu AMD -InstallDir D:\pf-install-amd -NoShortcuts -NoLaunch
+          & D:\pf-zip\Install-PushFPS.ps1 -Gpu AMD -InstallDir D:\pf-install-amd -NoShortcuts -NoLaunch -ExperimentalExtras No
           if ($LASTEXITCODE -ne 0) { throw "AMD install exit $LASTEXITCODE" }
           if (-not (Test-Path D:\pf-install-amd\PushFPS.exe)) { throw 'PushFPS.exe missing after the AMD install' }
           foreach ($d in 'runtime\amd-nr-rdna3', 'runtime\amd-nr') { if (Test-Path "D:\pf-install-amd\$d") { throw "AMD install still has $d" } }
@@ -319,7 +319,16 @@ jobs:
             Where-Object { $sig = Get-AuthenticodeSignature $_.FullName; -not ($sig.Status -eq 'Valid' -and $sig.SignerCertificate.Subject -match 'NVIDIA') }
           if ($nv) { throw 'AMD install has modified NVIDIA files' }
           Get-Content D:\pf-install-amd\PushFPS-VERSION.txt | Out-Host
+          # Nothing is lost: with -ExperimentalExtras Yes the AMD extras are installed (cached download, no new fetch).
+          & D:\pf-zip\Install-PushFPS.ps1 -Gpu AMD -InstallDir D:\pf-install-amd -NoShortcuts -NoLaunch -ExperimentalExtras Yes
+          if ($LASTEXITCODE -ne 0) { throw "AMD install with extras exit $LASTEXITCODE" }
+          if (-not (Test-Path D:\pf-install-amd\runtime\amd-nr)) { throw 'opt-in extras were not installed' }
           Remove-Item D:\pf-install-amd -Recurse -Force
+          & D:\pf-zip\Install-PushFPS.ps1 -Gpu NVIDIA -InstallDir D:\pf-install-nvx -NoShortcuts -NoLaunch -ExperimentalExtras Yes
+          if ($LASTEXITCODE -ne 0) { throw "NVIDIA install with extras exit $LASTEXITCODE" }
+          if (-not (Test-Path D:\pf-install-nvx\runtime\experimental\nr-ampere\nvngx_dlssnr.dll)) { throw 'opt-in RTX 30 extra was not installed' }
+          Remove-Item D:\pf-install-nvx -Recurse -Force
+          Write-Host 'Default installs carry only licensed files; the experimental extras install on request.' 
           # Start it and make sure Windows resolves every DLL and the program reaches its QML session.
           $p = Start-Process D:\pf-install\PushFPS.exe -PassThru
           Start-Sleep -Seconds 25
@@ -463,7 +472,7 @@ jobs:
           $zip = Get-ChildItem art -Recurse -Filter 'PushFPS-*-win64.zip' | Where-Object Name -notmatch 'OBS-Plugin' | Select-Object -First 1
           $obsZip = Get-ChildItem art -Recurse -Filter 'PushFPS-OBS-Plugin-*.zip' | Select-Object -First 1
           Expand-Archive $zip.FullName D:\pf-zip
-          & D:\pf-zip\Install-PushFPS.ps1 -Gpu NVIDIA -NoShortcuts -NoLaunch
+          & D:\pf-zip\Install-PushFPS.ps1 -Gpu NVIDIA -NoShortcuts -NoLaunch -ExperimentalExtras No
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if (-not (Test-Path "$env:LOCALAPPDATA\Programs\PushFPS\PushFPS.exe")) { throw 'PushFPS.exe not in the default folder' }
           Expand-Archive $obsZip.FullName D:\obs-pkg

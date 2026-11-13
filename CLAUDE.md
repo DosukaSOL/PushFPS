@@ -27,9 +27,10 @@ and edits would conflict on every merge.
    Likely7 wherever the product is described. Copy code from other projects only with a compatible license
    and record it in `THIRD_PARTY_NOTICES.md`. `NOTICE.md` holds the GPL-3.0 modification notice, the
    section 7 additional permission for PushFPS's own code (linking with the NVIDIA/AMD/Intel SDKs) and the
-   NVIDIA SDK attribution (also in the About page, required by the NVIDIA RTX SDKs License). The installer
-   must never install NVIDIA files that are not NVIDIA-signed originals, nor NVIDIA's model runtimes on AMD
-   installs (`packaging/Install-PushFPS.ps1`; CI checks both). Marketing describes features, not NVIDIA
+   NVIDIA SDK attribution (also in the About page, required by the NVIDIA RTX SDKs License). By default the
+   installer never installs NVIDIA files that are not NVIDIA-signed originals, nor NVIDIA's model runtimes on
+   AMD installs; they stay available as opt-in "experimental extras" (`-ExperimentalExtras Yes` or the
+   installer's question) so no feature is lost (`packaging/Install-PushFPS.ps1`; CI checks both paths). Marketing describes features, not NVIDIA
    marks: no "DLSS" in headlines, no NVIDIA logos, never imply endorsement.
 6. **Be honest about verification.** Say what was built, run and tested, and on which hardware. A change
    that only passed static checks is "unverified on Windows".

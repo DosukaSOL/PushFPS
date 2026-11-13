@@ -129,6 +129,10 @@ that Veyra's author distributes. The installer downloads that package (about 750
 the value pinned when the PushFPS release was built, unpacks it, and adds PushFPS on top. PushFPS itself
 never rehosts those files.
 
+- **Experimental extras.** Veyra's package also has AI enhancement for RTX 30 and Radeon cards, built on
+  NVIDIA files used outside the terms NVIDIA licenses them under. The installer asks whether you want them
+  (default no); `Install-PushFPS.cmd -ExperimentalExtras Yes` installs them without asking. Details in
+  [NOTICE.md](NOTICE.md).
 - Install folder: `%LOCALAPPDATA%\Programs\PushFPS`
 - Update: run the newer installer; your settings and profiles are kept
 - Uninstall: `Install-PushFPS.cmd -Uninstall`, or delete the folder and shortcuts
@@ -153,7 +157,7 @@ never rehosts those files.
 | **Console** | Any console with HDMI out | Set to 60 Hz output |
 
 AMD Radeon cards can use FSR frame generation (2× only, so 60 FPS from a 30 FPS game). AI picture
-enhancement needs an NVIDIA RTX card.
+enhancement on Radeon and on RTX 30 cards is an optional experimental extra (see below).
 
 <details>
 <summary>Which frame generation methods your PC offers</summary>
@@ -183,7 +187,7 @@ enhancement needs an NVIDIA RTX card.
    | **Game profile** | Optional: save the current settings under a game's name, switch to them later in one click |
    | **Game frame rate** | 30 for most games (GTA VI), 40 for 40 FPS modes, 60 for performance modes |
    | **Target frame rate** | Off, 60 FPS, 120 FPS or Match monitor. PushFPS picks the frame generation multiplier |
-   | **AI picture enhancement** | Off: frame generation only. On: every frame also goes through AI enhancement, NVIDIA RTX only (uses a lot more GPU, so start with it off) |
+   | **AI picture enhancement** | Off: frame generation only. On: every frame also goes through AI enhancement on RTX 40/50 cards (RTX 30 and Radeon: experimental extra). Uses a lot more GPU, so start with it off |
 
 5. **Click Connect** on the capture card. Choose your card, its resolution, 60 FPS and the card's audio input.
 6. Press **F11** (or Alt+Enter), or double-click the picture, for fullscreen.

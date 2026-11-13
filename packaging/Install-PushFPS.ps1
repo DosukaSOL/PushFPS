@@ -8,6 +8,7 @@
 
   Usage (normally just double-click Install-PushFPS.cmd):
     Install-PushFPS.ps1 [-Gpu Auto|NVIDIA|AMD] [-InstallDir <folder>] [-NoShortcuts] [-NoLaunch]
+                        [-ExperimentalExtras Ask|Yes|No]
     Install-PushFPS.ps1 -Uninstall [-InstallDir <folder>]
 
   Works with Windows PowerShell 5.1 and PowerShell 7.
@@ -19,6 +20,10 @@ param(
     [string]$InstallDir = (Join-Path $env:LOCALAPPDATA 'Programs\PushFPS'),
     [switch]$NoShortcuts,
     [switch]$NoLaunch,
+    # Veyra's experimental extras whose NVIDIA files fall outside NVIDIA's licence (see below).
+    # Ask (default): a question when run in a console window; No when there is no one to ask.
+    [ValidateSet('Ask', 'Yes', 'No')]
+    [string]$ExperimentalExtras = 'Ask',
     [switch]$Uninstall
 )
 
@@ -119,32 +124,50 @@ try {
     if (-not $exe) { Fail 'The runtime package has an unexpected layout (veyra_qml_ui.exe not found).' }
     $runtimeRoot = $exe.DirectoryName
 
-    # Licensing. PushFPS installs only what NVIDIA's licence allows to be passed on:
+    # Licensing. By default PushFPS installs only what NVIDIA's licence allows to be passed on:
     #  - NVIDIA's runtime files only as NVIDIA ships them. A file that says it is from NVIDIA but is not
-    #    an original with a valid NVIDIA signature (for example a community-modified DLSS build) is left
-    #    out.
-    #  - NVIDIA's DLSS runtimes are licensed for systems with NVIDIA graphics only. The AMD package's
-    #    experimental AI enhancement folders run NVIDIA's model on Radeon cards, so they are left out of
-    #    AMD installs. FSR and XeSS frame generation are not affected.
-    # Anything left out is also removed if an earlier install placed it. Veyra reports a feature whose
-    # files are missing as unavailable.
-    $skipped = @()
+    #    an original with a valid NVIDIA signature (a community-modified DLSS build: Veyra's RTX 30 AI
+    #    enhancement slot) is an "experimental extra".
+    #  - NVIDIA's DLSS runtimes are licensed for systems with NVIDIA graphics only. The AMD package's AI
+    #    enhancement folders run NVIDIA's model on Radeon cards: also experimental extras.
+    # Veyra ships the extras in its own package. Nothing is lost: they are offered here, off by default,
+    # and installed only if the user says yes (or passes -ExperimentalExtras Yes). Left out, they are also
+    # removed if an earlier install placed them, and Veyra reports their feature as unavailable.
+    $extras = @()
     if ($Gpu -eq 'AMD') {
         foreach ($rel in 'runtime\amd-nr-rdna3', 'runtime\amd-nr') {
-            $dir = Join-Path $runtimeRoot $rel
-            if (Test-Path $dir) { Remove-Item $dir -Recurse -Force; $skipped += "$rel (NVIDIA model for non-NVIDIA graphics)" }
-            Remove-Item (Join-Path $InstallDir $rel) -Recurse -Force -ErrorAction SilentlyContinue
+            if (Test-Path (Join-Path $runtimeRoot $rel)) { $extras += [pscustomobject]@{ Rel = $rel; Dir = $true; Why = 'AI enhancement on Radeon (runs NVIDIA''s model on non-NVIDIA graphics)' } }
         }
     }
     foreach ($f in Get-ChildItem $runtimeRoot -Recurse -File -Include *.dll, *.exe) {
         if ($f.VersionInfo.CompanyName -notmatch 'NVIDIA') { continue }
+        $rel = $f.FullName.Substring($runtimeRoot.Length).TrimStart('\')
+        if ($extras | Where-Object { $_.Dir -and $rel.StartsWith($_.Rel + '\', [StringComparison]::OrdinalIgnoreCase) }) { continue }
         $sig = Get-AuthenticodeSignature -FilePath $f.FullName
         $signer = if ($sig.SignerCertificate) { $sig.SignerCertificate.Subject } else { '' }
         if ($sig.Status -eq 'Valid' -and $signer -match 'NVIDIA') { continue }
-        $rel = $f.FullName.Substring($runtimeRoot.Length).TrimStart('\')
-        Remove-Item $f.FullName -Force
-        Remove-Item (Join-Path $InstallDir $rel) -Force -ErrorAction SilentlyContinue
-        $skipped += "$rel (not an original NVIDIA-signed file)"
+        $why = if ($rel -match 'nr-ampere') { 'AI enhancement on RTX 30 (community-modified NVIDIA file)' } else { 'community-modified NVIDIA file' }
+        $extras += [pscustomobject]@{ Rel = $rel; Dir = $false; Why = $why }
+    }
+    $keepExtras = $false
+    if ($extras.Count) {
+        if ($ExperimentalExtras -eq 'Yes') { $keepExtras = $true }
+        elseif ($ExperimentalExtras -eq 'Ask' -and -not [Console]::IsInputRedirected) {
+            Step 'Optional: Veyra''s experimental extras'
+            foreach ($x in $extras) { Info "- $($x.Why)" }
+            Info 'They use NVIDIA files outside the terms NVIDIA licenses them under, so PushFPS leaves them out'
+            Info 'unless you choose them. Everything else works without them.'
+            $answer = Read-Host '    Install the experimental extras too? [y/N]'
+            $keepExtras = $answer -match '^(y|yes|j|ja)$'
+        }
+    }
+    $skipped = @()
+    foreach ($x in $extras) {
+        if ($keepExtras) { Info "Installing experimental extra by your choice: $($x.Rel)"; continue }
+        $src = Join-Path $runtimeRoot $x.Rel
+        if ($x.Dir) { Remove-Item $src -Recurse -Force } else { Remove-Item $src -Force }
+        Remove-Item (Join-Path $InstallDir $x.Rel) -Recurse -Force -ErrorAction SilentlyContinue
+        $skipped += "$($x.Rel) ($($x.Why); install with -ExperimentalExtras Yes)"
     }
     foreach ($item in $skipped) { Info "Not installed: $item" }
 

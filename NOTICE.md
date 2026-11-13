@@ -61,20 +61,23 @@ whose text is in `licenses/sdk` of every release. NVIDIA, NVIDIA RTX and DLSS ar
 Corporation. PushFPS is not sponsored or endorsed by NVIDIA. The app shows this attribution under
 *Settings, About*.
 
-## What the installer leaves out
+## What the installer leaves out by default
 
-The installer downloads Veyra's runtime package from Veyra's own release and installs only files that may
-be passed on under their vendors' terms:
+The installer downloads Veyra's runtime package from Veyra's own release. By default it installs only files
+that may be passed on under their vendors' terms:
 
-- Files that say they are from NVIDIA but are not originals with a valid NVIDIA signature (for example a
-  community-modified DLSS build) are not installed.
-- On AMD installs, the experimental AI enhancement runtimes that run NVIDIA's model on Radeon cards
+- Files that say they are from NVIDIA but are not originals with a valid NVIDIA signature (in Veyra 2.1.5:
+  the community-modified DLSS build behind AI enhancement on RTX 30 cards) are not installed.
+- On AMD installs, the AI enhancement runtimes that run NVIDIA's model on Radeon cards
   (`runtime\amd-nr-rdna3`, `runtime\amd-nr`) are not installed: NVIDIA licenses its DLSS runtimes for
   systems with NVIDIA graphics only. FSR and XeSS frame generation are not affected.
 
-The installer lists anything it left out in `PushFPS-VERSION.txt` in the install folder, and CI fails a build
-whose test install contains such a file. `.github/workflows/audit-runtime.yml` produces a full report of the
-runtime package (publisher, version and signature of every program file).
+Nothing is removed from PushFPS or Veyra: the installer offers these "experimental extras" with a yes/no
+question (default no), or installs them with `Install-PushFPS.cmd -ExperimentalExtras Yes`. A user who
+chooses them gets them straight from Veyra's package, on their own decision; PushFPS does not host them.
+The installer lists what it left out in `PushFPS-VERSION.txt` in the install folder. CI checks that default
+installs contain no such file and that the opt-in installs them. `.github/workflows/audit-runtime.yml`
+produces a full report of the runtime package (publisher, version and signature of every program file).
 
 ## Source code
 
