@@ -202,7 +202,7 @@ jobs:
           }
           if ($failed) { exit 1 }
 
-      - name: QML component tests (PushFPS quick setup, strict)
+      - name: QML component tests (PushFPS quick setup)
         run: |
           cmake --build $env:BUILD --target veyra_qml_quick_tests veyra_qml_easing_tests --parallel
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -229,8 +229,7 @@ jobs:
           Write-Host "tst_push_quick_setup exit $code"
           if ($code -ne 0) { exit 1 }
 
-      - name: QML component tests (whole Veyra suite, report)
-        continue-on-error: true
+      - name: QML component tests (whole Veyra suite)
         run: |
           $stage = Join-Path $env:RUNNER_TEMP 'qml-tests-stage'
           $env:PATH = "$env:QT_ROOT_DIR\bin;$env:PATH"

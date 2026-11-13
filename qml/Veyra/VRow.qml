@@ -14,7 +14,7 @@ Item {
     // of it (a segmented control or a select in the 376-440px side panel). Beside
     // such a control the hint was squeezed into a 120px column of ten lines.
     readonly property bool hintUnder: hint.length > 0 && (hintBelow
-        || (!stacked && width > 0 && slot.childrenRect.width > width * 0.4))
+        || (!stacked && width > 0 && slot.childrenRect.width > width * 0.34))
     readonly property bool stacked: width > 0 && width - slot.childrenRect.width - (value.length ? 52 : 0) - 12
         < Math.min(170, labelMetrics.advanceWidth(label))
     FontMetrics { id: labelMetrics; font.family: Theme.fontUi; font.pixelSize: Theme.fsBody }

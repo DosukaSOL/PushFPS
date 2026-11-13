@@ -34,12 +34,17 @@ and edits would conflict on every merge.
 | What | Where |
 |---|---|
 | Product name, GitHub links, upstream credit | `include/veyra/Brand.h` |
-| Quick setup (target FPS, AI enhancement, low latency) | `qml/Veyra/PushQuickSetup.qml`, used in `HomePage.qml` and `ProPage.qml` |
+| Quick setup (console and game profiles, game FPS, target FPS, AI enhancement, low latency) | `qml/Veyra/PushQuickSetup.qml`, used in `HomePage.qml` and `ProPage.qml`; preferences `pushConsole`, `pushGameFps`, `pushProfiles` (validated in `src/ui/bridge/Preferences.cpp`); tests in `tests/qml/quick/tst_push_quick_setup.qml` |
+| Home layout, row layout, theme | `qml/Veyra/HomePage.qml`, `VRow.qml` (hint moves under wide controls), `Theme.qml` |
+| OBS Studio plugin | `obs-plugin/` (C, libobs headers + `.def` import libraries); CI builds it and loads it into the latest OBS (`obs-plugin/ci/obs-load-test.ps1`) |
 | Program name `PushFPS.exe` | `CMakeLists.txt` (`OUTPUT_NAME` on `veyra_qml_ui`) |
 | Logo and icon | `qml/Veyra/logo.png`, `assets/veyra.ico` (PushFPS artwork, upstream file name), `assets/pushfps-*.png` |
 
 ## Building and releasing
 
+- After any QML change, `tests/qml/quick` runs in CI (`tst_push_quick_setup.qml` strictly, the Veyra suite as a
+  report) and the install test opens every main page and fails on `[ERROR] [qml]`. The `screenshots` workflow
+  (`-f branch=<branch>`) photographs the real app and writes `qml-report.txt`.
 - `.github/workflows/build-windows.yml` is the build recipe (pinned, login-free dependencies). It builds
   `PushFPS.exe`, runs the GPU-free unit tests, checks the exe's Qt/FFmpeg imports against Veyra's runtime
   package, packages `packaging/make-release.ps1`, then installs with `packaging/Install-PushFPS.ps1` and

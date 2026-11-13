@@ -19,7 +19,7 @@ Using it
     OBS game capture support, or brings it to the front when it already runs.
   - Capture method "Game capture" receives every generated frame (recommended). If the source
     stays empty, choose "Window capture". If you start PushFPS yourself, turn on
-    Settings > OBS Game Capture compatibility in PushFPS once and restart it.
+    Settings > Compatible > OBS Game Capture compatibility in PushFPS once and restart it.
   - Sound: add an "Application Audio Capture" source and pick PushFPS.exe.
   - PushFPS installed somewhere else: set "PushFPS.exe location" in the source's properties.
 

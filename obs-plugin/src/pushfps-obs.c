@@ -401,7 +401,7 @@ static obs_properties_t *ps_properties(void *data)
 	obs_property_list_add_int(m, "Window capture (if game capture shows nothing)", METHOD_WINDOW);
 	obs_property_set_long_description(
 		m, "Game capture receives every generated frame. It needs PushFPS started with "
-		   "--obs-game-capture (\"Open PushFPS\" does that) or Settings > OBS Game Capture "
+		   "--obs-game-capture (\"Open PushFPS\" does that) or Settings > Compatible > OBS Game Capture "
 		   "compatibility turned on in PushFPS.");
 
 	obs_properties_add_bool(props, "autostart", "Start PushFPS when this source is shown");
