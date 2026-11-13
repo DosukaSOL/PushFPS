@@ -41,6 +41,7 @@ and edits would conflict on every merge.
 |---|---|
 | Product name, GitHub links, upstream credit | `include/veyra/Brand.h` |
 | Quick setup (console and game profiles, game FPS, target FPS, AI enhancement, low latency) | `qml/Veyra/PushQuickSetup.qml`, used in `HomePage.qml` and `ProPage.qml`; preferences `pushConsole`, `pushGameFps`, `pushProfiles` (validated in `src/ui/bridge/Preferences.cpp`); tests in `tests/qml/quick/tst_push_quick_setup.qml` |
+| Picture & sound editor, sound profiles, saved-recording card | `qml/Veyra/PushPicture.qml` (gamma is stored as RGB tone curve 0, not a new `ColorSettings` field, to keep the preset schema upstream-compatible), `PushSoundProfile.qml`, `PushRecordingSaved.qml`; DSP in `include/veyra/sink/SoundProfile.h` + `src/sink/SoundProfile.cpp`, applied in `WasapiAudioSink.cpp` before the recording tap; preferences `soundPreset`, `soundEq`; tests in `tests/unit/SoundProfileTests.cpp` and `tests/qml/quick/tst_push_picture_sound.qml` |
 | Home layout, row layout, theme | `qml/Veyra/HomePage.qml`, `VRow.qml` (hint moves under wide controls), `Theme.qml` |
 | OBS Studio plugin | `obs-plugin/` (C, libobs headers + `.def` import libraries); CI builds it and loads it into the latest OBS (`obs-plugin/ci/obs-load-test.ps1`) |
 | Program name `PushFPS.exe` | `CMakeLists.txt` (`OUTPUT_NAME` on `veyra_qml_ui`) |

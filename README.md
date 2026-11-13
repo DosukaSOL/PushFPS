@@ -208,6 +208,23 @@ profile stores the console, game frame rate, target, AI enhancement and low late
 settings currently match a saved preset, the profile remembers that preset as well and applies it first, so
 a game profile can carry every detail. Pick the game from the list to switch; the bin removes it.
 
+## Picture and sound
+
+Open **Picture & sound** on the home screen to adjust the picture and sound before you play or record:
+
+| Control | What it does |
+|---|---|
+| **Presets** | *Natural*, *Vivid*, *Cinematic* or *Bright* as a starting point |
+| **Brightness, contrast, gamma, saturation, sharpness** | Fine-tune the look. *Reset* goes back to the original picture, *Undo* takes back the last change |
+| **More colour controls** | Opens the full colour editor in Professional mode: curves, colour wheels, LUTs, saved looks |
+| **Sound profile** | *Bass boost*, *Voice clarity*, *Footsteps*, *Night mode* (quiet sounds louder, loud sounds softer), *Cinema*, or your own 5-band equaliser |
+
+Everything you set here is part of the picture and sound you see, hear and record. Sound profiles are
+also in Professional mode under *Audio*. Dolby and DTS passthrough to a receiver are not changed.
+
+**After recording.** When a recording is saved, a card offers **Edit** (opens it in the editor),
+**Export** (trim, pick tracks, re-encode) and **Show in folder**.
+
 ## OBS Studio plugin
 
 The plugin adds a **PushFPS** source to OBS Studio 28 or newer on Windows. It shows the PushFPS picture,
@@ -280,6 +297,8 @@ In your user folder, next to Veyra's settings. Updating PushFPS keeps them.
 - [x] Per-console and per-game profiles
 - [x] OBS Studio plugin
 - [x] Cleaner interface: capture card first, less text, aligned controls
+- [x] Picture and sound editor, sound profiles, edit after recording
+- [ ] NVIDIA Image Scaling (NIS) sharpening and upscaling
 - [ ] Tested settings for popular capture cards, from real-hardware reports
 - [ ] macOS version
 
