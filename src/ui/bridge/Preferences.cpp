@@ -84,7 +84,7 @@ QVariantList QmlPlayerBridge::readComponentList() const {
     // by hand here, so the page cannot claim a component the package lacks.
     QVariantList out;
     const auto anrDirectory=ngx::AnrProvider::directory(runtime::localRuntimeDirectory().wstring());
-    if(brand::kAnrFrameGeneration)  // PushFPS: ANR is not offered (Brand.h)
+    if constexpr(brand::kAnrFrameGeneration)  // PushFPS: ANR is not offered (Brand.h)
         out<<QVariantMap{{"name",QStringLiteral("ANR FG")},{"detail",QString::fromStdWString(anrDirectory)},
             {"loaded",ngx::AnrProvider::available(runtime::localRuntimeDirectory().wstring())},{"experimental",true}};
     const auto vfgDirectory=pipeline::VfgBackend::runtimeDirectory(runtime::localRuntimeDirectory().wstring());

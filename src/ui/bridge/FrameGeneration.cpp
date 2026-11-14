@@ -24,7 +24,7 @@ QVariantList QmlPlayerBridge::fgBackendChoices() const {
         QVariantMap{{"id","fsr4"},{"label",tr("FSR 4 ML · RX 9000 · 实验")}},
         QVariantMap{{"id","vfg"},{"label",tr("NVIDIA VFG 👑（顶级补帧质量） · RTX 30（实验）/ 40 / 50")},{"gold",true}}
     };
-    if (!brand::kAnrFrameGeneration) choices.removeFirst();  // PushFPS: ANR is not offered (Brand.h)
+    if constexpr (!brand::kAnrFrameGeneration) choices.removeFirst();  // PushFPS: ANR is not offered (Brand.h)
     const auto caps = effectCapabilities();
     for (auto& choice : choices) {
         auto row = choice.toMap();

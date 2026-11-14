@@ -20,22 +20,23 @@ SamplerState linearClamp : register(s1);
 Texture2D<float4> source : register(t0);
 RWTexture2D<float4> target : register(u0);
 
+// Per-component branch without a vector ternary (HLSL 2021 rejects those).
 float3 SrgbEncode(float3 c) {
     c = saturate(c);
-    return c <= 0.0031308 ? 12.92 * c : 1.055 * pow(c, 1.0 / 2.4) - 0.055;
+    return lerp(1.055 * pow(c, 1.0 / 2.4) - 0.055, 12.92 * c, step(c, 0.0031308));
 }
 float3 SrgbDecode(float3 c) {
     c = saturate(c);
-    return c <= 0.04045 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4);
+    return lerp(pow((c + 0.055) / 1.055, 2.4), c / 12.92, step(c, 0.04045));
 }
 
 [numthreads(8, 8, 1)]
 void main(uint3 p : SV_DispatchThreadID) {
     if (p.x >= outWidth || p.y >= outHeight) return;
     const float2 uv = (float2(p.xy) + 0.5) * float2(invOutWidth, invOutHeight);
-    const float4 c = source.SampleLevel(decode ? linearClamp : pointClamp, uv, 0);
+    const float4 c = decode != 0 ? source.SampleLevel(linearClamp, uv, 0) : source.SampleLevel(pointClamp, uv, 0);
     float3 rgb;
-    if (decode) rgb = hdr ? HdrDecodePq(c.rgb) : SrgbDecode(c.rgb);
-    else rgb = hdr ? HdrEncodePq(c.rgb) : SrgbEncode(c.rgb);
+    if (decode != 0) rgb = hdr != 0 ? HdrDecodePq(c.rgb) : SrgbDecode(c.rgb);
+    else rgb = hdr != 0 ? HdrEncodePq(c.rgb) : SrgbEncode(c.rgb);
     target[p.xy] = float4(rgb, 1.0);
 }
