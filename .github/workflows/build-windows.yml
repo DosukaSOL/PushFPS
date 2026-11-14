@@ -23,6 +23,11 @@ on:
         description: 'Publish this build as a pre-release with this tag (vX.Y.Z, e.g. v2.1.5). Leave empty for a test build.'
         required: false
         default: ''
+      full_release:
+        description: 'Publish as a full (latest) release instead of a pre-release. Only when the owner asks for it.'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -210,6 +215,24 @@ jobs:
           }
           if ($failed) { exit 1 }
 
+      - name: NVIDIA Image Scaling on D3D12 (WARP when there is no GPU)
+        run: |
+          cmake --build $env:BUILD --target veyra_nis_gpu_tests --parallel
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $exe = Get-ChildItem $env:BUILD -Recurse -Filter 'veyra_nis_gpu_tests.exe' | Select-Object -First 1
+          if (-not $exe) { Write-Host "::error::veyra_nis_gpu_tests.exe not built"; exit 1 }
+          $stage = Join-Path $env:RUNNER_TEMP 'nis-gpu'
+          New-Item -ItemType Directory -Force $stage | Out-Null
+          Copy-Item $exe.FullName $stage
+          Copy-Item -Recurse -Force "$env:BUILD\shaders" (Join-Path $stage 'shaders')
+          Get-ChildItem (Join-Path $stage 'shaders') -Filter 'Nis*.dxil' | Format-Table Name, Length
+          $env:PATH = "$env:DEPS\vcpkg\installed\x64-windows\bin;$env:QT_ROOT_DIR\bin;$env:PATH"
+          $env:VEYRA_NIS_GPU_DEBUG = '1'
+          & (Join-Path $stage 'veyra_nis_gpu_tests.exe') 2>&1 | Out-Host
+          $code = $LASTEXITCODE
+          Write-Host "veyra_nis_gpu_tests exit $code"
+          if ($code -ne 0) { exit 1 }
+
       - name: QML component tests (PushFPS quick setup)
         run: |
           cmake --build $env:BUILD --target veyra_qml_quick_tests veyra_qml_easing_tests --parallel
@@ -230,7 +253,7 @@ jobs:
           $env:QML_DISABLE_DISK_CACHE = '1'
           Push-Location $stage
           $failed = 0
-          foreach ($t in 'tst_push_quick_setup', 'tst_push_picture_sound') {
+          foreach ($t in 'tst_push_quick_setup', 'tst_push_picture_sound', 'tst_push_nis') {
             & .\veyra_qml_quick_tests.exe -platform offscreen -input "qml-tests\$t.qml" -o "$t.txt,txt" 2>&1 | Out-Host
             $code = $LASTEXITCODE
             Get-Content "$t.txt" -ErrorAction SilentlyContinue | Out-Host
@@ -505,7 +528,8 @@ jobs:
           if-no-files-found: ignore
 
   # Publishes a tagged build as a GitHub pre-release. It stays a pre-release (which the in-app update
-  # checker ignores) until someone has tested it on real hardware and marks it as the latest release.
+  # checker ignores) until someone has tested it on real hardware and marks it as the latest release,
+  # unless the owner asks for a full release (workflow input full_release).
   release:
     if: startsWith(github.ref, 'refs/tags/v') || inputs.release_tag != ''
     needs: [build, obs-plugin]
@@ -515,16 +539,27 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       TAG: ${{ inputs.release_tag || github.ref_name }}
+      FULL_RELEASE: ${{ inputs.full_release && 'true' || 'false' }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: packaging/release-notes
       - uses: actions/download-artifact@v4
         with:
           path: dist
           pattern: PushFPS-*
           merge-multiple: true
-      - name: Create the pre-release
+      - name: Create the release
         run: |
           ls -la dist
           zip=$(ls dist/PushFPS-*-win64.zip | grep -v OBS-Plugin | head -1); sum=$(cat "$zip.sha256")
+          if [ "$FULL_RELEASE" = "true" ]; then
+            STATUS_LINE="Built and tested automatically on Windows. Please report anything that doesn't work in Issues."
+            KIND=(--latest)
+          else
+            STATUS_LINE="**Preview build.** Built and start-tested automatically on Windows; not yet tested with a real capture card and GPU. Please report what works and what doesn't in Issues."
+            KIND=(--prerelease)
+          fi
           obszip=$(ls dist/PushFPS-OBS-Plugin-*.zip | head -1); obssum=$(cat "$obszip.sha256")
           cat > notes.md <<NOTES
           ## Install
@@ -536,8 +571,7 @@ jobs:
           graphics card) from Veyra's GitHub release, checks its SHA-256, and installs PushFPS with Start menu
           and desktop shortcuts. No administrator rights needed.
 
-          **Preview build.** Built and start-tested automatically on Windows; not yet tested with a real
-          capture card and GPU. Please report what works and what doesn't in Issues.
+          $STATUS_LINE
 
           SHA-256: \`$sum\`
 
@@ -555,6 +589,10 @@ jobs:
           the **$TAG** tag of this repository (also attached by GitHub as *Source code*); the build recipe is
           \`.github/workflows/build-windows.yml\` at that tag.
           NOTES
+          # What's new for this tag, written in the repository (packaging/release-notes/<tag>.md).
+          if [ -f "packaging/release-notes/$TAG.md" ]; then
+            { cat "packaging/release-notes/$TAG.md"; echo; cat notes.md; } > notes-full.md && mv notes-full.md notes.md
+          fi
           # A manual run creates the tag on the commit it built; a tag push already has it.
           gh release create "$TAG" dist/* -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "PushFPS $TAG" \
-            --notes-file notes.md --prerelease
+            --notes-file notes.md "${KIND[@]}"

@@ -45,6 +45,8 @@ bool QmlPlayerBridge::dualSrEnabled() const { return settings().dualSrEnabled; }
 // Double SR takes every SR backend (user 2026-11-08: DLSS SR and FSR as well).
 void QmlPlayerBridge::setDualSrEnabled(bool enabled){
     auto s=settings();if(s.dualSrEnabled==enabled)return;
+    // PushFPS: NVIDIA Image Scaling is a single SR pass.
+    if(enabled&&s.videoSrQuality==engine::kVideoSrNis){emit notice(tr("NVIDIA Image Scaling 只能单次超分，请先换用其他超分算法"),true);emit settingsChanged();return;}
     s.dualSrEnabled=enabled;
     if(enabled){
         // A kept second algorithm this adapter cannot run follows the base
@@ -69,6 +71,7 @@ int QmlPlayerBridge::dualSrQuality() const {return int(settings().dualSrQuality)
 // tier, or FSR - independent of the base.
 void QmlPlayerBridge::setDualSrQuality(int quality){
     if(quality<0||!engine::validVideoSrQuality(unsigned(quality)))return;
+    if(unsigned(quality)==engine::kVideoSrNis){emit notice(tr("NVIDIA Image Scaling 只能单次超分，请先换用其他超分算法"),true);return;}
     const auto cap=effectCapabilities().value("sr"+QString::number(quality)).toMap();
     if(!cap.value("available").toBool()){emit notice(cap.value("reason").toString(),true);return;}
     auto s=settings();if(int(s.dualSrQuality)==quality)return;
@@ -142,6 +145,11 @@ void QmlPlayerBridge::setVideoSrQuality(int value) {
     auto s = settings();
     if (int(s.videoSrQuality) == value) return;
     s.videoSrQuality = unsigned(value);
+    // PushFPS: NVIDIA Image Scaling runs as one pass; choosing it ends double SR.
+    if (s.videoSrQuality == engine::kVideoSrNis && s.dualSrEnabled) {
+        s.dualSrEnabled = false;
+        emit notice(tr("NVIDIA Image Scaling 只能单次超分，已关闭双重超分"), false);
+    }
     if (impl_->commit(s)) emit settingsChanged();
 }
 int QmlPlayerBridge::audioOffsetMs() const { return settings().audioOffsetMs; }

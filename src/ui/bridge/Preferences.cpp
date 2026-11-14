@@ -4,6 +4,7 @@
 
 #include <QJsonDocument>
 #include "veyra/sink/SoundProfile.h"
+#include "veyra/pipeline/NisSettings.h"
 #include <QJsonParseError>
 #include "veyra/ngx/AnrProvider.h"
 
@@ -218,6 +219,8 @@ bool QmlPlayerBridge::setPreference(const QString& key, const QVariant& value) {
         {"pushGameFps", {30, 60}},
         // PushFPS sound profile (veyra::sink::SoundPreset): 0 off .. 6 custom EQ.
         {"soundPreset", {0, 6}},
+        // PushFPS NVIDIA Image Scaling sharpness in percent (pipeline::setNisSharpness).
+        {"nisSharpness", {0, 100}},
         // Network sources (#48): seconds to collect before the first picture; -1 follows the buffer level.
         {"networkPrebuffer", {-1, 60}},
         // Live recording: the target bitrate for the file, and the frame rate
@@ -394,6 +397,8 @@ void QmlPlayerBridge::applyPreference(const QString& key) {
             for (int i = 0; i < sink::kSoundEqBands; ++i) sound.customDb[std::size_t(i)] = parts[i].toFloat();
         sink::setSoundProfile(sound);
     }
+    else if (key == QLatin1String("nisSharpness"))
+        pipeline::setNisSharpness(float(impl_->prefInt("nisSharpness", int(pipeline::kNisDefaultSharpness * 100))) / 100.0f);
     else if (key == QLatin1String("magewellLowLatency")) source::magewell::setLowLatencyPreference(impl_->prefBool("magewellLowLatency", false));
     else if (key == QLatin1String("blackmagicNativeCapture")) { if(impl_->captureListed)refreshCaptureDevices();emit captureChanged(); }
     else if (key == QLatin1String("language")) {

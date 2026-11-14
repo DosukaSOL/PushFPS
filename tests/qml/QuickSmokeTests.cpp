@@ -106,6 +106,23 @@ QtObject {
     signal recordingChanged()
     property var replayState: ({saved: 0, active: false, path: ""})
     signal replayChanged()
+    // PushFPS super-resolution editor (SrStageEditor): ids as QmlPlayerBridge::srBackendChoices.
+    property int videoSrQuality: 2
+    property int dualSrQuality: 2
+    property bool dualSrEnabled: false
+    property int dualSrTargetIndex: 2
+    property int srTargetIndex: 2
+    property int srMotionSource: 1
+    property int srPrescale: 0
+    property int srOutput: 0
+    property string srStageSummary: ""
+    property string srStageNote: ""
+    property var srBackendChoices: [{id: "0", label: "DLSS SR"}, {id: "rtx", label: "RTX"}, {id: "5", label: "FSR 3.1"},
+                                    {id: "6", label: "NVIDIA Image Scaling (NIS)"}]
+    function srAlgorithmOf(q) { return q >= 1 && q <= 4 ? "rtx" : String(q) }
+    function srTierOf(q) { return q >= 1 && q <= 4 ? q : 0 }
+    function srQualityFor(algorithm, tier) { return algorithm === "rtx" ? (tier >= 1 && tier <= 4 ? tier : 2) : Number(algorithm) }
+    function srTierChoices(q) { return [{id: "1", label: "1"}, {id: "2", label: "2"}, {id: "3", label: "3"}, {id: "4", label: "4"}] }
     signal navigate(string page)
     property string lastOpenedPath: ""
     property var lastExportFiles: []

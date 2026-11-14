@@ -1088,6 +1088,22 @@ is committed or shipped. The plugin links to `obs.dll` and `obs-frontend-api.dll
 installation through import libraries generated from `obs-plugin/cmake/*.def`. The plugin itself is
 GPL-3.0-or-later, which is compatible with OBS's GPL-2.0-or-later.
 
+## NVIDIA Image Scaling SDK 1.0.3 (PushFPS super resolution, 2026-11-14)
+
+`third_party/nis/NIS_Scaler.h` and `third_party/nis/NIS_Config.h` are copied unchanged from
+https://github.com/NVIDIAGameWorks/NVIDIAImageScaling commit `35e13ba316c98eeecf16f37eae70ce88019911f6`
+(MIT License, Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES); file hashes in
+`third_party/nis/PUSHFPS_ORIGIN.md`. The licence text ships as `licenses/NVIDIA_Image_Scaling_SDK_MIT.txt`.
+PushFPS compiles the shader through its own wrapper `shaders/NisScaler.hlsl` and adds its own colour
+boundary `shaders/NisColor.hlsl` and host `src/pipeline/NisPass.cpp` (GPL-3.0-or-later). Source code only:
+no NVIDIA binary is included, and MIT is compatible with GPL-3.0. PushFPS's use of NIS is not endorsed by
+NVIDIA.
+
+### ANR in PushFPS
+
+PushFPS keeps Veyra's ANR host source so upstream merges stay clean, but does not offer ANR frame generation
+in its interface (`brand::kAnrFrameGeneration = false` in `include/veyra/Brand.h`) and ships no ANR file.
+
 ## Apex Neural Rendering FG local experiment (2026-11-12)
 
 External runtime: [apex-compute/ANR](https://github.com/apex-compute/ANR), inspected repository commit `20a5e7731d899eca3a289904929879588448664d`, [FG-V.B15 release](https://github.com/apex-compute/ANR/releases/tag/FG-V.B15). The official `anr-fg-V.B15-addon.zip` used locally has SHA-256 `717e93b3e63cb08dbaf6240cd585bae94d498c2749d8603d800d17ad97ef9e41`; its original `nvngx_dlssg.dll` is ANR's provider, not an NVIDIA-signed replacement. Its 19 original files are held outside this source repository under the task's private runtime directory and recorded in `ANR-RUNTIME.json`. No runtime, model pack, SDK or downloaded archive is vendored in Git.

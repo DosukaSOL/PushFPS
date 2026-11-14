@@ -28,7 +28,7 @@ inline bool disableUnsupportedNvidiaEffects(EnhancementSettings& settings,bool n
     // the user turned SR on: FSR is the AMD default backend, so assigning the
     // backend test here switched SR on at every graph build (2.1.0 field
     // report: SR could not be turned off on AMD).
-    settings.sr=settings.sr&&settings.videoSrQuality==kVideoSrFsr;
+    settings.sr=settings.sr&&vendorNeutralVideoSr(settings.videoSrQuality);
     if(settings.frameGenerationBackend==FrameGenerationBackend::Dlss)settings.multiplier=1;
     return settings!=before;
 }
@@ -36,7 +36,7 @@ inline bool disableUnsupportedNvidiaEffects(EnhancementSettings& settings,bool n
 // the AMD runtime, SR other than FSR, and frame generation other than the
 // cross-vendor XeSS/FSR providers.
 inline bool nvidiaOnlyStagesRequested(bool nr,bool sr,bool fg,const EnhancementSettings& settings,bool amdNr){
-    return (nr&&!amdNr)||(sr&&settings.videoSrQuality!=kVideoSrFsr)||
+    return (nr&&!amdNr)||(sr&&!vendorNeutralVideoSr(settings.videoSrQuality))||
         (fg&&!crossVendorFrameGeneration(settings.frameGenerationBackend));
 }
 inline const wchar_t* backendFailureName(FailedBackend backend) {

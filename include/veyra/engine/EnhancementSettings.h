@@ -83,6 +83,10 @@ inline size_t exportBitrateIndex(uint32_t mbps){for(size_t i=0;i<kExportBitrateC
 // videoSrQuality values: 0 = DLSS SR, 1..4 = RTX video SR quality steps,
 // 5 = AMD FSR upscaling (vendor neutral; verified on an NVIDIA adapter).
 inline constexpr uint32_t kVideoSrFsr=5;
+// PushFPS: 6 = NVIDIA Image Scaling (NIS 1.0.3, MIT; pipeline/NisPass.h), a spatial
+// upscaler with adaptive sharpening on every DirectX 12 GPU. Single SR only: double SR
+// and the supersample shrink keep their own backends. Sharpness: pipeline/NisSettings.h.
+inline constexpr uint32_t kVideoSrNis=6;
 // Fresh SR selections use RTX Video SR medium; explicit saved selections retain
 // their numeric IDs. The UI seeds FSR separately on AMD/Intel adapters.
 inline constexpr uint32_t kDefaultVideoSrQuality=2;
@@ -101,7 +105,9 @@ constexpr bool ngxVideoSr(uint32_t q){return q>=1&&q<=4;}
 constexpr bool vfxVideoSr(uint32_t q){return (q>=16&&q<=19)||q==21||q==23;}
 constexpr bool vfxVideoSrNeedsAmpere(uint32_t q){return q==21||q==23;}
 constexpr bool rtxVideoSr(uint32_t q){return ngxVideoSr(q)||vfxVideoSr(q);}
-constexpr bool validVideoSrQuality(uint32_t q){return q<=kVideoSrFsr||vfxVideoSr(q);}
+constexpr bool validVideoSrQuality(uint32_t q){return q<=kVideoSrNis||vfxVideoSr(q);}
+// SR backends that run on any DirectX 12 adapter (FSR, NIS); the others need NVIDIA.
+constexpr bool vendorNeutralVideoSr(uint32_t q){return q==kVideoSrFsr||q==kVideoSrNis;}
 // DLSS SR and FSR are temporal: they read the SR motion source. RTX Video SR is spatial.
 constexpr bool temporalVideoSr(uint32_t q){return q==0||q==kVideoSrFsr;}
 inline constexpr uint32_t kVfxVideoSrQualities[]={16,17,18,19,21,23};

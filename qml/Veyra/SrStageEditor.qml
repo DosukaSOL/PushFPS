@@ -13,10 +13,33 @@ ColumnLayout {
     readonly property bool secondRtx: veyra.srAlgorithmOf(veyra.dualSrQuality).startsWith("rtx")
     readonly property bool manual: veyra.srPrescale >= 150 && veyra.srPrescale <= 190
     readonly property var targets: [{id:"1",label:"2K"},{id:"2",label:"4K"},{id:"4",label:"5K"},{id:"5",label:"6K"},{id:"6",label:"7K"},{id:"3",label:"8K"}]
+    // PushFPS: NVIDIA Image Scaling (SR choice 6) is a single, spatial pass.
+    readonly property bool nis: veyra.videoSrQuality === 6
+    readonly property int nisSharpness: {
+        const v = Number((veyra.preferences || {}).nisSharpness)
+        return isFinite(v) && v >= 0 && v <= 100 ? Math.round(v) : 50
+    }
     VRow {
         label: qsTr("目标尺寸")
         hint: qsTr("基础超分的尺寸；设置缩回时为中间尺寸。")
         VSeg { objectName: editor.namePrefix+"-sr-target"; options: editor.targets; current: String(veyra.srTargetIndex); onPicked: id => veyra.srTargetIndex=Number(id) }
+    }
+    VRow {
+        objectName: editor.namePrefix + "-nis-sharpness-row"
+        visible: editor.nis
+        label: qsTr("NIS 锐化")
+        hint: qsTr("0 只放大不锐化；50 为 NVIDIA 默认。一次最多放大 2 倍，更大的倍数由普通缩放补足。")
+        value: editor.nisSharpness + "%"
+        VSlider {
+            objectName: editor.namePrefix + "-nis-sharpness"
+            implicitWidth: 150
+            from: 0; to: 100; stepSize: 1
+            valueFromModel: true
+            value: editor.nisSharpness
+            resettable: true; defaultValue: 50
+            live: false
+            onMoved: v => veyra.setPreference("nisSharpness", Math.round(Math.max(0, Math.min(100, v))))
+        }
     }
     VRow {
         label: qsTr("超分运动来源")
@@ -51,8 +74,9 @@ ColumnLayout {
     }
     VRow {
         label: qsTr("双重超分")
-        hint: qsTr("先完成基础超分，再将结果降低分辨率并执行第二次超分；两次执行独立，会增加耗时和显存。")
-        enabled: editor.srAvailable
+        hint: editor.nis ? qsTr("NVIDIA Image Scaling 只能单次超分")
+                         : qsTr("先完成基础超分，再将结果降低分辨率并执行第二次超分；两次执行独立，会增加耗时和显存。")
+        enabled: editor.srAvailable && !editor.nis
         opacity: enabled ? 1 : 0.4
         VSwitch { objectName: editor.namePrefix+"-dual-sr-toggle"; checked: veyra.dualSrEnabled; onToggled: checked => veyra.dualSrEnabled=checked }
     }
@@ -93,7 +117,8 @@ ColumnLayout {
             VSelect {
                 objectName: editor.namePrefix+"-dual-sr-algorithm"
                 implicitWidth: 210
-                options: veyra.srBackendChoices || []
+                // NVIDIA Image Scaling runs as a single pass only.
+                options: (veyra.srBackendChoices || []).filter(o => o.id !== "6")
                 value: options.find(o => o.id === veyra.srAlgorithmOf(veyra.dualSrQuality))?.label || ""
                 // Switching between RTX families keeps the tier; DLSS SR and FSR have none.
                 onPicked: id => veyra.dualSrQuality = veyra.srQualityFor(id, veyra.srTierOf(veyra.dualSrQuality))

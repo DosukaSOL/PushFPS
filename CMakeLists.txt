@@ -389,6 +389,7 @@ add_library(veyra_pipeline STATIC
   src/pipeline/ColorGradeInstance.cpp
   src/pipeline/ColorDetailPass.cpp
   src/pipeline/AntiAliasPass.cpp
+  src/pipeline/NisPass.cpp
   src/pipeline/SmaaLookupTables.cpp
   src/pipeline/NrInstance.cpp
   src/pipeline/AmdHipPreflight.cpp
@@ -485,12 +486,25 @@ veyra_add_compute_shader(veyra_shader_aa_temporal AaTemporalResolve)
 veyra_add_compute_shader(veyra_shader_aa_mlaa_edges AaMlaaEdges)
 veyra_add_compute_shader(veyra_shader_aa_mlaa_counts AaMlaaCounts)
 veyra_add_compute_shader(veyra_shader_aa_mlaa_blend AaMlaaBlend)
+# PushFPS: NVIDIA Image Scaling (NIS 1.0.3, MIT, third_party/nis) as the SR choice
+# engine::kVideoSrNis: colour boundary + the NVScaler in SDR (sRGB) and HDR (PQ) variants.
+veyra_add_compute_shader(veyra_shader_nis_color NisColor)
+veyra_add_compute_shader_variant(veyra_shader_nis_scaler_sdr NisScaler NisScalerSdr NIS_HDR_MODE=0)
+veyra_add_compute_shader_variant(veyra_shader_nis_scaler_pq NisScaler NisScalerPq NIS_HDR_MODE=2)
+add_dependencies(veyra_pipeline veyra_shader_nis_color veyra_shader_nis_scaler_sdr veyra_shader_nis_scaler_pq)
 # DLAA in HDR: adds the input's out-of-BT.709 part back to the DLSS result.
 veyra_add_compute_shader(veyra_shader_dlaa_hdr_restore DlaaHdrRestore)
 add_dependencies(veyra_pipeline veyra_shader_aa_luma veyra_shader_aa_fxaa3 veyra_shader_aa_fxaa4 veyra_shader_aa_fxaa5
   veyra_shader_aa_smaa_edges veyra_shader_aa_smaa_weights_low veyra_shader_aa_smaa_weights_medium
   veyra_shader_aa_smaa_weights_high veyra_shader_aa_smaa_weights_ultra veyra_shader_aa_smaa_blend veyra_shader_aa_temporal
   veyra_shader_aa_mlaa_edges veyra_shader_aa_mlaa_counts veyra_shader_aa_mlaa_blend veyra_shader_dlaa_hdr_restore)
+
+# PushFPS: NVIDIA Image Scaling on a real D3D12 device (hardware or WARP), run in CI.
+add_executable(veyra_nis_gpu_tests tests/integration/NisGpuTests.cpp)
+target_compile_features(veyra_nis_gpu_tests PRIVATE cxx_std_20)
+target_compile_options(veyra_nis_gpu_tests PRIVATE /utf-8)
+target_link_libraries(veyra_nis_gpu_tests PRIVATE veyra_pipeline)
+add_dependencies(veyra_nis_gpu_tests veyra_shader_nis_color veyra_shader_nis_scaler_sdr veyra_shader_nis_scaler_pq)
 
 add_executable(veyra_pipeline_tests
   tests/unit/PipelineContractTests.cpp

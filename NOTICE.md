@@ -18,6 +18,10 @@ then (latest change: see the date of the newest commit). The modifications, in s
 - Builds without the NVIDIA Optical Flow SDK (`src/ngx/NvOfSessionUnavailable.cpp`).
 - Windows installer and release packaging (`packaging/`), build and test workflows (`.github/workflows/`).
 - OBS Studio plugin (`obs-plugin/`).
+- Picture & sound editor, sound profiles and the saved-recording card (`qml/Veyra/PushPicture.qml`,
+  `PushSoundProfile.qml`, `PushRecordingSaved.qml`, `src/sink/SoundProfile.cpp`).
+- NVIDIA Image Scaling as a super-resolution choice (`src/pipeline/NisPass.cpp`, `shaders/Nis*.hlsl`).
+- ANR frame generation from Veyra 2.1.6 is not offered (`brand::kAnrFrameGeneration`).
 
 The complete, dated list of changes is the Git history of https://github.com/DosukaSOL/PushFPS, starting
 after Veyra's commit that PushFPS was forked from.
@@ -60,6 +64,10 @@ PushFPS.exe incorporates the NVIDIA DLSS SDK and NGX SDK (version 310.7.0) under
 whose text is in `licenses/sdk` of every release. NVIDIA, NVIDIA RTX and DLSS are trademarks of NVIDIA
 Corporation. PushFPS is not sponsored or endorsed by NVIDIA. The app shows this attribution under
 *Settings, About*.
+
+PushFPS also includes the shader source of the NVIDIA Image Scaling SDK 1.0.3 (Copyright (c) 2022 NVIDIA
+CORPORATION & AFFILIATES) under the MIT License, in `third_party/nis`; the licence text is
+`licenses/NVIDIA_Image_Scaling_SDK_MIT.txt`.
 
 ## What the installer leaves out by default
 

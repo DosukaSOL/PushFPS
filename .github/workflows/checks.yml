@@ -59,7 +59,7 @@ jobs:
       - name: QML syntax (qmlformat parses every file)
         run: |
           status=0
-          for f in qml/Veyra/*.qml tests/qml/quick/tst_push_quick_setup.qml tests/qml/quick/tst_push_picture_sound.qml; do
+          for f in qml/Veyra/*.qml tests/qml/quick/tst_push_quick_setup.qml tests/qml/quick/tst_push_picture_sound.qml tests/qml/quick/tst_push_nis.qml; do
             if ! qmlformat "$f" > /dev/null 2> /tmp/qmlformat.err; then
               echo "::error file=$f::QML does not parse"
               cat /tmp/qmlformat.err

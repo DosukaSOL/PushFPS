@@ -5,6 +5,7 @@
 #include "veyra/pipeline/ColorGradeTables.h"
 #include "veyra/pipeline/ColorGradeInstance.h"
 #include "veyra/pipeline/AntiAliasPass.h"
+#include "veyra/pipeline/NisPass.h"
 #include "veyra/pipeline/BeautyPass.h"
 #include "veyra/beauty/FaceTracker.h"
 #include "veyra/pipeline/NrInstance.h"
@@ -741,6 +742,10 @@ public:
         (desc_.finalSrQuality()==engine::kVideoSrFsr || desc_.firstSrRuns(engine::kVideoSrFsr)); }
     // Out of line: the backend type is only forward declared here.
     bool fsrSrEnabled() const;
+    // PushFPS: NVIDIA Image Scaling as the single SR pass (engine::kVideoSrNis).
+    // Without its pass (shader failure) the stage falls back to the ordinary resize.
+    bool nisRequested() const { return desc_.enableSr && !desc_.dualSr && desc_.videoSrQuality==engine::kVideoSrNis; }
+    bool nisEnabled() const { return nisPass_ != nullptr; }
     // Requested output multiplier (2 = one generated frame). Consumed by the
     // present sink so the XeSS provider knows how many frames to generate.
     uint32_t fgMultiplier() const { return desc_.fgMultiplier; }
@@ -844,6 +849,7 @@ private:
     bool initNvof();
     bool initNgxFeatures();
     bool initFsrSr();
+    bool initNis();
     bool initFsrFg();
     bool initVfg();
     std::unique_ptr<VfgBackend> vfgBackend_;
@@ -1137,6 +1143,7 @@ private:
     std::unique_ptr<ngx::DlssFgBackend> fgBackend_;
     std::unique_ptr<gfx::FsrFgPresenter> fsrFgBackend_;
     std::unique_ptr<gfx::FsrSrBackend> fsrSrBackend_;
+    std::unique_ptr<NisPass> nisPass_;  // PushFPS: NVIDIA Image Scaling SR
     // Double SR first passes on DLSS SR / FSR (the final pass keeps the members above).
     std::unique_ptr<ngx::DlssSrBackend> firstDlssSrBackend_;
     std::unique_ptr<gfx::FsrSrBackend> firstFsrSrBackend_;

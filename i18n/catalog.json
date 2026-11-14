@@ -596,6 +596,13 @@
    "ja": "0 は元の変化を保持、1 は現在のスタイルの補正を完全に適用"
   },
   {
+   "zh": "0 只放大不锐化；50 为 NVIDIA 默认。一次最多放大 2 倍，更大的倍数由普通缩放补足。",
+   "src": "qml/SrStageEditor.qml",
+   "zh-TW": "0 只放大不銳化；50 為 NVIDIA 預設。一次最多放大 2 倍，更大的倍數由一般縮放補足。",
+   "en": "0 upscales without sharpening; 50 is NVIDIA's default. NIS enlarges up to 2× per pass; larger factors are finished with regular scaling.",
+   "ja": "0 は拡大のみでシャープ化なし、50 が NVIDIA の既定値です。1 回で最大 2 倍まで拡大し、それ以上は通常の拡大で補います。"
+  },
+  {
    "zh": "0% 关闭曲线；峰值保护与元数据独立",
    "src": "qml/SettingsPage.qml",
    "zh-TW": "0% 關閉曲線；峰值保護與中繼資料獨立",
@@ -1534,6 +1541,13 @@
    "ja": "NGX コア"
   },
   {
+   "zh": "NIS 锐化",
+   "src": "qml/SrStageEditor.qml",
+   "zh-TW": "NIS 銳化",
+   "en": "NIS sharpening",
+   "ja": "NIS シャープネス"
+  },
+  {
    "zh": "NR → SR · 全层",
    "src": "qml/NrLayerEditor.qml",
    "zh-TW": "NR → SR · 全層",
@@ -1714,6 +1728,27 @@
    "zh-TW": "NVENC 編碼失敗：",
    "en": "NVENC encoding failed: ",
    "ja": "NVENC エンコードに失敗しました："
+  },
+  {
+   "zh": "NVIDIA Image Scaling 只能单次超分",
+   "src": "qml/SrStageEditor.qml",
+   "zh-TW": "NVIDIA Image Scaling 只能單次超分",
+   "en": "NVIDIA Image Scaling runs as a single pass only",
+   "ja": "NVIDIA Image Scaling は 1 回の超解像のみに対応しています"
+  },
+  {
+   "zh": "NVIDIA Image Scaling 只能单次超分，已关闭双重超分",
+   "src": "src/ui/bridge/Enhancement.cpp",
+   "zh-TW": "NVIDIA Image Scaling 只能單次超分，已關閉雙重超分",
+   "en": "NVIDIA Image Scaling runs as a single pass; Double super resolution was turned off",
+   "ja": "NVIDIA Image Scaling は 1 回の処理のみのため、2段階超解像をオフにしました"
+  },
+  {
+   "zh": "NVIDIA Image Scaling 只能单次超分，请先换用其他超分算法",
+   "src": "src/ui/bridge/Enhancement.cpp",
+   "zh-TW": "NVIDIA Image Scaling 只能單次超分，請先換用其他超分演算法",
+   "en": "NVIDIA Image Scaling runs as a single pass; pick another upscaling algorithm first",
+   "ja": "NVIDIA Image Scaling は 1 回の超解像のみに対応しています。先に別の超解像方式を選んでください"
   },
   {
    "zh": "NVIDIA RTX 补帧；倍率以运行库实际能力为准",

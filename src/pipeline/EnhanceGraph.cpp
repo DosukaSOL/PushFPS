@@ -6,6 +6,7 @@
 // created BEFORE descriptor views; FG warm-up evaluate precedes views; static
 // views are created last. Per-frame execution uses the shared command slot
 // ring (NR evaluates on a fresh list - snippet constraint).
+#include "veyra/pipeline/NisSettings.h"
 #include "veyra/pipeline/EnhanceGraph.h"
 #include "veyra/pipeline/Rdna3NrBackend.h"
 #include "veyra/pipeline/AmdNrProvider.h"
@@ -96,7 +97,7 @@ bool mixedDualSr(const EnhanceGraphDesc& d){
     return d.dualSr&&(!engine::rtxVideoSr(d.videoSrQuality)||!engine::rtxVideoSr(d.dualSrQuality));
 }
 const char* srRuntimeName(uint32_t quality){
-    return quality==0?"dlss":quality==engine::kVideoSrFsr?"fsr":engine::vfxVideoSr(quality)?"video-effects":"ngx";
+    return quality==0?"dlss":quality==engine::kVideoSrFsr?"fsr":quality==engine::kVideoSrNis?"nis":engine::vfxVideoSr(quality)?"video-effects":"ngx";
 }
 
 // N1 packed capture ingress helpers. Codes match pipeline::packedInputCode:
@@ -752,6 +753,9 @@ bool EnhanceGraph::initialize(const EnhanceGraphDesc& desc)
        !Extent{desc.firstSrWidth,desc.firstSrHeight}.valid()||!srPrescaleActive())){
         veyra::log::error("dual-sr","invalid independent SR stages or missing reduction");return false;
     }
+    if(desc.dualSr&&(desc.videoSrQuality==engine::kVideoSrNis||desc.dualSrQuality==engine::kVideoSrNis)){
+        veyra::log::error("dual-sr","NVIDIA Image Scaling runs as a single SR pass only");return false;
+    }
     if(srPrescaleActive()||srResolveActive()){
         // Staged SR: double SR reduces before its second pass; supersampling
         // enlarges with RTX Video SR and then shrinks into the work extent.
@@ -897,6 +901,7 @@ bool EnhanceGraph::initialize(const EnhanceGraphDesc& desc)
     if (!initZeroAndDepthTextures()) return false;
     if (!initNvof()) { failedBackend_=engine::FailedBackend::OpticalFlow; return false; }
     if (!initFsrSr()) return false;
+    if (!initNis()) return false;
     if (!initFsrFg()) return false;
     if (!initVfg()) return false;
     if(nrEnabled_&&GetEnvironmentVariableW(L"VEYRA_TEST_NR_INIT_FAILURE",nullptr,0)){
@@ -1523,6 +1528,20 @@ bool EnhanceGraph::initFsrSr()
     if(finalFsr&&!create(fsrSrBackend_,renderW,renderH,workW_,workH_,desc_.dualSr?" second pass":"")){failedBackend_=engine::FailedBackend::None;return true;}
     if(firstFsr&&!create(firstFsrSrBackend_,srcW_,srcH_,desc_.firstSrWidth,desc_.firstSrHeight," first pass")){failedBackend_=engine::FailedBackend::None;return true;}
     failedBackend_=engine::FailedBackend::None;
+    return true;
+}
+
+// PushFPS: NVIDIA Image Scaling (NisPass). A pass that cannot be created leaves
+// the SR stage on the ordinary resize rather than failing the graph.
+bool EnhanceGraph::initNis() {
+    nisPass_.reset();
+    if(!nisRequested()||!srEnabled_)return true;
+    auto pass=std::make_unique<NisPass>();
+    if(!pass->initialize(context_.device(),srcW_,srcH_,workW_,workH_,desc_.hdrWorking())){
+        veyra::log::error("nis",std::format("NVIDIA Image Scaling unavailable {}x{} -> {}x{}; the SR stage uses the ordinary resize",srcW_,srcH_,workW_,workH_));
+        return true;
+    }
+    nisPass_=std::move(pass);
     return true;
 }
 
@@ -2237,6 +2256,7 @@ bool EnhanceGraph::createViews()
 {
     bindSignedHdrRestore(firstSrHdrRestore_,srStageInput(),firstSrLinear_.Get());
     bindSignedHdrRestore(srHdrRestore_,desc_.dualSr?srPrescaled_.Get():srStageInput(),workRgba_.Get());
+    if(nisPass_)nisPass_->createViews(context_.device(),stager_,srStageInput(),workRgba_.Get());
     // Descriptor initialization is DEFAULT ON since the RAW-upload-SRV removal
     // (2026-09-06): texture SRV/UAV views keep the device alive and NVOF
     // executing (r33b-tu: 599/599 executes, real motion/confidence, 0
@@ -3500,6 +3520,15 @@ bool EnhanceGraph::process(const AVFrame* frame, double ptsMs, bool reset, Frame
         }
         ++metrics_.srEvaluateCount;gpuTimer_.mark(list,GpuStage::Sr,true);
         finishTemporalOutput(list,srHdrRestore_,workRgba_.Get());
+    } else if(!mixed&&srEnabled_&&nisPass_&&workRgba_.Get()!=srStageInput()) {
+        // PushFPS: NVIDIA Image Scaling, spatial (no motion, no history).
+        gpuTimer_.mark(list,GpuStage::Sr);
+        if(!nisPass_->dispatch(list,tracker_,nisSharpness())){
+            failedBackend_=engine::FailedBackend::Sr;
+            veyra::log::error("nis","dispatch failed");
+            return false;
+        }
+        ++metrics_.srEvaluateCount;gpuTimer_.mark(list,GpuStage::Sr,true);
     } else if(workRgba_.Get()!=srcRgba_.Get()) {
         tracker_.transition(list,srStageInput(),D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
         tracker_.transition(list, workRgba_.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
