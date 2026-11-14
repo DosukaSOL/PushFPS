@@ -28,7 +28,7 @@
 #include <vector>
 
 using namespace veyra::pipeline;
-using Microsoft::WRL::ComPtr;
+
 using DirectX::PackedVector::XMConvertFloatToHalf;
 using DirectX::PackedVector::XMConvertHalfToFloat;
 
