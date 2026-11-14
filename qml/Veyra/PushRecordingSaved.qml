@@ -30,21 +30,36 @@ Rectangle {
     Behavior on opacity { NumberAnimation { duration: Theme.d(200) } }
     transform: Translate { y: card.on ? 0 : 10; Behavior on y { NumberAnimation { duration: Theme.d(450); easing.bezierCurve: Theme.spring } } }
 
+    // A finished recording, or a saved instant-replay clip, brings up the card.
+    property bool replay: false
+    property real lastReplaySaved: -1
+    function show(p, isReplay) {
+        card.path = p
+        card.replay = isReplay
+        card.on = true
+        hideTimer.restart()
+    }
     Connections {
         target: veyra
         function onRecordingChanged() {
             const s = veyra.recordingState || {}
             const saved = Number(s.saved ?? 0)
             if (card.lastSaved < 0) { card.lastSaved = saved; return }   // first state after start: no card
-            if (saved > card.lastSaved && !s.active && String(s.path || "").length > 0) {
-                card.path = s.path
-                card.on = true
-                hideTimer.restart()
-            }
+            if (saved > card.lastSaved && !s.active && String(s.path || "").length > 0) card.show(s.path, false)
             card.lastSaved = saved
         }
+        function onReplayChanged() {
+            const s = veyra.replayState || {}
+            const saved = Number(s.saved ?? 0)
+            if (card.lastReplaySaved < 0) { card.lastReplaySaved = saved; return }
+            if (saved > card.lastReplaySaved && String(s.path || "").length > 0) card.show(s.path, true)
+            card.lastReplaySaved = saved
+        }
     }
-    Component.onCompleted: lastSaved = Number((veyra.recordingState || {}).saved ?? 0)
+    Component.onCompleted: {
+        lastSaved = Number((veyra.recordingState || {}).saved ?? 0)
+        lastReplaySaved = Number((veyra.replayState || {}).saved ?? 0)
+    }
     Timer { id: hideTimer; interval: 12000; onTriggered: card.on = false }
     HoverHandler { onHoveredChanged: if (hovered) hideTimer.stop(); else if (card.on) hideTimer.restart() }
 
@@ -63,7 +78,7 @@ Rectangle {
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 1
-                Text { text: qsTr("录制已保存"); color: Theme.t1; font.family: Theme.fontUi; font.pixelSize: Theme.fsBody; font.weight: Font.DemiBold }
+                Text { text: card.replay ? qsTr("即时回放已保存") : qsTr("录制已保存"); color: Theme.t1; font.family: Theme.fontUi; font.pixelSize: Theme.fsBody; font.weight: Font.DemiBold }
                 Text { Layout.fillWidth: true; text: card.fileName; color: Theme.t3; font.family: Theme.fontUi; font.pixelSize: Theme.fsHint; elide: Text.ElideMiddle }
             }
             VButton {

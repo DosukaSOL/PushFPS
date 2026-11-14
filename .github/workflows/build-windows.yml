@@ -34,7 +34,7 @@ concurrency:
 
 env:
   UPSTREAM_REPO: Likely7/Veyra-NRVideo
-  UPSTREAM_TAG: v2.1.5
+  UPSTREAM_TAG: v2.1.6
   VCPKG_COMMIT: 30ef65cad98f08e7197c9a1656fbd871bcb72f2d   # builtin-baseline in vcpkg.json: FFmpeg 9.0.1
   DLSS_TAG: v310.7.0
   NVCODEC_TAG: n13.0.19.0

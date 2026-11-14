@@ -104,6 +104,8 @@ QtObject {
     function soundResponseDb(preset, eq, hz) { return preset === 0 ? 0 : 3 }
     property var recordingState: ({saved: 0, active: false, path: ""})
     signal recordingChanged()
+    property var replayState: ({saved: 0, active: false, path: ""})
+    signal replayChanged()
     signal navigate(string page)
     property string lastOpenedPath: ""
     property var lastExportFiles: []
@@ -136,6 +138,8 @@ QtObject {
         // by Veyra/qmldir. Register it only here to test its real inline controls.
         qmlRegisterType(QUrl::fromLocalFile(QDir(QCoreApplication::applicationDirPath()).filePath(
             QStringLiteral("qml/Veyra/ProPage.qml"))), "VeyraTest", 1, 0, "ProPage");
+        qmlRegisterType(QUrl::fromLocalFile(QDir(QCoreApplication::applicationDirPath()).filePath(
+            QStringLiteral("qml/Veyra/Ps5SourceDialog.qml"))), "VeyraTest", 1, 0, "Ps5SourceDialog");
         qmlRegisterType(QUrl::fromLocalFile(QDir(QCoreApplication::applicationDirPath()).filePath(
             QStringLiteral("qml/Veyra/ExportPage.qml"))), "VeyraTest", 1, 0, "ExportPage");
         qmlRegisterType(QUrl::fromLocalFile(QDir(QCoreApplication::applicationDirPath()).filePath(

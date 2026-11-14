@@ -153,6 +153,23 @@ Item {
             click("pushfps-recording-folder")
             verify(veyra.recordingFolderOpened)
         }
+        function test_card_after_a_saved_replay() {
+            card.on = false
+            card.lastReplaySaved = 0
+            veyra.replayState = ({saved: 0, active: true, path: ""})
+            veyra.replayChanged()
+            verify(!card.on, "buffering alone shows nothing")
+            veyra.replayState = ({saved: 1, active: true, path: "C:/Videos/PushFPS/PushFPS-Replay-1.mp4"})
+            veyra.replayChanged()
+            verify(card.on, "a saved replay clip shows the card even while the buffer keeps running")
+            verify(card.replay)
+            click("pushfps-recording-edit")
+            compare(veyra.lastOpenedPath, "C:/Videos/PushFPS/PushFPS-Replay-1.mp4")
+            card.lastSaved = 20
+            save(21, "C:/r2.mp4", false)
+            verify(card.on && !card.replay, "a recording after a replay is titled as a recording")
+            card.on = false
+        }
         function test_frame_generation_note() {
             card.lastSaved = 10
             veyra.fgEnabled = true
