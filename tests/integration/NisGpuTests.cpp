@@ -207,6 +207,26 @@ Image edgeImage(uint32_t w, uint32_t h, const float* dark, const float* light) {
         }
     return img;
 }
+// Mid grey with faint vertical bars (period 3 px, about +/-4 % in sRGB): the kind of detail NIS sharpens.
+Image detailImage(uint32_t w, uint32_t h) {
+    Image img{w, h, std::vector<float>(size_t(w) * h * 4)};
+    for (uint32_t y = 0; y < h; ++y)
+        for (uint32_t x = 0; x < w; ++x) {
+            const double srgb = 0.5 + 0.04 * std::sin(2.0 * 3.14159265358979 * x / 3.0 + 0.4 * y);
+            const float lin = float(srgb <= 0.04045 ? srgb / 12.92 : std::pow((srgb + 0.055) / 1.055, 2.4));
+            float* p = img.at(x, y);
+            p[0] = p[1] = p[2] = lin; p[3] = 1.0f;
+        }
+    return img;
+}
+// Standard deviation of the green channel in the central half of the picture.
+double contrastOf(const Image& i) {
+    double sum = 0, sq = 0; size_t n = 0;
+    for (uint32_t y = i.h / 4; y < i.h * 3 / 4; ++y)
+        for (uint32_t x = i.w / 4; x < i.w * 3 / 4; ++x) { const double v = i.at(x, y)[1]; sum += v; sq += v * v; ++n; }
+    const double mean = sum / double(n);
+    return std::sqrt(std::max(0.0, sq / double(n) - mean * mean));
+}
 // Peak of the green channel in the light half next to the edge (overshoot measure).
 float overshoot(const Image& i, float light) {
     float peak = 0;
@@ -227,8 +247,18 @@ void sdrCases(Gpu& gpu) {
     check(maxRelativeError(soft, 112, 8, 184, 100, light) < 0.02, "sdr-2x: flat light area unchanged");
     check(soft.at(90, 54)[1] < 0.3f && soft.at(102, 54)[1] > 0.3f, "sdr-2x: edge stays in the middle");
     const float o0 = overshoot(soft, light[1]), o1 = overshoot(sharp, light[1]);
-    std::printf("NOTE sdr-2x overshoot 0%%=%.4f 100%%=%.4f\n", o0, o1);
-    check(o1 > o0 + 0.005f, "sdr-2x: 100 % sharpening is visibly sharper than 0 %");
+    std::printf("NOTE sdr-2x hard-edge overshoot 0%%=%.4f 100%%=%.4f\n", o0, o1);
+    // NIS sharpens fine, low-contrast detail (texture, foliage); a hard edge is scaled, not sharpened.
+    const auto detail = detailImage(96, 54);
+    Image detailSoft, detailSharp;
+    const bool d0 = runNis(gpu, detail, 192, 108, false, 0.0f, detailSoft);
+    const bool d1 = runNis(gpu, detail, 192, 108, false, 1.0f, detailSharp);
+    check(d0 && d1 && allFinite(detailSoft) && allFinite(detailSharp), "sdr-detail: NIS runs on fine detail");
+    if (d0 && d1) {
+        const double c0 = contrastOf(detailSoft), c1 = contrastOf(detailSharp), cin = contrastOf(detail);
+        std::printf("NOTE sdr-detail contrast input=%.5f 0%%=%.5f 100%%=%.5f\n", cin, c0, c1);
+        check(c1 > c0 * 1.05, "sdr-detail: 100 % sharpening brings out more detail than 0 %");
+    }
 
     Image wide;
     check(runNis(gpu, input, 288, 162, false, 0.5f, wide) && wide.w == 288 && wide.h == 162 && allFinite(wide),
