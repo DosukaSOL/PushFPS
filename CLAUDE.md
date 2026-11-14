@@ -21,7 +21,8 @@ and edits would conflict on every merge.
 3. **QML is loaded from disk next to the exe** (`qml/Veyra`), so new QML files need a line in
    `qml/Veyra/qmldir` but no CMake change. Run the QML lint workflow (`.github/workflows/checks.yml`) on
    every QML change; there is no other QML check without a Windows build.
-4. **Never commit** SDKs, NVIDIA/AMD/Intel runtimes or models, build output, or user data
+4. **Never commit** SDKs, NVIDIA/AMD/Intel runtimes or models, build output, or user data (exception:
+   MIT-licensed shader source such as `third_party/nis`, recorded in `THIRD_PARTY_NOTICES.md`)
    (`.gitignore` covers `third_party_local/`, `runtime_local/`, `out/`, `build/`).
 5. **License.** Everything stays GPL-3.0 (the Chiaki remote-play part also AGPL-3.0). Credit Veyra and
    Likely7 wherever the product is described. Copy code from other projects only with a compatible license
@@ -42,6 +43,8 @@ and edits would conflict on every merge.
 | Product name, GitHub links, upstream credit | `include/veyra/Brand.h` |
 | Quick setup (console and game profiles, game FPS, target FPS, AI enhancement, low latency) | `qml/Veyra/PushQuickSetup.qml`, used in `HomePage.qml` and `ProPage.qml`; preferences `pushConsole`, `pushGameFps`, `pushProfiles` (validated in `src/ui/bridge/Preferences.cpp`); tests in `tests/qml/quick/tst_push_quick_setup.qml` |
 | Picture & sound editor, sound profiles, saved-recording card | `qml/Veyra/PushPicture.qml` (gamma is stored as RGB tone curve 0, not a new `ColorSettings` field, to keep the preset schema upstream-compatible), `PushSoundProfile.qml`, `PushRecordingSaved.qml`; DSP in `include/veyra/sink/SoundProfile.h` + `src/sink/SoundProfile.cpp`, applied in `WasapiAudioSink.cpp` before the recording tap; preferences `soundPreset`, `soundEq`; tests in `tests/unit/SoundProfileTests.cpp` and `tests/qml/quick/tst_push_picture_sound.qml` |
+| NVIDIA Image Scaling (SR choice `engine::kVideoSrNis` = 6) | `third_party/nis` (MIT, unchanged, see `PUSHFPS_ORIGIN.md`), `shaders/NisScaler.hlsl` + `NisColor.hlsl`, `src/pipeline/NisPass.cpp`, hooks in `EnhanceGraph.cpp` (`initNis`, `createViews`, `runSr`), `GraphDescription.h` / `BackendRecovery.h` (`vendorNeutralVideoSr`); sharpness preference `nisSharpness` (live, `pipeline/NisSettings.h`); UI in `SrStageEditor.qml`; tests `tests/integration/NisGpuTests.cpp` (WARP in CI) and `tests/qml/quick/tst_push_nis.qml`. Upstream SR changes in those files may conflict: keep NIS single-pass and vendor neutral |
+| ANR frame generation (Veyra 2.1.6) not offered | `brand::kAnrFrameGeneration` in `include/veyra/Brand.h`, used in `Hardware.cpp`, `FrameGeneration.cpp`, `Preferences.cpp` |
 | Home layout, row layout, theme | `qml/Veyra/HomePage.qml`, `VRow.qml` (hint moves under wide controls), `Theme.qml` |
 | OBS Studio plugin | `obs-plugin/` (C, libobs headers + `.def` import libraries); CI builds it and loads it into the latest OBS (`obs-plugin/ci/obs-load-test.ps1`) |
 | Program name `PushFPS.exe` | `CMakeLists.txt` (`OUTPUT_NAME` on `veyra_qml_ui`) |
@@ -49,7 +52,7 @@ and edits would conflict on every merge.
 
 ## Building and releasing
 
-- After any QML change, `tests/qml/quick` runs in CI (`tst_push_quick_setup.qml` strictly, the Veyra suite as a
+- After any QML change, `tests/qml/quick` runs in CI (`tst_push_*.qml` strictly, the Veyra suite as a
   report) and the install test opens every main page and fails on `[ERROR] [qml]`. The `screenshots` workflow
   (`-f branch=<branch>`) photographs the real app and writes `qml-report.txt`.
 - `.github/workflows/build-windows.yml` is the build recipe (pinned, login-free dependencies). It builds
@@ -58,7 +61,8 @@ and edits would conflict on every merge.
   starts the program; QML errors at startup fail the build. FFmpeg (~40 min) is cached by vcpkg commit.
 - Releases: push a tag `vX.Y.Z` (stable numbers only: the in-app update checker ignores other tags). The
   workflow publishes it as a GitHub **pre-release**; mark it as the latest release only after a person has
-  tested it with a real capture card and GPU. Builds without a tag are versioned `2.1.5-pushfps.<run>`.
+  tested it with a real capture card and GPU, or when the owner asks for a full release (dispatch with
+  `-f release_tag=vX.Y.Z -f full_release=true`). What's new goes in `packaging/release-notes/vX.Y.Z.md`. Builds without a tag are versioned `2.1.5-pushfps.<run>`.
 - The upstream runtime package version is `UPSTREAM_TAG` in the workflow; its SHA-256 values are pinned into
   the installer at build time from Veyra's own `SHA256SUMS.txt`. Moving to a newer Veyra release means
   merging upstream and changing `UPSTREAM_TAG` together.

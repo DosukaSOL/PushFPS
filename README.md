@@ -226,8 +226,28 @@ Open **Picture & sound** on the home screen to adjust the picture and sound befo
 Everything you set here is part of the picture and sound you see, hear and record. Sound profiles are
 also in Professional mode under *Audio*. Dolby and DTS passthrough to a receiver are not changed.
 
-**After recording.** When a recording is saved, a card offers **Edit** (opens it in the editor),
-**Export** (trim, pick tracks, re-encode) and **Show in folder**.
+**After recording.** When a recording or an instant replay clip is saved, a card offers **Edit** (opens it in
+the editor), **Export** (trim, pick tracks, re-encode) and **Show in folder**.
+
+## Recording, instant replay and microphone
+
+- **Record** (F8) saves what you see and hear, with the picture, sound profile and frame generation applied.
+- **Instant replay** keeps the last minute (15 seconds to 10 minutes) in memory; press **F9** to save it.
+  Turn it on next to the Record button or under *Settings, Playback*. It can run while you record. It uses
+  an extra hardware encoder and some memory while it is on, so it is off by default.
+- **Microphone**: add your mic to recordings, mixed with the game sound or as its own audio track.
+
+## Upscaling: NVIDIA Image Scaling and more
+
+Professional mode, *Quality*, *Super resolution*, *Upscaling algorithm* offers DLSS SR, RTX Video Super Resolution (three model
+families), AMD FSR 3.1 and **NVIDIA Image Scaling (NIS)**. NIS is a fast spatial upscaler with adaptive
+sharpening that runs on NVIDIA, AMD and Intel graphics. Set the strength with *NIS sharpening* (50 % is
+NVIDIA's default; 0 % only upscales). NIS enlarges up to 2x in one pass, so a 1080p capture fills a 4K
+screen directly; larger factors are finished with regular scaling. It works in SDR and HDR.
+
+**Keep the HUD sharp.** *Exclude all effects* regions (up to four rectangles or ellipses, from Veyra 2.1.6)
+leave parts of the picture, such as the minimap or the HUD, untouched by every effect and by frame
+generation.
 
 ## OBS Studio plugin
 
@@ -302,7 +322,8 @@ In your user folder, next to Veyra's settings. Updating PushFPS keeps them.
 - [x] OBS Studio plugin
 - [x] Cleaner interface: capture card first, less text, aligned controls
 - [x] Picture and sound editor, sound profiles, edit after recording
-- [ ] NVIDIA Image Scaling (NIS) sharpening and upscaling
+- [x] NVIDIA Image Scaling (NIS) upscaling and sharpening on any DirectX 12 GPU
+- [x] Instant replay and microphone recording (from Veyra 2.1.6)
 - [ ] Tested settings for popular capture cards, from real-hardware reports
 - [ ] macOS version
 
