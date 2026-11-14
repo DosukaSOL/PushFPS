@@ -1101,8 +1101,10 @@ NVIDIA.
 
 ### ANR in PushFPS
 
-PushFPS keeps Veyra's ANR host source so upstream merges stay clean, but does not offer ANR frame generation
-in its interface (`brand::kAnrFrameGeneration = false` in `include/veyra/Brand.h`) and ships no ANR file.
+PushFPS offers ANR frame generation exactly as Veyra 2.1.6 does: Veyra's independently written host is in the
+program, and PushFPS ships, downloads and mirrors no ANR file (provider DLL, models, configuration or loader).
+The choice stays unavailable until the user places ANR's own files in `runtime\experimental\anr` themselves,
+under ANR's terms. `brand::kAnrFrameGeneration` in `include/veyra/Brand.h` can hide it again.
 
 ## Apex Neural Rendering FG local experiment (2026-11-12)
 

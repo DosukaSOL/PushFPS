@@ -24,8 +24,9 @@ inline constexpr const char* kReleaseTagPathPrefix = "/DosukaSOL/PushFPS/release
 inline constexpr const char* kUpstreamName = "Veyra";
 inline constexpr const char* kUpstreamUrl = "https://github.com/Likely7/Veyra-NRVideo";
 
-// Veyra's ANR (Apex Neural Rendering) frame generation host stays in the source so upstream keeps
-// merging, but PushFPS does not offer it: its runtime may not be redistributed yet and its quality
-// is not suitable for console play. False hides it from every menu and reports it unavailable.
-inline constexpr bool kAnrFrameGeneration = false;
+// Veyra's ANR (Apex Neural Rendering) frame generation, offered exactly as Veyra 2.1.6 does: the
+// host is in the program, but ANR's own runtime may not be redistributed yet, so no ANR file ships.
+// The choice is usable once the user places ANR's files in runtime\experimental\anr. False would
+// hide it from every menu and report it unavailable.
+inline constexpr bool kAnrFrameGeneration = true;
 }

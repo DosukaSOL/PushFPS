@@ -1093,11 +1093,11 @@
    "ja": "DLSS モデル"
   },
   {
-   "zh": "DLSS、FSR 补帧，及运动来源选“光流”的 XeSS 生效：修人物边缘果冻，背景不再被人物拖着晃",
+   "zh": "DLSS、FSR、ANR 补帧，及运动来源选“光流”的 XeSS 生效：修人物边缘果冻，背景不再被人物拖着晃",
    "src": "qml/ProPage.qml",
-   "zh-TW": "DLSS、FSR 補幀，及運動來源選「光流」的 XeSS 生效：修人物邊緣果凍，背景不再被人物拖著晃",
-   "en": "For DLSS and FSR frame generation, and XeSS with the optical-flow motion source: stops the jelly at character edges, so the background no longer drags along",
-   "ja": "DLSS・FSR のフレーム生成と、動きの推定を「オプティカルフロー」にした XeSS で有効：人物の輪郭のゼリー状の揺れを抑え、背景が人物に引きずられなくなります"
+   "zh-TW": "DLSS、FSR、ANR 補幀，及運動來源選「光流」的 XeSS 生效：修人物邊緣果凍，背景不再被人物拖著晃",
+   "en": "For DLSS, FSR and ANR frame generation, and XeSS with the optical-flow motion source: stops the jelly at character edges, so the background no longer drags along",
+   "ja": "DLSS・FSR・ANR のフレーム生成と、動きの推定を「オプティカルフロー」にした XeSS で有効：人物の輪郭のゼリー状の揺れを抑え、背景が人物に引きずられなくなります"
   },
   {
    "zh": "DXGI 为显示器兼容方式，无鼠标指针；捕获显示器时不显示黄色边框，PushFPS 自己也不会出现在截图和录屏里",

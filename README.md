@@ -172,6 +172,7 @@ enhancement on Radeon and on RTX 30 cards is an optional experimental extra (see
 | NVIDIA DLSS Frame Generation | RTX 40 (2×), RTX 50 (up to 6×) | 6× |
 | Intel XeSS Frame Generation (experimental) | DirectX 12 cards; Veyra tested it on NVIDIA | 4× |
 | AMD FSR Frame Generation | DirectX 12 cards (FSR 4 needs a Radeon RX 9000) | 2× |
+| ANR Frame Generation by Apex Compute (experimental, from Veyra 2.1.6) | DirectX 12 cards; needs ANR's own files in `runtime\experimental\anr`, which may not be redistributed | 6× |
 
 </details>
 
