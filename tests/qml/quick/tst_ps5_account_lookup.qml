@@ -48,6 +48,16 @@ Item {
             compare(backend.ps5.account,"123456789012345678")
             compare(backend.ps5.profile,"saved.dat")
         }
+        function test_typed_id_reaches_pairing_without_enter() {
+            // 配对并保存 takes no focus, so no editingFinished: the typed text must already be saved.
+            backend.ps5Set("account","")
+            const field=findChild(panel,"ps5-account-id")
+            verify(field);mouseClick(field)
+            for(const ch of "1234567890")keyClick(ch)
+            compare(backend.ps5.account,"1234567890")
+            backend.ps5Set("status","refreshed")
+            compare(field.text,"1234567890")
+        }
         function texts(item,result) {
             if(item.text!==undefined)result.push(String(item.text))
             for(const child of item.children)texts(child,result)
