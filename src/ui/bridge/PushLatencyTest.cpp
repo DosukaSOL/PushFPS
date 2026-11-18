@@ -14,6 +14,15 @@
 namespace veyra::ui {
 namespace {
 constexpr qint64 kBaselineMs = 300, kHoldMs = 90, kAnswerTimeoutMs = 1200, kCloseWaitMs = 700, kSettleMs = 1300;
+// The controller path exists only in builds with PS5 Remote Play; without it the test never starts
+// (the snapshot never reports a Remote Play source), and this keeps such builds compiling.
+template <class Engine> void sendController(Engine& engine, const remoteplay::ControllerState& state) {
+#ifdef VEYRA_ENABLE_REMOTEPLAY
+    engine.remotePlayController(state);
+#else
+    (void)engine; (void)state;
+#endif
+}
 }
 
 remoteplay::ControllerState QmlPlayerBridge::pushLatencyPress() const {
@@ -48,7 +57,7 @@ void QmlPlayerBridge::pushLatencyTestCancel() {
     auto& t = impl_->latency;
     if (!t.active) return;
     t.pressing = false;
-    impl_->engine.remotePlayController(pushLatencyPress());
+    sendController(impl_->engine, pushLatencyPress());
     t.active = false; t.state = QStringLiteral("idle");
     if (t.timer) t.timer->stop();
     impl_->engine.inputLatencyProbe().endWindow();
@@ -66,7 +75,7 @@ void QmlPlayerBridge::pushLatencyTick() {
         t.active = false; t.pressing = false; if (t.timer) t.timer->stop(); probe.endWindow(); return;
     }
     const double answer = probe.poll();
-    const auto press = [&](bool down) { t.pressing = down; impl_->engine.remotePlayController(pushLatencyPress()); };
+    const auto press = [&](bool down) { t.pressing = down; sendController(impl_->engine, pushLatencyPress()); };
     switch (t.phase) {
     case 0:   // baseline frames, then the press
         if (now - t.phaseStart >= kBaselineMs) {

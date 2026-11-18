@@ -4546,7 +4546,10 @@ uint32_t EnhanceGraph::actualFlowPerf()const{return nvof_?nvof_->caps().actualPe
 bool EnhanceGraph::vfgFastReady() const { return vfgBackend_&&vfgBackend_->fastReady(); }
 bool EnhanceGraph::fgCreated() const
 {
-    return (vfgBackend_&&vfgBackend_->created()) || fsrActive() || amfFrcActive() || (fgBackend_ && fgBackend_->created());
+    // PushFlow too: at f306f570 it was missing here, so fgCandidates stayed 0 and a live PushFlow session
+    // presented no generated frame (PS Remote Play window, RTX 4090, 2026-11-18; the GPU tests drive
+    // PushFlowBackend directly, not through the graph).
+    return (vfgBackend_&&vfgBackend_->created()) || fsrActive() || amfFrcActive() || pushFlowActive() || (fgBackend_ && fgBackend_->created());
 }
 
 uint64_t EnhanceGraph::lastNvofSignal() const
