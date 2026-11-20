@@ -110,7 +110,7 @@ that, PushFPS adds what console players need:
 | **Go live** | Stream the boosted picture straight to Twitch, YouTube, Kick, TikTok, Facebook, Trovo or any RTMP server, to several platforms at once from one encode, at its own resolution (vertical for TikTok LIVE). Stream keys are stored encrypted |
 | **Output presets** | Platform settings per resolution and frame rate for going live (Twitch, YouTube, Kick, Facebook, TikTok LIVE, Trovo) and for uploads (YouTube SDR and HDR, Shorts, TikTok, Instagram Reels, X, editing). Every value stays editable |
 | **Frame Pacing Repair** | Evens out the uneven frame timing many 30 FPS console games have before frames are generated |
-| **Keep the HUD sharp** | On by default: what stands still in front of a moving picture keeps its real pixels in generated frames, with every method PushFPS runs itself |
+| **Keep the HUD sharp** | An option, off unless you switch it on: what stands still in front of a moving picture keeps its real pixels in generated frames. It can soften camera pans, so try it per game |
 | **Live HUD Lock** | Finds still text, crosshairs and bars on every frame and keeps them sharp in generated frames, no boxes needed |
 | **Lip sync by hand** | Move the sound earlier or later in steps of 10 ms on top of automatic sync, for the delay your capture card, screen or headphones add |
 | **Choose before you record** | Click Record and pick horizontal or vertical, fill or fit, the size (4K, 1440p, 1080p) and the quality, and see the bitrate before it starts |
@@ -511,12 +511,17 @@ generates inside its own presenter, so it can't be combined.
 
 ## Keep the HUD sharp
 
-On by default since 4.0, and it needs no setup. Frame generation works out one motion for every place of the
-picture, so a HUD that stands still in front of a moving world gets the world's motion too. With **Keep the HUD
-sharp**, a pixel that is the same in both real frames, and stands in a surrounding that mostly moves, keeps its
-real value in the generated frames between them. It works with every method PushFPS runs itself (NVIDIA's,
-FSR, PushFlow), not with XeSS. With a still camera or in a menu it touches nothing. It judges every pair of
-frames by itself, where Live HUD Lock remembers: the two can be on together.
+An option in *Quick setup*, **off unless you switch it on** (it was on by default in 4.0). Frame generation works
+out one motion for every place of the picture, so a HUD that stands still in front of a moving world gets the
+world's motion too. With **Keep the HUD sharp**, a pixel that is the same in both real frames, and stands in a
+surrounding that mostly moves, keeps its real value in the generated frames between them. It works with every
+method PushFPS runs itself (NVIDIA's, FSR, PushFlow), not with XeSS.
+
+**Why it is off by default.** "The same in both frames" is not always "standing still": a moving game picture has
+many pixels that match by chance (road, walls, skin, anything smooth or motion blurred). With the option on,
+those are held back too, and in camera pans the picture can turn soft and the edges of moving things can break
+up. That is what 4.0 users reported. If you see it, switch the option off. For a HUD, the game presets, HUD
+protection and Live HUD Lock know where the HUD is or watch it over time, and leave the rest of the picture alone.
 
 It does not remove ghosting in the moving world right beside a character, and a source with visible noise gives
 it less to find.

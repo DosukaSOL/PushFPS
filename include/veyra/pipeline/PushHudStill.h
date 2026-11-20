@@ -42,8 +42,19 @@ inline constexpr unsigned kNear = 3, kAround = 5;            // of 9, of 25 (the
 inline constexpr unsigned kBlock = 16;                       // pixels a side
 inline constexpr float kSurround = 0.5f;
 
-// The process-wide switch (preference pushHudStill; on unless the user turned it off).
-inline std::atomic<bool>& wantedStore() { static std::atomic<bool> value{true}; return value; }
+// The process-wide switch (preference pushHudStill). OFF unless the user turned it on, since 4.0.1.
+// It was on for everyone in 4.0, and two reports the same day said the picture had become soft and that
+// edges, poles and the character broke up in camera pans; going back to 3.2.10 cured it. The reason is the
+// rule's first point: "the same in both real frames" is not "standing still". A moving game picture is full of
+// pixels that match by chance within two steps of 255 (road, walls, skin, clothing, anything smooth or motion
+// blurred). Measured on pictures with the statistics of natural images, panned, with nothing standing still
+// (a study of 20 November 2026, run on this header): the rule overwrote 5 to 38 % of every generated frame with
+// the older real frame's pixels, each wrong by 2 to 9 steps. The drawn pictures the rule was first measured on
+// had hard-edged, high-contrast patterns and almost no chance matches (0.07 %), which is why it looked safe.
+// So it is a choice now, and what tells a HUD from the world reliably stays the tools that know where the HUD
+// is or watch it over time: the game presets, HUD protection and Live HUD Lock. Never make it a default again
+// on drawn pictures alone: it needs the study on natural pictures and a real card.
+inline std::atomic<bool>& wantedStore() { static std::atomic<bool> value{false}; return value; }
 inline void setWanted(bool on) { wantedStore().store(on, std::memory_order_relaxed); }
 inline bool wanted() { return wantedStore().load(std::memory_order_relaxed); }
 

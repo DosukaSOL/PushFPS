@@ -26879,6 +26879,23 @@
    "ru": "Включён: настройки и скриншоты сохраняются в папке рядом с программой"
   },
   {
+   "zh": "已开启：镜头移动时画面可能变糊，物体边缘可能破碎；出现这种情况请关闭",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "已開啟：鏡頭移動時畫面可能變糊，物體邊緣可能破碎；出現這種情況請關閉",
+   "en": "On: in camera pans the picture can turn soft and edges can break up. Switch it off if you see that",
+   "ja": "オン：カメラが動くと映像がぼやけたり、物の輪郭が崩れたりすることがあります。その場合はオフにしてください",
+   "nl": "Aan: bij camerabewegingen kan het beeld zacht worden en kunnen randen opbreken. Zet het uit als je dat ziet",
+   "de": "Ein: Bei Kameraschwenks kann das Bild weich werden und Kanten können zerfallen. Schalte es aus, wenn du das siehst",
+   "es": "Activado: en los movimientos de cámara la imagen puede verse borrosa y los bordes pueden romperse. Desactívalo si lo notas",
+   "fr": "Activé : lors des mouvements de caméra, l'image peut devenir floue et les contours peuvent se briser. Désactivez-le si vous le constatez",
+   "it": "Attivo: nei movimenti di camera l'immagine può risultare sfocata e i bordi possono spezzarsi. Disattivalo se lo noti",
+   "pt-BR": "Ativado: em movimentos de câmera a imagem pode ficar borrada e as bordas podem se quebrar. Desative se notar isso",
+   "tr": "Açık: kamera hareketlerinde görüntü bulanıklaşabilir ve kenarlar bozulabilir. Bunu görürseniz kapatın",
+   "ar": "مفعّل: عند تحريك الكاميرا قد تصبح الصورة ضبابية وقد تتكسر الحواف. أوقفه إذا لاحظت ذلك",
+   "pl": "Włączone: przy ruchach kamery obraz może się rozmywać, a krawędzie mogą się rozpadać. Wyłącz, jeśli to zauważysz",
+   "ru": "Включено: при движении камеры изображение может размываться, а края объектов — распадаться. Отключите, если заметите это"
+  },
+  {
    "zh": "已恢复录制里的游戏声音：之前的版本在用过图卡场景后可能让它一直静音（直播模式 → 音频混音器）",
    "src": "src/ui/QmlPlayerBridge.cpp",
    "zh-TW": "已恢復錄製裡的遊戲聲音：先前的版本在用過圖卡場景後可能讓它一直靜音（直播模式 → 音訊混音器）",
@@ -42603,23 +42620,6 @@
    "ar": "قيد التشغيل: يبقى النص وعلامات التصويب واضحة في الإطارات المولّدة",
    "pl": "Działa: tekst i celowniki zostają ostre w generowanych klatkach",
    "ru": "Работает: текст и прицелы остаются чёткими в сгенерированных кадрах"
-  },
-  {
-   "zh": "正在运行：静止的 HUD 在补出来的帧里使用真实像素",
-   "src": "qml/PushQuickSetup.qml",
-   "zh-TW": "正在執行：靜止的 HUD 在補出來的幀裡使用真實像素",
-   "en": "Running: a still HUD keeps its real pixels in generated frames",
-   "ja": "動作中：静止した HUD は生成フレームでも実際の画素を使います",
-   "nl": "Running: a still HUD keeps its real pixels in generated frames",
-   "de": "Running: a still HUD keeps its real pixels in generated frames",
-   "es": "Running: a still HUD keeps its real pixels in generated frames",
-   "fr": "Running: a still HUD keeps its real pixels in generated frames",
-   "it": "Running: a still HUD keeps its real pixels in generated frames",
-   "pt-BR": "Running: a still HUD keeps its real pixels in generated frames",
-   "tr": "Running: a still HUD keeps its real pixels in generated frames",
-   "ar": "Running: a still HUD keeps its real pixels in generated frames",
-   "pl": "Running: a still HUD keeps its real pixels in generated frames",
-   "ru": "Running: a still HUD keeps its real pixels in generated frames"
   },
   {
    "zh": "正在连接",
@@ -63054,23 +63054,6 @@
    "ar": "تراكم ثابت",
    "pl": "Akumulacja statyczna",
    "ru": "Статическое накопление"
-  },
-  {
-   "zh": "静止的 HUD 在补出来的帧里使用真实像素（默认开启）",
-   "src": "qml/PushQuickSetup.qml",
-   "zh-TW": "靜止的 HUD 在補出來的幀裡使用真實像素（預設開啟）",
-   "en": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "ja": "静止した HUD は生成フレームでも実際の画素を使います（既定でオン）",
-   "nl": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "de": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "es": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "fr": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "it": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "pt-BR": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "tr": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "ar": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "pl": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "ru": "A still HUD keeps its real pixels in generated frames (on unless switched off)"
   },
   {
    "zh": "静音",

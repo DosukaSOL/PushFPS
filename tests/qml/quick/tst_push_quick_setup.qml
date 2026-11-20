@@ -817,25 +817,31 @@ Item {
             compare(veyra.compareMode, 0)
         }
 
-        function test_the_still_rule_is_on_unless_switched_off() {
+        // Off unless switched on (4.0.1): on for everyone, 4.0 made camera pans soft and broke edges up.
+        function test_the_still_rule_is_off_unless_switched_on() {
             veyra.fgEnabled = true; veyra.fgMultiplier = 2
             const row = control("pushfps-hudstill-row"), sw = control("pushfps-hudstill")
-            // Nothing saved: on.
-            verify(row.on && sw.checked, "on by default")
-            // What runs is said: running, could not start, or just the description.
-            veyra.liveStats = ({ running: true, hudStillState: 1 }); quick.liveStats = veyra.liveStats
-            verify(row.hint.length > 0)
-            const running = row.hint
-            veyra.liveStats = ({ running: true, hudStillState: 2 }); quick.liveStats = veyra.liveStats
-            verify(row.hint !== running, "a pass that could not start says so")
-            // Switched off it is saved as off, and says so; switched on again it is saved as on.
-            sw.toggled(false)
-            compare(veyra.preferences.pushHudStill, false); verify(!row.on && !sw.checked)
+            // Nothing saved: off, and it says so.
+            verify(!row.on && !sw.checked, "off by default")
             const off = row.hint
+            verify(off.length > 0)
+            // Switched on it is saved as on and warns what it can do to a moving picture.
             sw.toggled(true)
             compare(veyra.preferences.pushHudStill, true); verify(row.on && sw.checked && row.hint !== off)
+            const warned = row.hint
+            // A pass that is running says the same; one that could not start says that instead.
+            veyra.liveStats = ({ running: true, hudStillState: 1 }); quick.liveStats = veyra.liveStats
+            compare(row.hint, warned)
+            veyra.liveStats = ({ running: true, hudStillState: 2 }); quick.liveStats = veyra.liveStats
+            verify(row.hint !== warned, "a pass that could not start says so")
+            // Switched off again it is saved as off.
+            sw.toggled(false)
+            compare(veyra.preferences.pushHudStill, false); verify(!row.on && !sw.checked)
+            compare(row.hint, off)
+            sw.toggled(true)
             // It is its own switch: Live HUD Lock is not touched by it.
             compare(veyra.hudLock, false)
+            sw.toggled(false)   // left as it starts
             // Without frame generation there is nothing for it to do.
             veyra.fgEnabled = false
             verify(!sw.enabled)
