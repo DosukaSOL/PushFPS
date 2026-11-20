@@ -25876,6 +25876,23 @@
    "ru": "Закрыто то, что играло; все GPU идет на экспорт"
   },
   {
+   "zh": "已关闭（默认）。试验功能：HUD 更清晰，但移动物体的边缘可能出现瑕疵",
+   "src": "qml/PushQuickSetup.qml",
+   "zh-TW": "已關閉（預設）。試驗功能：HUD 更清晰，但移動物體的邊緣可能出現瑕疵",
+   "en": "Off (default). Experimental: a sharper HUD, but artifacts can appear around the edges of moving things",
+   "ja": "オフ（既定）。試験的な機能：HUD は鮮明になりますが、動くものの輪郭に乱れが出ることがあります",
+   "nl": "Off (default). Experimental: a sharper HUD, but artifacts can appear around the edges of moving things",
+   "de": "Off (default). Experimental: a sharper HUD, but artifacts can appear around the edges of moving things",
+   "es": "Off (default). Experimental: a sharper HUD, but artifacts can appear around the edges of moving things",
+   "fr": "Off (default). Experimental: a sharper HUD, but artifacts can appear around the edges of moving things",
+   "it": "Off (default). Experimental: a sharper HUD, but artifacts can appear around the edges of moving things",
+   "pt-BR": "Off (default). Experimental: a sharper HUD, but artifacts can appear around the edges of moving things",
+   "tr": "Off (default). Experimental: a sharper HUD, but artifacts can appear around the edges of moving things",
+   "ar": "Off (default). Experimental: a sharper HUD, but artifacts can appear around the edges of moving things",
+   "pl": "Off (default). Experimental: a sharper HUD, but artifacts can appear around the edges of moving things",
+   "ru": "Off (default). Experimental: a sharper HUD, but artifacts can appear around the edges of moving things"
+  },
+  {
    "zh": "已关闭，设置保留",
    "src": "qml/PushQuickSetup.qml",
    "zh-TW": "已關閉，設定保留",
@@ -25891,23 +25908,6 @@
    "ar": "Off; your settings are kept",
    "pl": "Off; your settings are kept",
    "ru": "Off; your settings are kept"
-  },
-  {
-   "zh": "已关闭：HUD 交给补帧处理",
-   "src": "qml/PushQuickSetup.qml",
-   "zh-TW": "已關閉：HUD 交給補幀處理",
-   "en": "Off: the HUD is left to frame generation",
-   "ja": "オフ：HUD はフレーム生成に任せます",
-   "nl": "Off: the HUD is left to frame generation",
-   "de": "Off: the HUD is left to frame generation",
-   "es": "Off: the HUD is left to frame generation",
-   "fr": "Off: the HUD is left to frame generation",
-   "it": "Off: the HUD is left to frame generation",
-   "pt-BR": "Off: the HUD is left to frame generation",
-   "tr": "Off: the HUD is left to frame generation",
-   "ar": "Off: the HUD is left to frame generation",
-   "pl": "Off: the HUD is left to frame generation",
-   "ru": "Off: the HUD is left to frame generation"
   },
   {
    "zh": "已切换播放内容，录制已保存",
@@ -63056,21 +63056,21 @@
    "ru": "Статическое накопление"
   },
   {
-   "zh": "静止的 HUD 在补出来的帧里使用真实像素（默认开启）",
+   "zh": "静止的 HUD 在补出来的帧里使用真实像素；移动物体的边缘出现瑕疵时请关闭",
    "src": "qml/PushQuickSetup.qml",
-   "zh-TW": "靜止的 HUD 在補出來的幀裡使用真實像素（預設開啟）",
-   "en": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "ja": "静止した HUD は生成フレームでも実際の画素を使います（既定でオン）",
-   "nl": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "de": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "es": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "fr": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "it": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "pt-BR": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "tr": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "ar": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "pl": "A still HUD keeps its real pixels in generated frames (on unless switched off)",
-   "ru": "A still HUD keeps its real pixels in generated frames (on unless switched off)"
+   "zh-TW": "靜止的 HUD 在補出來的幀裡使用真實像素；移動物體的邊緣出現瑕疵時請關閉",
+   "en": "A HUD that stands still uses its real pixels in generated frames; switch this off if you see artifacts around the edges of moving things",
+   "ja": "静止した HUD は生成フレームで実際の画素を使います。動くものの輪郭に乱れが見えたらオフにしてください",
+   "nl": "A HUD that stands still uses its real pixels in generated frames; switch this off if you see artifacts around the edges of moving things",
+   "de": "A HUD that stands still uses its real pixels in generated frames; switch this off if you see artifacts around the edges of moving things",
+   "es": "A HUD that stands still uses its real pixels in generated frames; switch this off if you see artifacts around the edges of moving things",
+   "fr": "A HUD that stands still uses its real pixels in generated frames; switch this off if you see artifacts around the edges of moving things",
+   "it": "A HUD that stands still uses its real pixels in generated frames; switch this off if you see artifacts around the edges of moving things",
+   "pt-BR": "A HUD that stands still uses its real pixels in generated frames; switch this off if you see artifacts around the edges of moving things",
+   "tr": "A HUD that stands still uses its real pixels in generated frames; switch this off if you see artifacts around the edges of moving things",
+   "ar": "A HUD that stands still uses its real pixels in generated frames; switch this off if you see artifacts around the edges of moving things",
+   "pl": "A HUD that stands still uses its real pixels in generated frames; switch this off if you see artifacts around the edges of moving things",
+   "ru": "A HUD that stands still uses its real pixels in generated frames; switch this off if you see artifacts around the edges of moving things"
   },
   {
    "zh": "静音",

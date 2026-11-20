@@ -947,20 +947,22 @@ VGroup {
         }
     }
 
-    // The still rule (pipeline/PushHudStill.h): on unless switched off. What stands still in front of a
-    // moving picture keeps its real pixels in generated frames, with every method the graph runs.
+    // The still rule (pipeline/PushHudStill.h): off unless switched on (4.0 had it on for everyone; it
+    // sharpened HUDs and added artifacts around the edges of moving things, so 4.0.1 went back to what
+    // generated frames were before). What stands still in front of a moving picture keeps its real
+    // pixels in generated frames, with every method the graph runs.
     VRow {
         id: hudStill
         objectName: "pushfps-hudstill-row"
         label: qsTr("保持 HUD 清晰")
         help: qsTr("补帧会给画面的每个位置算一个运动。HUD 静止而背后的画面在动时，HUD 的像素会被当成背景一起拉动，文字、血条和准星就会发糊、重影或消失。开启后，在两张真实画面里完全相同、并且周围大部分在动的像素，会在补出来的帧里直接使用真实画面的像素。它不需要预热，每一对画面单独判断；画面整体静止时（菜单、镜头不动）不会改动任何像素。对带噪点的信号（模拟连接、压缩很重的串流）它找不到完全相同的像素，补帧就和原来一样。")
         readonly property int stillState: Number(quick.liveStats.hudStillState || 0)
-        readonly property bool on: veyra.preferences.pushHudStill !== false
+        readonly property bool on: veyra.preferences.pushHudStill === true
         hint: !quick.ownTechPossible ? (quick.fgPossible ? qsTr("XeSS 自己生成画面，不能同时使用") : (Support.status(veyra, "frame-generation").reason || ""))
             : on && stillState === 2 ? qsTr("没能在这台电脑上启动，补帧照常运行（原因见日志）")
             : on && stillState === 1 ? qsTr("正在运行：静止的 HUD 在补出来的帧里使用真实像素")
-            : on ? qsTr("静止的 HUD 在补出来的帧里使用真实像素（默认开启）")
-            : qsTr("已关闭：HUD 交给补帧处理")
+            : on ? qsTr("静止的 HUD 在补出来的帧里使用真实像素；移动物体的边缘出现瑕疵时请关闭")
+            : qsTr("已关闭（默认）。试验功能：HUD 更清晰，但移动物体的边缘可能出现瑕疵")
         VSwitch {
             objectName: "pushfps-hudstill"
             enabled: quick.ownTechPossible && veyra.fgEnabled

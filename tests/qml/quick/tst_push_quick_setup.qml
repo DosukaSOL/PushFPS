@@ -817,11 +817,16 @@ Item {
             compare(veyra.compareMode, 0)
         }
 
-        function test_the_still_rule_is_on_unless_switched_off() {
+        // 4.0 had it on for everyone and it added artifacts around moving edges: off unless switched on.
+        function test_the_still_rule_is_off_unless_switched_on() {
             veyra.fgEnabled = true; veyra.fgMultiplier = 2
             const row = control("pushfps-hudstill-row"), sw = control("pushfps-hudstill")
-            // Nothing saved: on.
-            verify(row.on && sw.checked, "on by default")
+            // Nothing saved: off, and nothing is written by looking at it.
+            verify(!row.on && !sw.checked, "off by default")
+            verify(veyra.preferences.pushHudStill !== true, "nothing switches it on by itself")
+            const untouched = row.hint
+            sw.toggled(true)
+            compare(veyra.preferences.pushHudStill, true); verify(row.on && sw.checked && row.hint !== untouched)
             // What runs is said: running, could not start, or just the description.
             veyra.liveStats = ({ running: true, hudStillState: 1 }); quick.liveStats = veyra.liveStats
             verify(row.hint.length > 0)

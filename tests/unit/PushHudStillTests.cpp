@@ -90,8 +90,8 @@ int main() {
         check(decide({}, 0, 0).empty() && count(decide(std::vector<uint8_t>(10, 1), 4, 4)) == 0, "a size that does not fit its data keeps nothing");
     }
     {   // The switch.
-        check(wanted(), "on unless switched off");
-        setWanted(false); check(!wanted(), "off"); setWanted(true); check(wanted(), "and on again");
+        check(!wanted(), "off unless switched on (4.0 had it on for everyone; 4.0.1 went back)");
+        setWanted(true); check(wanted(), "on"); setWanted(false); check(!wanted(), "and off again");
         check(kPairStill > 2.0f / 255.0f && kPairStill < 3.0f / 255.0f, "two steps of 255 are still the same, three are not");
     }
     {   // A picture that is no multiple of the blocks: the cut blocks at the right and the bottom count

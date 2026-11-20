@@ -232,7 +232,7 @@
       <li><b>Adaptive multiplier</b><span>Follows the game's real frame rate as it dips and picks the multiplier closest to your target.</span></li>
       <li><b>Go live</b><span>Stream straight to Twitch, YouTube, Kick, TikTok and more, to several platforms at once, at its own resolution (vertical for TikTok LIVE). Stream keys are stored encrypted.</span></li>
       <li><b>Frame Pacing Repair</b><span>Evens out the uneven frame timing of many 30&nbsp;FPS console games before frames are generated.</span></li>
-      <li><b>Keep the HUD sharp</b><span>On by default: what stands still in front of a moving picture keeps its real pixels in generated frames, with every method PushFPS runs itself.</span></li>
+      <li><b>Keep the HUD sharp</b><span>Optional and experimental, off by default: what stands still in front of a moving picture keeps its real pixels in generated frames. It can add artifacts around the edges of moving things.</span></li>
       <li><b>Live HUD Lock</b><span>Keeps still text, crosshairs and bars sharp in generated frames, found on every frame, no boxes needed.</span></li>
       <li><b>Lip sync by hand</b><span>Move the sound earlier or later in steps of 10&nbsp;ms on top of automatic sync.</span></li>
       <li><b>Choose before you record</b><span>Horizontal or vertical, fill or fit, 4K, 1440p or 1080p, and the quality, with the bitrate shown before it starts.</span></li>
@@ -362,7 +362,7 @@
       <table class="spec tune">
         <thead><tr><th scope="col">If you see</th><th scope="col">Try</th></tr></thead>
         <tbody>
-          <tr><th scope="row">Smeared HUD or text in fast motion</th><td data-label="Try">Keep the HUD sharp (on by default), Live HUD Lock on, the game preset or Automatic HUD detection, or a lower target (60 instead of 120)</td></tr>
+          <tr><th scope="row">Smeared HUD or text in fast motion</th><td data-label="Try">Live HUD Lock on, the game preset or Automatic HUD detection, or a lower target (60 instead of 120)</td></tr>
           <tr><th scope="row">Wobbly edges in fast motion</th><td data-label="Try">A lower target, or a higher frame generation quality in Pro mode</td></tr>
           <tr><th scope="row">Stutter or uneven motion</th><td data-label="Try">Smooth frame pacing on, G-SYNC/FreeSync on in your driver, capture card at exactly 60&nbsp;FPS, fullscreen (F11)</td></tr>
           <tr><th scope="row">The game feels slow to react</th><td data-label="Try">Lowest latency on, 120&nbsp;Hz console output if your card captures 120&nbsp;Hz, or target Off for competitive games</td></tr>

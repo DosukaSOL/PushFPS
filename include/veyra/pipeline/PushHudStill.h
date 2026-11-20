@@ -42,8 +42,15 @@ inline constexpr unsigned kNear = 3, kAround = 5;            // of 9, of 25 (the
 inline constexpr unsigned kBlock = 16;                       // pixels a side
 inline constexpr float kSurround = 0.5f;
 
-// The process-wide switch (preference pushHudStill; on unless the user turned it off).
-inline std::atomic<bool>& wantedStore() { static std::atomic<bool> value{true}; return value; }
+// The process-wide switch (preference pushHudStill). Off unless the user turned it on, since 4.0.1:
+// 4.0 had it on for everyone, and with it on the owner saw more artifacts around the edges of moving
+// things with NVIDIA's frame generation than before 4.0 (20 November 2026). The study that set the
+// thresholds used drawn pictures; a real game has far more pixels that are the same in two frames by
+// chance, and where one of them belongs to something passing in between, a real pixel is written
+// into the generated frame where the moving thing should be. With the switch off the graph has no
+// pass for it at all: every generated frame is what it was before 4.0. Never make it the default
+// again before it has been seen on real games on a real card.
+inline std::atomic<bool>& wantedStore() { static std::atomic<bool> value{false}; return value; }
 inline void setWanted(bool on) { wantedStore().store(on, std::memory_order_relaxed); }
 inline bool wanted() { return wantedStore().load(std::memory_order_relaxed); }
 

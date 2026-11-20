@@ -655,10 +655,11 @@ void QmlPlayerBridge::applyPreference(const QString& key) {
     else if (key == QLatin1String("pushAmbientFill"))
         engine::setPushAmbientFill(impl_->prefBool("pushAmbientFill", false));   // read by the presenter at every frame
     else if (key == QLatin1String("pushHudStill")) {
-        // The still rule (pipeline/PushHudStill.h): on unless switched off, and off for a run started with
+        // The still rule (pipeline/PushHudStill.h): off unless switched on (4.0 had it on for everyone and
+        // it added artifacts around moving edges; 4.0.1 went back), and off for a run started with
         // --safe-mode. Read when the graph is described; while frame generation plays, the engine is asked
         // to describe the graph again.
-        const bool on = impl_->prefBool("pushHudStill", true) && !pushflow2::emergencyOff();
+        const bool on = impl_->prefBool("pushHudStill", false) && !pushflow2::emergencyOff();
         const bool changed = pipeline::hudstill::wanted() != on;
         pipeline::hudstill::setWanted(on);
         if (changed && impl_->snapshot.running && settings().multiplier > 1) impl_->engine.refreshGraph();

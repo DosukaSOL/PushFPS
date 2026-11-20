@@ -601,7 +601,7 @@
   },
   {
    "id": "F23",
-   "what": "The still rule: a HUD that stands still in front of a moving picture keeps its real pixels in generated frames; a still picture, a plain pan and a ball crossing a still world are not touched; the shaders decide every pixel as the rule in plain C++ does",
+   "what": "The still rule, off unless switched on (4.0 had it on for everyone and it added artifacts around moving edges with NVIDIA's frame generation; with it off the graph has no pass for it and generated frames are what they were before 4.0). Switched on: a HUD that stands still in front of a moving picture keeps its real pixels in generated frames; the shaders decide every pixel as the rule in plain C++ does",
    "guards": [
     {
      "file": "tests/unit/PushHudStillTests.cpp",
@@ -616,7 +616,12 @@
     {
      "file": "tests/qml/quick/tst_push_quick_setup.qml",
      "ci": "tst_push_quick_setup",
-     "contains": "test_the_still_rule_is_on_unless_switched_off"
+     "contains": "test_the_still_rule_is_off_unless_switched_on"
+    },
+    {
+     "file": "tests/unit/PushHudStillTests.cpp",
+     "ci": "veyra_push_hud_still_tests",
+     "contains": "off unless switched on (4.0 had it on for everyone; 4.0.1 went back)"
     }
    ],
    "needs_hardware": "Real games on real cards: the rule was measured on drawn pictures with the shipped PushFlow models and compared with its reference on the software renderer."
