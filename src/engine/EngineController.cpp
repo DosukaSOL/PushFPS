@@ -1172,10 +1172,8 @@ void EngineController::run(HWND window,std::wstring path,PlayerOptions options,s
             // capture-noise band, PictureCompare.h) are dropped before any GPU work and
             // kept frames get content timestamps. "60->30" is the plain
             // every-second-sample CaptureHalfRate again (user 2026-10-12); since
-            // 2026-10-27 the callback's picture numbers move its phase onto the
-            // first copies of a 30 fps game, and since PushFPS 4.0 a due sample that
-            // shows the last kept picture again waits for the next new one, so a game
-            // below 30 is not handed on as repeated pairs (CaptureHalfRate.h).
+            // 2026-10-27 the callback's picture numbers only move its phase onto the
+            // first copies of a 30 fps game (CaptureHalfRate.h).
             // VEYRA_TEST_CONTENT_DEDUP_LEGACY=1 restores the report-only content modes
             // for A/B runs.
             ContentDedup contentDedup;uint64_t dedupRevision=0;
@@ -2294,8 +2292,7 @@ void EngineController::run(HWND window,std::wstring path,PlayerOptions options,s
                     pkt.pts={contentPts,10000000};
                     if(contentInterval>0)pkt.duration={contentInterval,10000000};
                 }else if(halfRate&&!rereadCached){
-                    // 60->30: every second sample on the effective capture clock; a due
-                    // repeat of the last kept picture waits for the next new picture.
+                    // 60->30: every second sample on the effective capture clock.
                     // Only a number the capture callback already computed is used, so the
                     // engine thread never compares a whole picture for this.
                     const auto interval=capturePeriod;
@@ -2306,8 +2303,8 @@ void EngineController::run(HWND window,std::wstring path,PlayerOptions options,s
                         std::lock_guard lock(mutex_);++snapshot_.captureRateSkipped;continue;
                     }
                     if(captureSampler.shifts()!=shifts||(picture&&captureSampler.gridKept()%600==0))
-                        veyra::log::info("capture-rate",std::format("60->30 phase: shifts={} keptOnGrid={} secondCopiesKept={} repeatsSkipped={} stillRefreshes={} stillEnds={} (a 30 fps game moves onto first copies; below 30 a due repeat waits for the next picture; a still is refreshed on the grid; 60 fps content never repeats)",
-                            captureSampler.shifts(),captureSampler.gridKept(),captureSampler.secondCopiesKept(),captureSampler.repeatsSkipped(),captureSampler.repeatsHeld(),captureSampler.stillEnds()));
+                        veyra::log::info("capture-rate",std::format("60->30 phase: shifts={} keptOnGrid={} secondCopiesKept={} (a 30 fps game moves onto first copies; 60 fps content never repeats)",
+                            captureSampler.shifts(),captureSampler.gridKept(),captureSampler.secondCopiesKept()));
                     pkt.duration={interval*2,10000000};
                 }
                 if(!halfRate)captureSampler.reset();

@@ -572,12 +572,22 @@
   },
   {
    "id": "F21",
-   "what": "60 to 30 for a game below 30 FPS: no picture handed on twice, every picture once at its first copy, a still kept on the grid; 60 FPS, steady 30 FPS and streams without picture numbers decided as in 3.2.10",
+   "what": "60 to 30 hands on every second sample exactly as 3.2.10 did, and never passes a due sample over because its picture number repeats: 4.0 did, and threw real game frames away wherever small motion stayed inside the picture comparison's noise tolerance (a steady 30 FPS game handed on at 22 to 27 a second, with pairs two game frames apart; taken back in 4.0.1)",
    "guards": [
     {
      "file": "tests/unit/PushHalfRateTests.cpp",
      "ci": "veyra_push_half_rate_tests",
      "contains": "decided exactly as in 3.2.10"
+    },
+    {
+     "file": "tests/unit/PushHalfRateTests.cpp",
+     "ci": "veyra_push_half_rate_tests",
+     "contains": "a steady 30 FPS game is handed on whole when the comparison sees"
+    },
+    {
+     "file": "tests/unit/PushHalfRateTests.cpp",
+     "ci": "veyra_push_half_rate_tests",
+     "contains": "a picture number that never changes still gives every second sample"
     }
    ],
    "needs_hardware": "A capture card and a game that dips below 30 FPS, for how it looks."
