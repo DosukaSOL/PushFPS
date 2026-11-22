@@ -110,7 +110,7 @@ VPage {
     // (preference pushProFolded: the blocks' ids with commas, as quick setup's sections are kept). A
     // tab of its own always shows its block: there the fold has nothing to say.
     // (The list's rules are PushShell.js, tested without Qt.)
-    readonly property string foldedText: String(veyra.preferences.pushProFolded || "")
+    readonly property string foldedText: String(Theme.shot.pushProFolded || "")
     function blockOpen(id) { return PushShell.blockOpen(root.foldedText, id) }
     function setBlockOpen(id, open) { veyra.setPreference("pushProFolded", PushShell.withBlock(root.foldedText, id, open)) }
     function blockShown(id) { return root.tab === id || (root.allTabs && root.blockOpen(id)) }
@@ -575,7 +575,7 @@ VPage {
     // panel over the full-screen picture, which has its own way in and out, and never during the
     // tour, which points at the panel): the picture's column takes the panel's room.
     readonly property bool sideCollapsed: Theme.modern && !root.overlay && !root.onboardingActive
-        && veyra.preferences.pushSideCollapsed === true
+        && Theme.shot.pushSideCollapsed === true
     readonly property real videoColumnWidth: Math.max(1, root.width - 14 * 2 - (root.sideCollapsed ? 0 : root.inspectorWidth + 10))
     // PushFPS: the three meter cards show only while something plays (with nothing open they were a wall of
     // "Not measured"), and, since 2.2.0's layout, only when the picture keeps room beside them. The guided

@@ -74,7 +74,7 @@ VPage {
     // (4.3.1) The settings side hidden with the title bar's button: the picture's column takes its
     // room. Quick setup is still the same item; whatever asks to be shown a row of it brings the
     // side back first (showSide).
-    readonly property bool sideCollapsed: threePane && veyra.preferences.pushSideCollapsed === true
+    readonly property bool sideCollapsed: threePane && Theme.shot.pushSideCollapsed === true
     function showSide() { if (sideCollapsed) veyra.setPreference("pushSideCollapsed", false) }
     readonly property real midX: paneMargin + leftWidth + paneGap
     readonly property real midWidth: Math.max(1, width - 2 * paneMargin - leftWidth - paneGap - (sideCollapsed ? 0 : rightWidth + paneGap))

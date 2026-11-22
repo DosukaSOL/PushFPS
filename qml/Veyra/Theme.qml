@@ -47,6 +47,7 @@ QtObject {
     // The value here is "legacy": the main window (Main.qml) binds it to the preference, where no choice
     // means the new design. So a component used without the shell (every QML test) is drawn as it always
     // was unless the test asks for the new design.
+    property var shot: ({})
     property string design: "legacy"
     readonly property bool modern: design !== "legacy"
     readonly property var surfacesModern: ({

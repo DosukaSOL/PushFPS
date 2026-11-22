@@ -98,11 +98,11 @@ Window {
     // button folded it. The button is not offered where the window's width has already decided.
     // (The rules are PushShell.js, which is tested without Qt: no test loads this window.)
     readonly property bool navForcedSlim: PushShell.navForcedSlim(width)
-    readonly property bool navCollapsed: veyra.preferences.pushNavCollapsed === true
-    readonly property bool navSlim: PushShell.navSlim(width, veyra.preferences)
+    readonly property bool navCollapsed: Theme.shot.pushNavCollapsed === true
+    readonly property bool navSlim: PushShell.navSlim(width, Theme.shot)
     // (4.3.1) The settings side of a page: quick setup on the home page's three panes, the panel in
     // Professional mode. One choice for both, made with the title bar's other button.
-    readonly property bool sideCollapsed: PushShell.sideCollapsed(veyra.preferences)
+    readonly property bool sideCollapsed: PushShell.sideCollapsed(Theme.shot)
     readonly property bool sideOffered: PushShell.sideOffered(page, homePage.threePane)
     // (4.3.1) A capture card connected from the new home page plays there: that page shows the
     // picture now. Not while full screen on connecting is on (Professional mode is the page that
@@ -1372,6 +1372,7 @@ Window {
                 veyra.setPreference(pair.slice(0, at), raw === "true" ? true : raw === "false" ? false : (raw !== "" && !isNaN(Number(raw)) ? Number(raw) : raw))
             }
         }
+        if (root.test.prefs !== undefined) { const shot2 = {}; for (const pair of root.test.prefs) { const at = pair.indexOf("="); if (at > 0) { const raw = pair.slice(at + 1); shot2[pair.slice(0, at)] = raw === "true" ? true : raw === "false" ? false : raw } } Theme.shot = shot2 }
         applyStartupSize()
         // Open on the configured page: the user's saved preference, or the
         // override a test passes on the command line.

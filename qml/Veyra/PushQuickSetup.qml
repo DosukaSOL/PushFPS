@@ -1785,7 +1785,7 @@ VGroup {
                   : qsTr("关闭时留在首页，画面显示在首页中间")
             VSwitch {
                 objectName: "pushfps-connect-pro"
-                checked: veyra.preferences.pushConnectToPro === true
+                checked: Theme.shot.pushConnectToPro === true
                 onToggled: v => veyra.setPreference("pushConnectToPro", v)
             }
         }
