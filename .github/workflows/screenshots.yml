@@ -294,7 +294,7 @@ jobs:
             @{ name = '158-design-pro-quality'; size = '1600x900'; args = @('--page', 'pro', '--tab', 'quality', '--lang', 'en') },
             @{ name = '159-design-legacy-appearance'; size = '1600x900'; args = @('--page', 'home', '--dialog', 'appearance', '--lang', 'en', '--pref', 'pushDesign=legacy') },
             # Showcase shots at 1920 x 1080 (names V...: 'o' the program as it is, 'n' the new design).
-            @{ name = 'Vo1-home'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en') },
+            @{ name = 'Vo1-home'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en', '--pref', 'pushSunset=false') },
             @{ name = 'Vo2-pro'; size = '1600x900'; args = @('--page', 'pro', '--lang', 'en') },
             @{ name = 'Vo3-pro-playing'; sender = $true; size = '1600x900'; args = @('frameinput:default', '--page', 'pro', '--lang', 'en') },
             @{ name = 'Vo4-studio'; size = '1600x900'; args = @('--page', 'live', '--lang', 'en') },
@@ -313,7 +313,7 @@ jobs:
             @{ name = 'Vn11-watch'; size = '1600x900'; args = @('--page', 'watch', '--lang', 'en') },
             @{ name = 'Vn12-settings'; size = '1600x900'; args = @('--page', 'set', '--tab', 'look', '--lang', 'en') },
             @{ name = 'Vn13-appearance'; size = '1600x900'; args = @('--page', 'home', '--dialog', 'appearance', '--lang', 'en') },
-            @{ name = 'Vn14-legacy-home'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en', '--pref', 'pushDesign=legacy') },
+            @{ name = 'Vn14-legacy-home'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en', '--pref', 'pushDesign=legacy', '--pref', 'pushSunset=false') },
             @{ name = 'Vn15-legacy-appearance'; size = '1600x900'; args = @('--page', 'home', '--dialog', 'appearance', '--lang', 'en', '--pref', 'pushDesign=legacy') },
             @{ name = 'Vn16-intro'; size = '1600x900'; args = @('--page', 'home', '--intro-at', '1640') },
             @{ name = 'Vn17-compare-line'; sender = $true; size = '1600x900'; args = @('frameinput:default', '--page', 'min', '--lang', 'en', '--compare', '0.4') }
