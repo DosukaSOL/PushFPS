@@ -33,28 +33,26 @@ endif()
 target_include_directories(pushfps_portable PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 set_source_files_properties(qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+# The files are kept in qml/ here but must sit next to the module's qmldir in the resources: in a
+# folder of their own, that folder is also an implicit import that offers Theme.qml as a plain type,
+# and Qt picks one or the other at random on each start (Qt 6.12: about four starts in five drew the
+# whole interface without its colours, sizes and fonts).
+set(pushfps_qml_files
+    qml/Main.qml qml/HomePage.qml qml/PlayerPage.qml qml/SettingsPage.qml qml/Theme.qml qml/Card.qml
+    qml/SettingRow.qml qml/Segmented.qml qml/Toggle.qml qml/Choice.qml qml/Slider2.qml qml/Button2.qml
+    qml/GpuCheck.qml)
+set(pushfps_qml_resources qml/logo.png qml/icon.png)
+foreach(file IN LISTS pushfps_qml_files pushfps_qml_resources)
+  get_filename_component(name "${file}" NAME)
+  set_source_files_properties(${file} PROPERTIES QT_RESOURCE_ALIAS ${name})
+endforeach()
 qt_add_qml_module(pushfps_portable
   URI PushFPS
   VERSION 1.0
   # Not build/app/PushFPS: that is the program's own name.
   OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/qml/PushFPS
-  QML_FILES
-    qml/Main.qml
-    qml/HomePage.qml
-    qml/PlayerPage.qml
-    qml/SettingsPage.qml
-    qml/Theme.qml
-    qml/Card.qml
-    qml/SettingRow.qml
-    qml/Segmented.qml
-    qml/Toggle.qml
-    qml/Choice.qml
-    qml/Slider2.qml
-    qml/Button2.qml
-    qml/GpuCheck.qml
-  RESOURCES
-    qml/logo.png
-    qml/icon.png)
+  QML_FILES ${pushfps_qml_files}
+  RESOURCES ${pushfps_qml_resources})
 
 # Interpolation shader. texelFetch needs GLSL ES 3.0 / GLSL 3.3 at least.
 # BATCHABLE: Qt Quick's renderer asks for the batchable variant of a material's vertex shader.

@@ -157,6 +157,8 @@ private:
     void startCameraNow();
     QString formatKey() const;
     void restoreFormat();
+    int savedCameraIndex() const;
+    void rememberCamera();
 
     QQmlEngine* qml_;
     CatalogTranslator* translator_;
@@ -172,6 +174,9 @@ private:
     int targetMode_ = 3, quality_ = 1;
     bool pacing_ = false, hud_ = false, dedup_ = true, audioOn_ = true, showStats_ = false, onTop_ = false;
     bool lowLatency_ = false, autoConnect_ = false, applyingLowLatency_ = false, savedCameraFound_ = false;
+    bool autoConnectPending_ = false;
+    QByteArray audioInId_, audioOutId_;
+    QString audioInName_, audioOutName_;
     int audioTrim_ = 0, fillMode_ = 0;
     qreal volume_ = 1.0, brightness_ = 0, contrast_ = 1, saturation_ = 1, gamma_ = 1;
     QString language_ = QStringLiteral("auto");

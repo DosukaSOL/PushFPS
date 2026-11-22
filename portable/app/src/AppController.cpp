@@ -83,17 +83,62 @@ AppController::AppController(QQmlEngine* qml, CatalogTranslator* translator, QSt
     connect(&statsTimer_, &QTimer::timeout, this, &AppController::updateStats);
     statsTimer_.start();
 
-    const QString savedCamera = s.value(QStringLiteral("camera")).toString();
+    // The sound devices chosen by hand, by id with the name as a fallback (empty = automatic / the
+    // system default). Kept while the device is away, so it is chosen again when it comes back.
+    audioInId_ = s.value(QStringLiteral("audioInput")).toByteArray();
+    audioInName_ = s.value(QStringLiteral("audioInputName")).toString();
+    audioOutId_ = s.value(QStringLiteral("audioOutput")).toByteArray();
+    audioOutName_ = s.value(QStringLiteral("audioOutputName")).toString();
+
     cameras_ = QMediaDevices::videoInputs();
-    for (int i = 0; i < cameras_.size(); ++i)
-        if (QString::fromUtf8(cameras_[i].id()) == savedCamera) { videoIndex_ = i; savedCameraFound_ = true; }
+    const int saved = savedCameraIndex();
+    if (saved >= 0) { videoIndex_ = saved; savedCameraFound_ = true; }
     refreshDevices();
     restoreFormat();
     // Plug and play: the capture card that was used last is connected when the app opens. Only that
     // card, and only on the home page (a screenshot or self-test run starts elsewhere or has no card).
-    if (autoConnect_ && savedCameraFound_ && startPage_ == QLatin1String("home"))
-        QTimer::singleShot(400, this, [this] { if (!running()) startCamera(); });
+    // A card that is listed a moment after the start (the device list on Linux can come late) is still
+    // connected while the first seconds last.
+    if (autoConnect_ && startPage_ == QLatin1String("home")) {
+        if (savedCameraFound_) {
+            QTimer::singleShot(400, this, [this] { if (!running()) startCamera(); });
+        } else if (!settings_->value(QStringLiteral("camera")).toString().isEmpty()) {
+            autoConnectPending_ = true;
+            QTimer::singleShot(15000, this, [this] { autoConnectPending_ = false; });
+        }
+    }
 }
+
+// The card used last: by its id, else by its name (on Linux the id is the /dev/video node, which can
+// change between starts or when the card is plugged into another port). -1 when it is not listed.
+int AppController::savedCameraIndex() const {
+    const QString id = settings_->value(QStringLiteral("camera")).toString();
+    const QString name = settings_->value(QStringLiteral("cameraName")).toString();
+    if (id.isEmpty() && name.isEmpty()) return -1;
+    for (int i = 0; i < cameras_.size(); ++i)
+        if (!id.isEmpty() && QString::fromUtf8(cameras_[i].id()) == id) return i;
+    for (int i = 0; i < cameras_.size(); ++i)
+        if (!name.isEmpty() && cameras_[i].description() == name) return i;
+    return -1;
+}
+
+void AppController::rememberCamera() {
+    if (videoIndex_ < 0 || videoIndex_ >= cameras_.size()) return;
+    save(QStringLiteral("camera"), QString::fromUtf8(cameras_[videoIndex_].id()));
+    save(QStringLiteral("cameraName"), cameras_[videoIndex_].description());
+}
+
+namespace {
+// Where a chosen sound device stands in the list (0 = automatic / default, so 1 + its place).
+int audioIndexOf(const QList<QAudioDevice>& list, const QByteArray& id, const QString& name) {
+    if (id.isEmpty()) return 0;
+    for (int i = 0; i < list.size(); ++i)
+        if (list[i].id() == id) return i + 1;
+    for (int i = 0; i < list.size(); ++i)
+        if (!name.isEmpty() && list[i].description() == name) return i + 1;
+    return 0;
+}
+}  // namespace
 
 AppController::~AppController() {
     audio_->stop();
@@ -129,13 +174,16 @@ void AppController::applyEngineSettings() {
 void AppController::refreshDevices() {
     const QByteArray current = videoIndex_ >= 0 && videoIndex_ < cameras_.size() ? cameras_[videoIndex_].id() : QByteArray();
     cameras_ = QMediaDevices::videoInputs();
-    videoIndex_ = 0;
+    videoIndex_ = -1;
     for (int i = 0; i < cameras_.size(); ++i)
         if (cameras_[i].id() == current) videoIndex_ = i;
+    if (videoIndex_ < 0) videoIndex_ = savedCameraIndex();  // the card used last, back in the list
+    if (videoIndex_ < 0) videoIndex_ = 0;
     inputs_ = QMediaDevices::audioInputs();
     outputs_ = QMediaDevices::audioOutputs();
-    audioInIndex_ = std::clamp(audioInIndex_, 0, int(inputs_.size()));
-    audioOutIndex_ = std::clamp(audioOutIndex_, 0, int(outputs_.size()));
+    // By id, not by place: the lists change order when a device comes or goes.
+    audioInIndex_ = audioIndexOf(inputs_, audioInId_, audioInName_);
+    audioOutIndex_ = audioIndexOf(outputs_, audioOutId_, audioOutName_);
     if (videoIndex_ < cameras_.size()) {
         const auto list = cameras_[videoIndex_].videoFormats();
         if (formatIndex_ < 0 || formatIndex_ >= list.size()) {
@@ -146,6 +194,11 @@ void AppController::refreshDevices() {
         formatIndex_ = -1;
     }
     emit devicesChanged();
+    if (autoConnectPending_ && !running() && savedCameraIndex() >= 0 && savedCameraIndex() == videoIndex_) {
+        autoConnectPending_ = false;
+        savedCameraFound_ = true;
+        QTimer::singleShot(400, this, [this] { if (!running()) startCamera(); });
+    }
 }
 
 QStringList AppController::videoDevices() const {
@@ -158,7 +211,7 @@ void AppController::setVideoDeviceIndex(int i) {
     if (i < 0 || i >= cameras_.size() || i == videoIndex_) return;
     videoIndex_ = i;
     formatIndex_ = CaptureSource::preferredFormat(cameras_[i].videoFormats());
-    save(QStringLiteral("camera"), QString::fromUtf8(cameras_[i].id()));
+    rememberCamera();
     restoreFormat();
     emit devicesChanged();
 }
@@ -206,6 +259,10 @@ QStringList AppController::audioInputs() const {
 void AppController::setAudioInputIndex(int i) {
     if (i < 0 || i > inputs_.size() || i == audioInIndex_) return;
     audioInIndex_ = i;
+    audioInId_ = i > 0 ? inputs_[i - 1].id() : QByteArray();
+    audioInName_ = i > 0 ? inputs_[i - 1].description() : QString();
+    save(QStringLiteral("audioInput"), audioInId_);
+    save(QStringLiteral("audioInputName"), audioInName_);
     emit devicesChanged();
     if (running() && source_->kind() == CaptureSource::Kind::Camera) startAudioIfWanted();
 }
@@ -219,6 +276,10 @@ QStringList AppController::audioOutputs() const {
 void AppController::setAudioOutputIndex(int i) {
     if (i < 0 || i > outputs_.size() || i == audioOutIndex_) return;
     audioOutIndex_ = i;
+    audioOutId_ = i > 0 ? outputs_[i - 1].id() : QByteArray();
+    audioOutName_ = i > 0 ? outputs_[i - 1].description() : QString();
+    save(QStringLiteral("audioOutput"), audioOutId_);
+    save(QStringLiteral("audioOutputName"), audioOutName_);
     emit devicesChanged();
     if (running() && source_->kind() == CaptureSource::Kind::Camera) startAudioIfWanted();
 }
@@ -268,6 +329,11 @@ void AppController::startCameraNow() {
     const QCameraFormat format = formatIndex_ >= 0 && formatIndex_ < list.size() ? list[formatIndex_] : QCameraFormat();
     audio_->stop();
     if (source_->startCamera(device, format)) {
+        // The card connected is the one "Connect when PushFPS opens" connects next time, also when it
+        // was never picked from the list (a single card stays on its first place and was never saved).
+        rememberCamera();
+        if (formatIndex_ >= 0 && formatIndex_ < list.size()) save(formatKey(), formatLabel(list[formatIndex_]));
+        autoConnectPending_ = false;
         startedAt_ = nowNs();
         startAudioIfWanted();
     }

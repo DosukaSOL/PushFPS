@@ -257,7 +257,7 @@ int main(int argc, char** argv) {
 #ifdef PUSHFPS_MAC_ACTIVITY
     keepTimingPrecise();
 #endif
-    app.setWindowIcon(QIcon(QStringLiteral(":/qt/qml/PushFPS/qml/icon.png")));
+    app.setWindowIcon(QIcon(QStringLiteral(":/qt/qml/PushFPS/icon.png")));
 
     QCommandLineParser cli;
     cli.setApplicationDescription(QStringLiteral("PushFPS for Linux and macOS (preview)"));

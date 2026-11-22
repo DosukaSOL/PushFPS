@@ -2,7 +2,7 @@
 # PushFPS for Linux and macOS. Built on its own (cmake -S portable), separate from the Windows build in
 # the repository root, which stays Veyra's D3D12 engine.
 cmake_minimum_required(VERSION 3.21)
-project(pushfps_portable VERSION 0.1.0 LANGUAGES CXX)
+project(pushfps_portable VERSION 0.1.1 LANGUAGES CXX)
 if(APPLE)
   enable_language(OBJCXX)
 endif()
