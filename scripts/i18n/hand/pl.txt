@@ -1590,3 +1590,9 @@ zh:FSR 的运动估算可以更省|Szacowanie ruchu dla FSR może być lżejsze
 zh:FSR 补帧前，PushFPS 先从画面里估算运动。改用更省的估算后每帧少占显卡，中低端显卡更容易跟上；物体边缘会粗一些，看起来变差就撤销|Zanim FSR wygeneruje klatkę, PushFPS szacuje ruch na podstawie obrazu. Lżejsze szacowanie mniej obciąża kartę graficzną w każdej klatce, dzięki czemu karty ze średniej i niższej półki łatwiej nadążają; krawędzie obiektów stają się nieco bardziej zgrubne. Cofnij, jeśli obraz wygląda gorzej
 zh:改用更省的运动估算|Użyj lżejszego szacowania ruchu
 zh:发给 PS5 的带宽请求，主机不保证达到。有线网络下 30 Mbps 或更高会更清晰；画面卡顿就调低|Przepustowość, o którą prosi się PS5; konsola nie gwarantuje jej osiągnięcia. W sieci przewodowej 30 Mb/s lub więcej daje ostrzejszy obraz; zmniejsz, jeśli obraz się zacina
+zh:人物保持|Utrzymanie postaci
+zh:镜头绕着人物快速转动时，背后的画面移动得很快而人物几乎不动，补帧会把人物的一部分当成背景一起拉动：头发和肩膀破碎，背后的东西弯进人物里。开启后，PushFPS 用一个抠像网络在每张真实画面里找出人物，补帧之后再把人物按它自己的运动从真实画面里原样放回。紧挨着人物的背景不会被修复；在屏幕上移动得很快的人，以及车辆，保持补帧原来的样子。它会占用一些显卡性能。|Gdy kamera szybko obraca się wokół postaci, świat za nią przesuwa się szybko, a postać prawie się nie rusza, i generowanie klatek ciągnie części postaci razem ze światem: włosy i ramiona się rozpadają, a to, co stoi z tyłu, wygina się do środka. Po włączeniu PushFPS znajduje ludzi w każdej prawdziwej klatce za pomocą sieci do wycinania postaci i po generowaniu klatek kładzie ich z powrotem z prawdziwych klatek, przesuniętych o ich własny ruch. Tło tuż obok postaci nie jest naprawiane; ludzie poruszający się bardzo szybko po ekranie oraz pojazdy zostają tacy, jakimi zrobiło ich generowanie klatek. Zużywa trochę mocy karty graficznej.
+zh:这个安装里没有人物保持需要的模型文件，补帧照常运行|Ta instalacja nie ma modelu, którego potrzebuje utrzymanie postaci; generowanie klatek działa jak zwykle
+zh:正在运行：已找到人物，补出的每一帧里都把人物原样放回|Działa: znaleziono ludzi. Wracają w całości do każdej wygenerowanej klatki
+zh:正在运行：画面里还没有找到人物|Działa: na obrazie nie znaleziono jeszcze żadnej osoby
+zh:已关闭：镜头快速转动时人物的头发和轮廓可能破碎|Wyłączone: włosy i zarys postaci mogą się rozpadać, gdy kamera szybko się obraca

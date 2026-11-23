@@ -13519,6 +13519,24 @@
    "ru": "Разборчивость речи"
   },
   {
+   "zh": "人物保持",
+   "src": "qml/ProPage.qml",
+   "zh-TW": "人物保持",
+   "en": "Character Hold",
+   "ja": "キャラクター保持",
+   "ko": "캐릭터 유지",
+   "nl": "Character Hold",
+   "de": "Character Hold",
+   "es": "Retención del personaje",
+   "fr": "Maintien du personnage",
+   "it": "Blocco del personaggio",
+   "pt-BR": "Fixação do personagem",
+   "tr": "Karakter Sabitleme",
+   "ar": "تثبيت الشخصية",
+   "pl": "Utrzymanie postaci",
+   "ru": "Удержание персонажа"
+  },
+  {
    "zh": "人脸原画保护",
    "src": "qml/BeautyEditor.qml",
    "zh-TW": "人臉原畫保護",
@@ -30564,6 +30582,24 @@
    "ar": "متوقف: قد تومض علامة التصويب أو تترك أثراً شبحياً عند تحرك الصورة",
    "pl": "Wyłączone: gdy obraz się porusza, celownik może migotać lub zostawiać powidoki",
    "ru": "Выключено: при движении изображения прицел может мерцать или двоиться"
+  },
+  {
+   "zh": "已关闭：镜头快速转动时人物的头发和轮廓可能破碎",
+   "src": "qml/ProPage.qml",
+   "zh-TW": "已關閉：鏡頭快速轉動時人物的頭髮和輪廓可能破碎",
+   "en": "Off: a character's hair and outline can break up when the camera turns quickly",
+   "ja": "オフ：カメラがすばやく回ると、キャラクターの髪や輪郭が崩れることがあります",
+   "ko": "끔: 카메라가 빠르게 돌 때 캐릭터의 머리카락과 윤곽이 깨질 수 있습니다",
+   "nl": "Uit: haar en omtrek van een personage kunnen uiteenvallen als de camera snel draait",
+   "de": "Aus: Haare und Umriss einer Figur können zerfallen, wenn sich die Kamera schnell dreht",
+   "es": "Desactivado: el pelo y el contorno de un personaje pueden romperse cuando la cámara gira rápido",
+   "fr": "Désactivé : les cheveux et le contour d'un personnage peuvent se briser quand la caméra tourne vite",
+   "it": "Disattivato: i capelli e il contorno di un personaggio possono spezzarsi quando la telecamera gira velocemente",
+   "pt-BR": "Desligado: o cabelo e o contorno de um personagem podem se quebrar quando a câmera gira rápido",
+   "tr": "Kapalı: kamera hızlı döndüğünde karakterin saçı ve dış hattı parçalanabilir",
+   "ar": "متوقف: قد يتكسر شعر الشخصية ومحيطها عندما تدور الكاميرا بسرعة",
+   "pl": "Wyłączone: włosy i zarys postaci mogą się rozpadać, gdy kamera szybko się obraca",
+   "ru": "Выключено: волосы и контур персонажа могут разваливаться при быстром повороте камеры"
   },
   {
    "zh": "已关闭；每次启动软件后需手动启用",
@@ -50891,6 +50927,24 @@
    "ru": "Бег в %1 × %2"
   },
   {
+   "zh": "正在运行：已找到人物，补出的每一帧里都把人物原样放回",
+   "src": "qml/ProPage.qml",
+   "zh-TW": "正在執行：已找到人物，補出的每一幀裡都把人物原樣放回",
+   "en": "Running: people found. They are put back whole in every generated frame",
+   "ja": "動作中：人物を検出しました。生成されたすべてのフレームにそのまま重ね戻します",
+   "ko": "실행 중: 사람을 찾았습니다. 생성된 모든 프레임에 그대로 다시 올려놓습니다",
+   "nl": "Actief: mensen gevonden. Ze worden in elk gegenereerd frame heel teruggelegd",
+   "de": "Aktiv: Personen gefunden. Sie werden in jedem generierten Frame unversehrt zurückgelegt",
+   "es": "En marcha: personas encontradas. Se vuelven a colocar enteras en cada fotograma generado",
+   "fr": "En cours : personnes trouvées. Elles sont remises entières dans chaque image générée",
+   "it": "In funzione: persone trovate. Vengono rimesse intere in ogni fotogramma generato",
+   "pt-BR": "Em execução: pessoas encontradas. Elas são recolocadas inteiras em cada quadro gerado",
+   "tr": "Çalışıyor: insanlar bulundu. Üretilen her kareye bütün olarak geri konur",
+   "ar": "يعمل: تم العثور على أشخاص. يُعادون كاملين في كل إطار مُولَّد",
+   "pl": "Działa: znaleziono ludzi. Wracają w całości do każdej wygenerowanej klatki",
+   "ru": "Работает: люди найдены. Они возвращаются целыми в каждый созданный кадр"
+  },
+  {
    "zh": "正在运行：已找到准星，补出的每一帧里都原样放回",
    "src": "qml/ProPage.qml",
    "zh-TW": "正在執行：已找到準星，補出的每一幀裡都原樣放回",
@@ -50943,6 +50997,24 @@
    "ar": "يعمل: لم يُعثر بعد على علامة تصويب في وسط الصورة (تُكتشف عندما تتحرك الصورة خلفها)",
    "pl": "Działa: na środku obrazu nie znaleziono jeszcze celownika (jest wykrywany, gdy obraz za nim się porusza)",
    "ru": "Работает: в центре изображения прицел пока не найден (он определяется, когда изображение за ним движется)"
+  },
+  {
+   "zh": "正在运行：画面里还没有找到人物",
+   "src": "qml/ProPage.qml",
+   "zh-TW": "正在執行：畫面裡還沒有找到人物",
+   "en": "Running: no person found in the picture yet",
+   "ja": "動作中：映像の中にまだ人物が見つかっていません",
+   "ko": "실행 중: 화면에서 아직 사람을 찾지 못했습니다",
+   "nl": "Actief: nog geen persoon in het beeld gevonden",
+   "de": "Aktiv: noch keine Person im Bild gefunden",
+   "es": "En marcha: todavía no se ha encontrado ninguna persona en la imagen",
+   "fr": "En cours : aucune personne trouvée dans l'image pour l'instant",
+   "it": "In funzione: nessuna persona trovata nell'immagine per ora",
+   "pt-BR": "Em execução: nenhuma pessoa encontrada na imagem ainda",
+   "tr": "Çalışıyor: görüntüde henüz bir insan bulunamadı",
+   "ar": "يعمل: لم يُعثر على أي شخص في الصورة بعد",
+   "pl": "Działa: na obrazie nie znaleziono jeszcze żadnej osoby",
+   "ru": "Работает: людей на изображении пока не найдено"
   },
   {
    "zh": "正在连接",
@@ -70801,6 +70873,24 @@
    "ru": "Встроенный пресет уже использует это имя"
   },
   {
+   "zh": "这个安装里没有人物保持需要的模型文件，补帧照常运行",
+   "src": "qml/ProPage.qml",
+   "zh-TW": "這個安裝裡沒有人物保持需要的模型檔案，補幀照常執行",
+   "en": "This install does not have the model Character Hold needs; frame generation runs as usual",
+   "ja": "このインストールにはキャラクター保持に必要なモデルファイルがありません。フレーム生成は通常どおり動作します",
+   "ko": "이 설치에는 캐릭터 유지에 필요한 모델 파일이 없습니다. 프레임 생성은 평소대로 실행됩니다",
+   "nl": "Deze installatie heeft het model niet dat Character Hold nodig heeft; framegeneratie draait gewoon door",
+   "de": "Dieser Installation fehlt das Modell, das Character Hold braucht; die Frame-Generierung läuft wie gewohnt",
+   "es": "Esta instalación no tiene el modelo que necesita la retención del personaje; la generación de fotogramas funciona como siempre",
+   "fr": "Cette installation n'a pas le modèle nécessaire au maintien du personnage ; la génération d'images fonctionne comme d'habitude",
+   "it": "Questa installazione non ha il modello che serve al blocco del personaggio; la generazione di fotogrammi funziona come sempre",
+   "pt-BR": "Esta instalação não tem o modelo de que a fixação do personagem precisa; a geração de quadros funciona normalmente",
+   "tr": "Bu kurulumda Karakter Sabitleme'nin ihtiyaç duyduğu model yok; kare üretimi her zamanki gibi çalışır",
+   "ar": "هذا التثبيت لا يحتوي على النموذج الذي يحتاجه تثبيت الشخصية؛ توليد الإطارات يعمل كالمعتاد",
+   "pl": "Ta instalacja nie ma modelu, którego potrzebuje utrzymanie postaci; generowanie klatek działa jak zwykle",
+   "ru": "В этой установке нет модели, нужной для удержания персонажа; генерация кадров работает как обычно"
+  },
+  {
    "zh": "这个帧率下这张卡只提供压缩格式（MJPEG），画面会发糊并带压缩痕迹。%1 fps 下可以用不压缩的 %2：30 FPS 的游戏不会少任何画面，60 FPS 的游戏会少一半",
    "src": "qml/CaptureSourceDialog.qml",
    "zh-TW": "這個幀率下這張卡只提供壓縮格式（MJPEG），畫面會發糊並帶壓縮痕跡。%1 fps 下可以用不壓縮的 %2：30 FPS 的遊戲不會少任何畫面，60 FPS 的遊戲會少一半",
@@ -74489,6 +74579,24 @@
    "ar": "في حين تحرك الكاميرا، فإنها تضع بؤر الإطار السابق على الإطارات المولدة. \"لحماية الـ \"هيو دي إستخدموا لعبة \"مسبقة أو حماية \"هود",
    "pl": "Podczas gdy kamera porusza się, kładzie piksele poprzedniej ramki nad generowanymi ramkami: krawędzie obiektów się rozpadają i obraz staje się miękki. Aby chronić HUD, użyj ustawionej gry lub ochrony HUD",
    "ru": "В то время как камера движется, она укладывает пиксели предыдущего кадра над сгенерированными кадрами: края объектов распадаются, и изображение становится мягким. Для защиты HUD используйте предустановленную игру или защиту HUD."
+  },
+  {
+   "zh": "镜头绕着人物快速转动时，背后的画面移动得很快而人物几乎不动，补帧会把人物的一部分当成背景一起拉动：头发和肩膀破碎，背后的东西弯进人物里。开启后，PushFPS 用一个抠像网络在每张真实画面里找出人物，补帧之后再把人物按它自己的运动从真实画面里原样放回。紧挨着人物的背景不会被修复；在屏幕上移动得很快的人，以及车辆，保持补帧原来的样子。它会占用一些显卡性能。",
+   "src": "qml/ProPage.qml",
+   "zh-TW": "鏡頭繞著人物快速轉動時，背後的畫面移動得很快而人物幾乎不動，補幀會把人物的一部分當成背景一起拉動：頭髮和肩膀破碎，背後的東西彎進人物裡。開啟後，PushFPS 用一個摳像網路在每張真實畫面裡找出人物，補幀之後再把人物按它自己的運動從真實畫面裡原樣放回。緊挨著人物的背景不會被修復；在螢幕上移動得很快的人，以及車輛，保持補幀原來的樣子。它會佔用一些顯示卡效能。",
+   "en": "When the camera turns quickly round a character, the world behind passes fast while the character hardly moves, and frame generation drags parts of the character along with the world: hair and shoulders break up, and what stands behind bends into them. With this on, PushFPS uses a matting network to find the people in every real frame, and after frame generation lays them back from the real frames, moved by their own motion. The background right beside a character is not repaired; people who move very fast across the screen, and vehicles, stay as frame generation made them. It takes some of the graphics card's power.",
+   "ja": "カメラがキャラクターの周りをすばやく回ると、背後の景色は速く流れるのにキャラクターはほとんど動きません。フレーム生成はキャラクターの一部を背景と一緒に引きずってしまい、髪や肩が崩れ、背後のものがキャラクターに食い込みます。オンにすると、PushFPS はマッティング用ネットワークで実フレームごとに人物を見つけ、フレーム生成のあとで、その人物自身の動きに合わせて実フレームからそのまま重ね戻します。キャラクターのすぐ横の背景は修復されません。画面上を非常に速く動く人物や乗り物は、フレーム生成が作ったままになります。グラフィックカードの性能を少し使います。",
+   "ko": "카메라가 캐릭터 주위를 빠르게 돌면 뒤쪽 화면은 빠르게 지나가지만 캐릭터는 거의 움직이지 않습니다. 이때 프레임 생성이 캐릭터의 일부를 배경과 함께 끌고 가서 머리카락과 어깨가 깨지고 뒤에 있는 것이 캐릭터 안으로 휘어 들어옵니다. 켜면 PushFPS가 매팅 네트워크로 실제 프레임마다 사람을 찾아내고, 프레임 생성이 끝난 뒤 그 사람 자신의 움직임에 맞춰 실제 프레임에서 그대로 다시 올려놓습니다. 캐릭터 바로 옆의 배경은 복구되지 않습니다. 화면에서 매우 빠르게 움직이는 사람과 차량은 프레임 생성이 만든 그대로 둡니다. 그래픽 카드 성능을 조금 사용합니다.",
+   "nl": "Als de camera snel om een personage draait, schuift de wereld erachter snel voorbij terwijl het personage nauwelijks beweegt. Framegeneratie trekt dan delen van het personage met de wereld mee: haar en schouders vallen uiteen en wat erachter staat buigt erin. Staat dit aan, dan zoekt PushFPS met een matting-netwerk de mensen in elk echt frame en legt ze na de framegeneratie vanuit de echte frames terug, verplaatst met hun eigen beweging. De achtergrond vlak naast een personage wordt niet hersteld; mensen die heel snel over het scherm bewegen, en voertuigen, blijven zoals framegeneratie ze maakte. Het kost wat rekenkracht van de grafische kaart.",
+   "de": "Dreht sich die Kamera schnell um eine Figur, zieht die Welt dahinter schnell vorbei, während sich die Figur kaum bewegt. Die Frame-Generierung zieht dann Teile der Figur mit der Welt mit: Haare und Schultern zerfallen, und was dahinter steht, biegt sich in die Figur hinein. Ist dies an, findet PushFPS mit einem Matting-Netzwerk die Personen in jedem echten Frame und legt sie nach der Frame-Generierung aus den echten Frames zurück, verschoben um ihre eigene Bewegung. Der Hintergrund direkt neben einer Figur wird nicht repariert; Personen, die sich sehr schnell über den Bildschirm bewegen, und Fahrzeuge bleiben so, wie die Frame-Generierung sie gemacht hat. Es kostet etwas Leistung der Grafikkarte.",
+   "es": "Cuando la cámara gira rápido alrededor de un personaje, el mundo de detrás pasa deprisa mientras el personaje apenas se mueve, y la generación de fotogramas arrastra partes del personaje con el mundo: el pelo y los hombros se rompen y lo que hay detrás se dobla hacia dentro. Con esto activado, PushFPS usa una red de matting para encontrar a las personas en cada fotograma real y, tras la generación de fotogramas, las vuelve a colocar desde los fotogramas reales, desplazadas con su propio movimiento. El fondo justo al lado de un personaje no se repara; las personas que se mueven muy rápido por la pantalla y los vehículos quedan como los hizo la generación de fotogramas. Usa algo de potencia de la tarjeta gráfica.",
+   "fr": "Quand la caméra tourne vite autour d'un personnage, le décor derrière défile rapidement alors que le personnage bouge à peine, et la génération d'images entraîne des parties du personnage avec le décor : les cheveux et les épaules se brisent et ce qui se trouve derrière se plie à l'intérieur. Une fois activé, PushFPS utilise un réseau de matting pour trouver les personnes dans chaque image réelle et, après la génération d'images, les remet en place à partir des images réelles, déplacées selon leur propre mouvement. Le décor juste à côté d'un personnage n'est pas réparé ; les personnes qui traversent l'écran très vite et les véhicules restent tels que la génération d'images les a faits. Cela utilise un peu de puissance de la carte graphique.",
+   "it": "Quando la telecamera gira velocemente intorno a un personaggio, il mondo dietro scorre in fretta mentre il personaggio si muove appena, e la generazione di fotogrammi trascina parti del personaggio insieme al mondo: capelli e spalle si spezzano e ciò che sta dietro si piega al loro interno. Con questa opzione attiva, PushFPS usa una rete di matting per trovare le persone in ogni fotogramma reale e, dopo la generazione di fotogrammi, le rimette al loro posto prendendole dai fotogrammi reali, spostate secondo il loro movimento. Lo sfondo subito accanto a un personaggio non viene riparato; le persone che attraversano lo schermo molto velocemente e i veicoli restano come li ha fatti la generazione di fotogrammi. Usa un po' di potenza della scheda grafica.",
+   "pt-BR": "Quando a câmera gira rápido em volta de um personagem, o mundo atrás passa depressa enquanto o personagem quase não se move, e a geração de quadros arrasta partes do personagem junto com o mundo: cabelo e ombros se quebram e o que está atrás se dobra para dentro. Com isto ligado, o PushFPS usa uma rede de matting para encontrar as pessoas em cada quadro real e, depois da geração de quadros, as recoloca a partir dos quadros reais, deslocadas pelo próprio movimento. O fundo logo ao lado de um personagem não é reparado; pessoas que se movem muito rápido pela tela e veículos ficam como a geração de quadros os fez. Usa um pouco da potência da placa de vídeo.",
+   "tr": "Kamera bir karakterin çevresinde hızla döndüğünde arkadaki dünya hızla geçer, karakter ise neredeyse hiç hareket etmez; kare üretimi karakterin bazı kısımlarını dünyayla birlikte sürükler: saç ve omuzlar parçalanır, arkadaki şeyler karakterin içine doğru bükülür. Açıkken PushFPS bir matlama ağıyla her gerçek karedeki insanları bulur ve kare üretiminden sonra onları gerçek karelerden, kendi hareketleriyle kaydırarak geri yerleştirir. Karakterin hemen yanındaki arka plan onarılmaz; ekranda çok hızlı hareket eden insanlar ve araçlar kare üretiminin yaptığı gibi kalır. Ekran kartının gücünün bir kısmını kullanır.",
+   "ar": "عندما تدور الكاميرا بسرعة حول شخصية، يمر العالم خلفها سريعاً بينما تكاد الشخصية لا تتحرك، فيسحب توليد الإطارات أجزاء من الشخصية مع العالم: يتكسر الشعر والكتفان وينحني ما يقف خلفهما إلى داخلهما. عند التشغيل يستخدم PushFPS شبكة عزل لإيجاد الأشخاص في كل إطار حقيقي، وبعد توليد الإطارات يعيدهم من الإطارات الحقيقية مزاحين بحركتهم الخاصة. الخلفية الملاصقة للشخصية لا تُصلَح؛ والأشخاص الذين يتحركون بسرعة كبيرة على الشاشة والمركبات يبقون كما صنعهم توليد الإطارات. يستهلك بعضاً من قدرة بطاقة الرسوميات.",
+   "pl": "Gdy kamera szybko obraca się wokół postaci, świat za nią przesuwa się szybko, a postać prawie się nie rusza, i generowanie klatek ciągnie części postaci razem ze światem: włosy i ramiona się rozpadają, a to, co stoi z tyłu, wygina się do środka. Po włączeniu PushFPS znajduje ludzi w każdej prawdziwej klatce za pomocą sieci do wycinania postaci i po generowaniu klatek kładzie ich z powrotem z prawdziwych klatek, przesuniętych o ich własny ruch. Tło tuż obok postaci nie jest naprawiane; ludzie poruszający się bardzo szybko po ekranie oraz pojazdy zostają tacy, jakimi zrobiło ich generowanie klatek. Zużywa trochę mocy karty graficznej.",
+   "ru": "Когда камера быстро вращается вокруг персонажа, мир позади проносится быстро, а персонаж почти не двигается, и генерация кадров тянет части персонажа вместе с миром: волосы и плечи разваливаются, а то, что стоит позади, загибается внутрь. Если включить, PushFPS с помощью сети матирования находит людей в каждом настоящем кадре и после генерации кадров возвращает их из настоящих кадров, сдвинув по их собственному движению. Фон вплотную к персонажу не исправляется; люди, которые очень быстро движутся по экрану, и транспорт остаются такими, какими их сделала генерация кадров. Это занимает часть мощности видеокарты."
   },
   {
    "zh": "长句自动缩小",

@@ -28,6 +28,7 @@
 #include "veyra/pipeline/PushHudStill.h"
 #include "veyra/pipeline/PushOverlay.h"
 #include "veyra/pipeline/PushOverlayPass.h"
+#include "PushCharacterGpu.h"
 #include "veyra/pipeline/PushAmbientPass.h"
 #include "veyra/pipeline/PushEnhanceShape.h"
 #include "veyra/engine/PushAmbient.h"
@@ -2390,6 +2391,17 @@ void testOverlay(Gpu& gpu) {
     check(!tiny.initialize(gpu.device.Get(), 160, 90, DXGI_FORMAT_R8G8B8A8_UNORM, 0), "crosshair hold: a picture too small for a zone gets no pass");
 }
 
+// Character Hold (tests/integration/PushCharacterGpu.h): the pass, its shaders and the release's matting network
+// through DirectML, against pipeline/PushCharacter.h. Needs the release's runtime, as PushFlow's test does.
+void testCharacter(Gpu& gpu) {
+    wchar_t dir[1024]{};
+    if (!GetEnvironmentVariableW(L"VEYRA_PUSHFLOW_TEST_RUNTIME", dir, 1024)) { std::printf("SKIP character hold: VEYRA_PUSHFLOW_TEST_RUNTIME not set\n"); return; }
+    const bool installed = pushflow::PushMatteBackend::installed(dir);
+    check(installed, "character hold: the matting model is in the release's runtime");
+    if (!installed) return;
+    check(charactergpu::run(gpu, dir, [](bool ok, const std::string& label) { check(ok, label); }), "character hold: the pass started");
+}
+
 int main() {
     Gpu gpu;
     if (!gpu.create()) { std::printf("FAIL no D3D12 device\n"); return 1; }
@@ -2418,6 +2430,7 @@ int main() {
     testHudLock(gpu);
     testHudStill(gpu);
     testOverlay(gpu);
+    testCharacter(gpu);
     testAmbient(gpu);
     testEnhanceShape(gpu);
     testPushFlowSizes();

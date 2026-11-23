@@ -283,6 +283,41 @@ Item {
             veyra.fgBackendName = was
         }
 
+        function test_character_hold_has_its_switch_in_the_frame_generation_list() {
+            page.tab = "fg"
+            const row = control(page, "list-fg-character-row"), sw = control(page, "list-fg-character")
+            const was = veyra.fgBackendName
+            veyra.fgBackendName = "vfg"
+            tryVerify(function() { return row.visible }, 3000)
+            verify(veyra.preferences.pushCharacterHold !== true && !sw.checked, "off unless switched on")
+            const off = row.hint
+            verify(off.length > 0 && row.help.length > 0)
+            sw.toggled(true)
+            compare(veyra.preferences.pushCharacterHold, true)
+            tryVerify(function() { return sw.checked && row.hint !== off }, 3000)
+            const on = row.hint
+            veyra.fgBackendName = "anr"
+            tryVerify(function() { return row.hint !== on && row.hint !== off }, 3000, "a method it does not work with is said")
+            veyra.fgBackendName = "vfg"
+            tryVerify(function() { return row.hint === on }, 3000)
+            const stats = veyra.liveStats
+            veyra.liveStats = ({ running: true, characterHoldState: 1, characterHoldBlocks: 180 })
+            tryVerify(function() { return row.hint !== on && row.hint !== off }, 4000, "a pass that has found people says so")
+            const holding = row.hint
+            veyra.liveStats = ({ running: true, characterHoldState: 1, characterHoldBlocks: 0 })
+            tryVerify(function() { return row.hint !== holding && row.hint !== on && row.hint !== off }, 4000, "a pass that has found nobody says so")
+            const looking = row.hint
+            veyra.liveStats = ({ running: true, characterHoldState: 2, characterHoldReason: "no-files" })
+            tryVerify(function() { return row.hint !== looking && row.hint !== holding && row.hint !== on && row.hint !== off }, 4000, "an install without the model says that")
+            veyra.liveStats = ({ running: true, characterHoldState: 3 })
+            tryVerify(function() { return row.hint === on }, 4000, "no pass in the engine: on, not running")
+            veyra.liveStats = stats
+            sw.toggled(false)
+            compare(veyra.preferences.pushCharacterHold, false)
+            tryVerify(function() { return !sw.checked && row.hint === off }, 3000)
+            veyra.fgBackendName = was
+        }
+
         function test_overlay_panel_is_as_wide_as_its_edge_is_dragged() {
             const panel = control(page, "pro-inspector"), grip = control(page, "pro-overlay-split")
             verify(!grip.visible, "docked beside the picture: the splitter between them is the handle")

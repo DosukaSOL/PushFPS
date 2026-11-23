@@ -339,8 +339,10 @@ bool PushMatteBackend::initialize(ID3D12Device* device, ID3D12CommandQueue* queu
     // one compiled graph for the whole model, DirectML refuses this model when the session is made
     // (DmlGraphFusionHelper.cpp(576), "The parameter is incorrect": ONNX Runtime 1.20.1 on the software renderer,
     // 23 November 2026; the same with the model optimised beforehand, with what the dropped output needed
-    // removed, and without the states' Expand nodes). Operator by operator the network runs and gives what the
-    // processor gives. What the whole-graph form would save on a graphics card is not known.
+    // removed, without the states' Expand nodes, and without the Split one part of which nobody reads: the
+    // "matte" job of the pushflow-models workflow tries those again on every run). Operator by operator the
+    // network runs and gives what the processor gives. What the whole-graph form would save on a graphics card,
+    // and whether a graphics card's own driver takes it, is not known.
     // For developers (tools/character_probe): VEYRA_PUSHMATTE_FUSION=1 asks for the whole-graph form,
     // VEYRA_PUSHMATTE_VERBOSE=1 makes ONNX Runtime say what it does, VEYRA_PUSHMATTE_OPTIMIZE=0|1|2|99 sets the
     // graph optimisation level. Never set in the product.

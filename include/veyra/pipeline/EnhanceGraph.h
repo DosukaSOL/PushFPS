@@ -8,6 +8,7 @@
 #include "veyra/pipeline/NisPass.h"
 #include "veyra/pipeline/PushHudLock.h"
 #include "veyra/pipeline/PushOverlayPass.h"
+#include "veyra/pipeline/PushCharacterPass.h"
 #include "veyra/pipeline/BeautyPass.h"
 #include "veyra/beauty/FaceTracker.h"
 #include "veyra/pipeline/NrInstance.h"
@@ -184,6 +185,7 @@ struct EnhanceGraphDesc {
     bool hudLock=false; // PushFPS Live HUD Lock (PushHudLock.h), graph frame generation only
     bool hudStill=false; // PushFPS still rule (PushHudStill.h): what stands still in front of a moving picture keeps its real pixels
     bool crosshairHold=false; // PushFPS Crosshair Hold (PushOverlay.h): the crosshair is taken out of what frame generation is given
+    bool characterHold=false; // PushFPS Character Hold (PushCharacter.h): people are laid back whole over what frame generation made
     engine::ContentRate contentRate=engine::ContentRate::Transport;
     engine::NrSettings model;
     engine::ResidualSettings residual;
@@ -846,6 +848,15 @@ public:
     // (Asking counts the sample taken last, if the card has written it; nothing waits.)
     unsigned crosshairHoldPixels() { if(!overlay_)return 0u; overlay_->harvest(); return overlay_->maskedPixels(); }
     uint64_t crosshairHoldFrames() const { return overlay_?overlay_->realFrames():0ull; }
+    // PushFPS Character Hold: 0 not asked, 1 running, 2 asked but the pass or its network could not start (or
+    // stopped), 3 not with this method or without frame generation. characterHoldReason(): the word for a 2
+    // ("no-files", "runtime", "model", "session", "failed", "not-built"; "shaders" when a pass could not be made).
+    int characterHoldState() const { if(!pipeline::character::wanted())return 0; if(character_&&character_->ready())return 1; if(!desc_.characterHold||!fgEnabled_||presentSinkFg())return 3; return 2; }
+    std::string characterHoldReason() const { return character_&&!character_->ready()?std::string("failed"):characterReason_; }
+    // In how many of the 2040 blocks the pass found a person in the pair it sampled last, and how many real frames
+    // it has seen (asking counts the sample taken last, if the card has written it; nothing waits).
+    unsigned characterHoldBlocks() { if(!character_)return 0u; character_->harvest(); return character_->activeBlocks(); }
+    uint64_t characterHoldFrames() const { return character_?character_->realFrames():0ull; }
     int hudStillState() const { if(!desc_.hudStill)return 0; if(hudLock_&&hudLock_->stillActive())return 1; if(!fgEnabled_||presentSinkFg())return 3; return 2; }
     // AMD FSR upscaling replaces the SR stage; it is a FidelityFX effect, not
     // an NGX feature, so it also works on non-NVIDIA adapters.
@@ -1263,6 +1274,10 @@ private:
     std::unique_ptr<NisPass> nisPass_;  // PushFPS: NVIDIA Image Scaling SR
     std::unique_ptr<PushHudLock> hudLock_;  // PushFPS: Live HUD Lock
     std::unique_ptr<PushOverlayPass> overlay_;  // PushFPS: Crosshair Hold
+    std::unique_ptr<PushCharacterPass> character_;  // PushFPS: Character Hold
+    std::string characterReason_;
+    bool initCharacter();
+    void composeCharacter(ID3D12GraphicsCommandList* list,unsigned generatedSlot,unsigned parity,float t);
     bool initHudLock();
     void composeHudLock(ID3D12GraphicsCommandList* list,unsigned generatedSlot,unsigned heldParity);
     // PushFPS Crosshair Hold: the frame a method is given for real frame `parity` (the real frame itself without the pass).

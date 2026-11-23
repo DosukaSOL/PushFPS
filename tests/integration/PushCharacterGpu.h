@@ -111,15 +111,15 @@ inline std::vector<float> developFloats(ID3D12Resource* readback, uint64_t float
 // check draws it (scripts/pushflow/prepare_matte.py, picture()). `step` moves the figure 9 across and 3 down
 // at the network's size; without a figure only the world is drawn.
 struct Drawn { int w, h; std::vector<uint8_t> rgba; };
-inline void figureCentre(int step, float& cx, float& cy) { cx = 900.0f + 9.0f * float(step); cy = 560.0f + 3.0f * float(step); }
-inline Drawn draw(int w, int h, int step, bool figure) {
+inline void figureCentre(float step, float& cx, float& cy) { cx = 900.0f + 9.0f * step; cy = 560.0f + 3.0f * step; }
+inline Drawn draw(int w, int h, float step, bool figure) {
     Drawn d{w, h, std::vector<uint8_t>(size_t(w) * h * 4)};
     float cx = 0, cy = 0;
     figureCentre(step, cx, cy);
     for (int y = 0; y < h; ++y)
         for (int x = 0; x < w; ++x) {
             const float u = (float(x) + 0.5f) * 1920.0f / float(w), v = (float(y) + 0.5f) * 1080.0f / float(h);   // the network's pixels
-            float c[3] = {0.35f + 0.25f * std::sin(u / 97.0f + float(step)), 0.40f + 0.20f * std::cos(v / 61.0f + 0.7f * float(step)), 0.45f + 0.15f * std::sin((u + v) / 131.0f)};
+            float c[3] = {0.35f + 0.25f * std::sin(u / 97.0f + step), 0.40f + 0.20f * std::cos(v / 61.0f + 0.7f * step), 0.45f + 0.15f * std::sin((u + v) / 131.0f)};
             if (figure) {
                 const float bx = (u - cx) / 150.0f, by = (v - cy - 140.0f) / 330.0f, hx = (u - cx) / 80.0f, hy = (v - cy + 250.0f) / 95.0f;
                 if (bx * bx + by * by < 1.0f) { c[0] = 0.62f; c[1] = 0.12f; c[2] = 0.20f; }
@@ -130,6 +130,14 @@ inline Drawn draw(int w, int h, int step, bool figure) {
             p[3] = 255;
         }
     return d;
+}
+// Where a point of the network's picture lies in the drawn figure at `step`: under 1 inside it (0 at a middle),
+// above 1 outside.
+inline float figureInside(float step, float u, float v) {
+    float cx = 0, cy = 0;
+    figureCentre(step, cx, cy);
+    const float bx = (u - cx) / 150.0f, by = (v - cy - 140.0f) / 330.0f, hx = (u - cx) / 80.0f, hy = (v - cy + 250.0f) / 95.0f;
+    return (std::min)(bx * bx + by * by, hx * hx + hy * hy);
 }
 // A generated frame that is neither real frame: stripes, so every laid-over pixel shows.
 inline Drawn stripes(int w, int h) {

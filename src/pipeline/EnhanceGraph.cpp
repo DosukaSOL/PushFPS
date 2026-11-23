@@ -914,6 +914,7 @@ bool EnhanceGraph::initialize(const EnhanceGraphDesc& desc)
     if (!initPushFlow()) return false;
     if (!initHudLock()) return false;
     if (!initOverlay()) return false;
+    if (!initCharacter()) return false;
     if(nrEnabled_&&GetEnvironmentVariableW(L"VEYRA_TEST_NR_INIT_FAILURE",nullptr,0)){
         failedBackend_=engine::FailedBackend::Nr;
         veyra::log::error("backend-recovery-test","test-only NR initialization rejection before SDK call; not a hardware failure");return false;
@@ -1592,6 +1593,32 @@ bool EnhanceGraph::initOverlay() {
 }
 ID3D12Resource* EnhanceGraph::fgInput(unsigned parity) const {
     return overlay_?overlay_->input(parity):videoFrame_[parity].Get();
+}
+// PushFPS: Character Hold (PushCharacterPass; the rule is pipeline/PushCharacter.h). For the methods Crosshair Hold
+// serves and never with PushFlow's Predict. Frame generation is given exactly what it always was: the pass reads
+// the frames and writes only to generated frames, after the method made them. A pass or a network that cannot
+// start leaves frame generation exactly as it was, and the reason is kept for the interface.
+bool EnhanceGraph::initCharacter() {
+    character_.reset();characterReason_.clear();
+    if(!desc_.characterHold||!fgEnabled_||presentSinkFg()){
+        if(pipeline::character::wanted())veyra::log::info("character-hold",std::format("asked for, not in this graph: described={} frameGeneration={} method={} presentsItself={} multiplier={}",
+            desc_.characterHold,fgEnabled_,int(desc_.frameGenerationBackend),presentSinkFg(),desc_.fgMultiplier));
+        return true;
+    }
+    const DXGI_FORMAT format=outputFormat();
+    const bool linear=format==DXGI_FORMAT_R16G16B16A16_FLOAT||format==DXGI_FORMAT_R16G16B16A16_TYPELESS;
+    auto pass=std::make_unique<PushCharacterPass>();
+    if(!pass->initialize(context_.device(),ring_.queue(),desc_.runtimeAbsPath,workW_,workH_,format,linear?(desc_.hdrOutput?2u:1u):0u)){
+        characterReason_=pass->state().empty()||pass->state()=="on"?std::string("shaders"):pass->state();
+        veyra::log::error("character-hold",std::format("unavailable at {}x{} ({}); frame generation runs without it",workW_,workH_,characterReason_));
+        return true;
+    }
+    character_=std::move(pass);
+    return true;
+}
+void EnhanceGraph::composeCharacter(ID3D12GraphicsCommandList* list,unsigned generatedSlot,unsigned parity,float t){
+    if(character_&&character_->composes(generatedSlot,parity)&&!character_->compose(list,tracker_,generatedSlot,parity,t))
+        veyra::log::warn("character-hold",std::format("compose skipped slot={} parity={}",generatedSlot,parity));
 }
 void EnhanceGraph::composeOverlay(ID3D12GraphicsCommandList* list,unsigned generatedSlot,unsigned parity,float t){
     if(overlay_&&overlay_->composes(generatedSlot)&&!overlay_->compose(list,tracker_,generatedSlot,parity,t))
@@ -2376,6 +2403,14 @@ bool EnhanceGraph::createViews()
         std::array<ID3D12Resource*,kGeneratedPoolSlots> generated{};
         for(size_t i=0;i<kGeneratedPoolSlots;++i)generated[i]=genFrame_[i].Get();
         overlay_->createViews(context_.device(),stager_,real,generated.data(),unsigned(generated.size()));
+    }
+    if(character_){
+        // What a method is given (the real frame, or with Crosshair Hold the frame with the crosshair filled in): the
+        // character is taken from the picture without the crosshair, which Crosshair Hold lays back over it afterwards.
+        ID3D12Resource* const real[2]={fgInput(0),fgInput(1)};
+        std::array<ID3D12Resource*,kGeneratedPoolSlots> generated{};
+        for(size_t i=0;i<kGeneratedPoolSlots;++i)generated[i]=genFrame_[i].Get();
+        character_->createViews(context_.device(),stager_,real,generated.data(),unsigned(generated.size()));
     }
     // Descriptor initialization is DEFAULT ON since the RAW-upload-SRV removal
     // (2026-09-06): texture SRV/UAV views keep the device alive and NVOF
@@ -4391,6 +4426,20 @@ bool EnhanceGraph::process(const AVFrame* frame, double ptsMs, bool reset, Frame
         out.creatorRealLease->readyFence=out.videoFenceValue;out.creatorRealLease->readyFenceObject=out.videoFenceObject;
         generatedLeases_[dualRealSlot]=out.creatorRealLease;out.creatorReal=genFrame_[dualRealSlot].Get();
     }
+    // PushFPS Character Hold: this real frame's matte, every real frame (the network remembers from frame to
+    // frame). The frame is packed in a list of its own, the network is queued behind it on the same queue, and
+    // a third list turns its answer into the matte and, with the frame before, the character's own motion. The
+    // real frame's own fence was taken above: nothing here holds it back, and nothing waits for the card.
+    if(character_&&character_->ready()){
+        auto* clist=ring_.acquireNext(slot,st);if(!clist)return false;
+        const bool packed=character_->pack(clist,tracker_,parity);
+        if(!submitGraph(slot))return false;
+        if(packed&&character_->run(reset||!prevValid_)){
+            auto* dlist=ring_.acquireNext(slot,st);if(!dlist)return false;
+            if(!character_->finish(dlist,tracker_,parity))veyra::log::warn("character-hold","finish skipped");
+            if(!submitGraph(slot))return false;
+        }
+    }
 
     // PushFlow 2's Predict (opt-in, live sources): this pair's generated frames are forecasts for after
     // the real frame (a reduced group has one, half an interval after it).
@@ -4490,6 +4539,7 @@ bool EnhanceGraph::process(const AVFrame* frame, double ptsMs, bool reset, Frame
             if(!pushFlow_->resolve(flist,fgInput(1-parity),fgInput(parity),genFrame_[generatedSlot].Get())){failedBackend_=engine::FailedBackend::Fg;return false;}
             tracker_.transition(flist,fgInput(1-parity),D3D12_RESOURCE_STATE_COMMON);
             tracker_.transition(flist,fgInput(parity),D3D12_RESOURCE_STATE_COMMON);
+            composeCharacter(flist,generatedSlot,parity,float(sub)/float(outputMultiplier));
             composeOverlay(flist,generatedSlot,parity,float(sub)/float(outputMultiplier));
             composeHudLock(flist,generatedSlot,1-parity);
             if(!composeExclusion(flist,generatedSlot+2,1-parity,false))return false;
@@ -4515,7 +4565,7 @@ bool EnhanceGraph::process(const AVFrame* frame, double ptsMs, bool reset, Frame
             tracker_.transition(flist,genFrame_[generatedSlot].Get(),D3D12_RESOURCE_STATE_COPY_DEST);
             const bool copied=amfFrc_->copyOutput(flist,genFrame_[generatedSlot].Get());
             if(!copied&&!resetFg){veyra::log::error("amf-frc","AMF returned no interpolated frame for this pair");failedBackend_=engine::FailedBackend::Fg;return false;}
-            if(copied&&!resetFg)composeOverlay(flist,generatedSlot,parity,0.5f);
+            if(copied&&!resetFg){composeCharacter(flist,generatedSlot,parity,0.5f);composeOverlay(flist,generatedSlot,parity,0.5f);}
             composeHudLock(flist,generatedSlot,resetFg?parity:1-parity);
             if(!composeExclusion(flist,generatedSlot+2,resetFg?parity:1-parity,false))return false;
             tracker_.transition(flist,genFrame_[generatedSlot].Get(),D3D12_RESOURCE_STATE_COMMON);
@@ -4542,7 +4592,7 @@ bool EnhanceGraph::process(const AVFrame* frame, double ptsMs, bool reset, Frame
             auto* flist=ring_.acquireNext(slot,st);if(!flist)return false;
             tracker_.transition(flist,genFrame_[generatedSlot].Get(),D3D12_RESOURCE_STATE_COPY_DEST);
             if(!vfgBackend_->copyOutput(flist,genFrame_[generatedSlot].Get(),generatedSlot)){failedBackend_=engine::FailedBackend::Fg;return false;}
-            if(!resetFg)composeOverlay(flist,generatedSlot,parity,float(sub)/float(outputMultiplier));
+            if(!resetFg){composeCharacter(flist,generatedSlot,parity,float(sub)/float(outputMultiplier));composeOverlay(flist,generatedSlot,parity,float(sub)/float(outputMultiplier));}
             composeHudLock(flist,generatedSlot,resetFg?parity:1-parity);
             if(!composeExclusion(flist,generatedSlot+2,resetFg?parity:1-parity,false))return false;
             tracker_.transition(flist,genFrame_[generatedSlot].Get(),D3D12_RESOURCE_STATE_COMMON);
@@ -4635,7 +4685,7 @@ bool EnhanceGraph::process(const AVFrame* frame, double ptsMs, bool reset, Frame
         }
         // PushFPS Crosshair Hold: the overlay back over what the method made (never a reset pair; there is no pass
         // for ANR, whose output only exists once this list is submitted).
-        if(!resetFg)composeOverlay(flist,generatedSlot,parity,float(sub)/float(outputMultiplier));
+        if(!resetFg){composeCharacter(flist,generatedSlot,parity,float(sub)/float(outputMultiplier));composeOverlay(flist,generatedSlot,parity,float(sub)/float(outputMultiplier));}
         composeHudLock(flist,generatedSlot,resetFg?parity:1-parity);
         if(!composeExclusion(flist,generatedSlot+2,resetFg?parity:1-parity,false))return false;
         tracker_.transition(flist,videoFrame_[parity].Get(),D3D12_RESOURCE_STATE_COMMON);
@@ -5161,6 +5211,7 @@ void EnhanceGraph::shutdown()
     exclusionPass_={};exclusionScratch_.Reset();
     hudLock_.reset();
     overlay_.reset();
+    character_.reset();
     for(auto& r:exclusionVideo_)r.Reset();
     for(auto& r:exclusionUi_)r.Reset();
     for(auto& r:sourceReferences_)r.Reset();for(auto& r:baseReferences_)r.Reset();workRgba_.Reset();

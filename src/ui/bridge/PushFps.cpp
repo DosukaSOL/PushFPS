@@ -94,6 +94,11 @@ QVariantMap QmlPlayerBridge::pushLiveStats() const {
     m["crosshairHoldState"] = s.crosshairHoldState;
     m["crosshairHoldPixels"] = s.crosshairHoldPixels;
     m["crosshairHoldFrames"] = double(s.crosshairHoldFrames);
+    // Character Hold: the same four states; the blocks (of 2040) with a person in the pair sampled last; why it could not start.
+    m["characterHoldState"] = s.characterHoldState;
+    m["characterHoldBlocks"] = s.characterHoldBlocks;
+    m["characterHoldFrames"] = double(s.characterHoldFrames);
+    m["characterHoldReason"] = QString::fromStdString(s.characterHoldReason);
     // PushFPS 4.2.1: the FSR upscaler really running (quick setup's upscale row says it).
     m["fsrUpscalerVersion"] = QString::fromStdString(s.fsrSrProviderVersion);
     m["pushFlowPrecision"] = QString::fromStdString(s.pushFlowPrecision);

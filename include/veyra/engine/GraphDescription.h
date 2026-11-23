@@ -7,6 +7,7 @@
 #include "veyra/pushflow/PushFlowMotion.h"
 #include "veyra/pipeline/PushHudStill.h"
 #include "veyra/pipeline/PushOverlay.h"
+#include "veyra/pipeline/PushCharacter.h"
 
 namespace veyra::engine {
 // Shared by graph creation and drained live-parameter updates. Disabled list
@@ -226,6 +227,10 @@ inline pipeline::ResolutionPlan describeStages(const StageRequest& request,const
     // forecasts after the real frame, not frames between two), never ANR (its output exists only after the
     // list is submitted) and never XeSS (it presents its own frames).
     desc.crosshairHold=desc.enableFg&&pipeline::overlay::wanted()&&!desc.pushFlowPredict&&crosshairHoldMethod(settings.frameGenerationBackend);
+    // PushFPS Character Hold (pipeline/PushCharacter.h): the same methods, for the same reason (the graph writes
+    // to their frames before they are shown), and never with PushFlow's Predict. Frame generation is given what
+    // it always was; only its output is changed.
+    desc.characterHold=desc.enableFg&&pipeline::character::wanted()&&!desc.pushFlowPredict&&crosshairHoldMethod(settings.frameGenerationBackend);
     desc.nrLayersExtent.clear();
     for(uint32_t i=0;i<chain.nodeCount;++i){
         auto& node=chain.nodes[i];

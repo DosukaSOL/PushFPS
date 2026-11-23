@@ -2129,6 +2129,41 @@ VPage {
                                     onToggled: checked => veyra.setPreference("pushCrosshairHold", checked)
                                 }
                             }
+                            // PushFPS Character Hold (preference pushCharacterHold, off unless switched on): the quick setup
+                            // above leaves this switch to this list in Professional mode.
+                            VRow {
+                                id: listCharacter
+                                objectName: "list-fg-character-row"
+                                label: qsTr("人物保持")
+                                help: qsTr("镜头绕着人物快速转动时，背后的画面移动得很快而人物几乎不动，补帧会把人物的一部分当成背景一起拉动：头发和肩膀破碎，背后的东西弯进人物里。开启后，PushFPS 用一个抠像网络在每张真实画面里找出人物，补帧之后再把人物按它自己的运动从真实画面里原样放回。紧挨着人物的背景不会被修复；在屏幕上移动得很快的人，以及车辆，保持补帧原来的样子。它会占用一些显卡性能。")
+                                visible: !veyra.presentationOwned
+                                readonly property bool on: veyra.preferences.pushCharacterHold === true
+                                readonly property bool methodOk: ["vfg", "amdfrc", "pushflow", "dlss", "fsr3", "fsr4"].indexOf(veyra.fgBackendName) >= 0
+                                // What the engine says (read once a second while the switch is on and the row is shown).
+                                property var stats: ({})
+                                readonly property int holdState: Number(stats.characterHoldState || 0)
+                                readonly property int holdBlocks: Number(stats.characterHoldBlocks || 0)
+                                readonly property string holdReason: String(stats.characterHoldReason || "")
+                                Timer {
+                                    objectName: "list-fg-character-timer"
+                                    interval: 1000; repeat: true; triggeredOnStart: true
+                                    running: listCharacter.visible && listCharacter.on
+                                    onTriggered: listCharacter.stats = veyra.pushLiveStats() || ({})
+                                    onRunningChanged: if (!running) listCharacter.stats = ({})
+                                }
+                                hint: on && !methodOk ? qsTr("这种补帧方式暂不支持，请换一种补帧方式")
+                                    : on && holdState === 2 ? (holdReason === "no-files" ? qsTr("这个安装里没有人物保持需要的模型文件，补帧照常运行")
+                                                                                         : qsTr("没能在这台电脑上启动，补帧照常运行（原因见日志）"))
+                                    : on && holdState === 1 ? (holdBlocks > 0 ? qsTr("正在运行：已找到人物，补出的每一帧里都把人物原样放回")
+                                                                               : qsTr("正在运行：画面里还没有找到人物"))
+                                    : on ? qsTr("已开启：有画面播放并且补帧开启后开始运行")
+                                    : qsTr("已关闭：镜头快速转动时人物的头发和轮廓可能破碎")
+                                VSwitch {
+                                    objectName: "list-fg-character"
+                                    checked: listCharacter.on
+                                    onToggled: checked => veyra.setPreference("pushCharacterHold", checked)
+                                }
+                            }
                             VRow {
                                 objectName: "list-fg-hudlock-row"
                                 label: qsTr("实时 HUD 锁定")

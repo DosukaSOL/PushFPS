@@ -1590,3 +1590,9 @@ zh:FSR 的运动估算可以更省|FSR'nin hareket kestirimi daha hafif olabilir
 zh:FSR 补帧前，PushFPS 先从画面里估算运动。改用更省的估算后每帧少占显卡，中低端显卡更容易跟上；物体边缘会粗一些，看起来变差就撤销|FSR bir kare üretmeden önce PushFPS hareketi görüntüden kestirir. Daha hafif bir kestirim her karede ekran kartını daha az yorar; orta ve giriş seviyesi kartların yetişmesi kolaylaşır. Nesnelerin kenarları biraz kabalaşır. Görüntü kötüleşirse geri alın
 zh:改用更省的运动估算|Daha hafif hareket kestirimini kullan
 zh:发给 PS5 的带宽请求，主机不保证达到。有线网络下 30 Mbps 或更高会更清晰；画面卡顿就调低|PS5'ten istenen bant genişliği; konsol buna ulaşmayı garanti etmez. Kablolu ağda 30 Mbps veya üzeri daha net görünür; görüntü takılırsa düşürün
+zh:人物保持|Karakter Sabitleme
+zh:镜头绕着人物快速转动时，背后的画面移动得很快而人物几乎不动，补帧会把人物的一部分当成背景一起拉动：头发和肩膀破碎，背后的东西弯进人物里。开启后，PushFPS 用一个抠像网络在每张真实画面里找出人物，补帧之后再把人物按它自己的运动从真实画面里原样放回。紧挨着人物的背景不会被修复；在屏幕上移动得很快的人，以及车辆，保持补帧原来的样子。它会占用一些显卡性能。|Kamera bir karakterin çevresinde hızla döndüğünde arkadaki dünya hızla geçer, karakter ise neredeyse hiç hareket etmez; kare üretimi karakterin bazı kısımlarını dünyayla birlikte sürükler: saç ve omuzlar parçalanır, arkadaki şeyler karakterin içine doğru bükülür. Açıkken PushFPS bir matlama ağıyla her gerçek karedeki insanları bulur ve kare üretiminden sonra onları gerçek karelerden, kendi hareketleriyle kaydırarak geri yerleştirir. Karakterin hemen yanındaki arka plan onarılmaz; ekranda çok hızlı hareket eden insanlar ve araçlar kare üretiminin yaptığı gibi kalır. Ekran kartının gücünün bir kısmını kullanır.
+zh:这个安装里没有人物保持需要的模型文件，补帧照常运行|Bu kurulumda Karakter Sabitleme'nin ihtiyaç duyduğu model yok; kare üretimi her zamanki gibi çalışır
+zh:正在运行：已找到人物，补出的每一帧里都把人物原样放回|Çalışıyor: insanlar bulundu. Üretilen her kareye bütün olarak geri konur
+zh:正在运行：画面里还没有找到人物|Çalışıyor: görüntüde henüz bir insan bulunamadı
+zh:已关闭：镜头快速转动时人物的头发和轮廓可能破碎|Kapalı: kamera hızlı döndüğünde karakterin saçı ve dış hattı parçalanabilir

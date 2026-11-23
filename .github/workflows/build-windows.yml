@@ -276,6 +276,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & $py -I scripts/pushflow/prepare_runtime.py --out "$env:DEPS\pushflow"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          # Character Hold's matting model (Robust Video Matting, GPL-3.0): the pinned file, its sizes fixed, checked
+          # against the published model, into the same runtime folder. After the script above, which empties it.
+          & $py -I scripts/pushflow/prepare_matte.py --out "$env:DEPS\pushflow"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       # Dolby Vision metadata parsing (quietvoid/dovi_tool, MIT), built here from the pinned source: nothing of it is
       # in the repository. When this step fails the program is built without it (Dolby Vision files then play through

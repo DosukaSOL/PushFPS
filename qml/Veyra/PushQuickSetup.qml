@@ -294,7 +294,7 @@ VGroup {
     property real pacingShare: -1
     Timer {
         interval: 1000; repeat: true
-        running: (quick.adaptive || quick.pacingOn || veyra.hudLock === true || veyra.fgBackendName === "pushflow" || veyra.preferences.pushCrosshairHold === true) && veyra.hasSource && veyra.fgEnabled && quick.visible
+        running: (quick.adaptive || quick.pacingOn || veyra.hudLock === true || veyra.fgBackendName === "pushflow" || veyra.preferences.pushCrosshairHold === true || veyra.preferences.pushCharacterHold === true) && veyra.hasSource && veyra.fgEnabled && quick.visible
         triggeredOnStart: true
         onTriggered: {
             const st = veyra.pushLiveStats()
@@ -1282,6 +1282,36 @@ VGroup {
                 opacity: enabled ? 1 : 0.4
                 checked: quick.pacingOn
                 onToggled: checked => quick.setPacingRepair(checked)
+            }
+        }
+        // Character Hold (pipeline/PushCharacter.h): off unless switched on. A matting network finds the people in every
+        // real frame; after frame generation they are laid back from the real frames, moved by their own motion. For
+        // the methods Crosshair Hold serves. The hint says what the engine says, never only that the switch is on.
+        VRow {
+            id: characterHold
+            objectName: "pushfps-character-row"
+            visible: !quick.proPage   // Professional mode's own list has this switch
+            label: qsTr("人物保持")
+            help: qsTr("镜头绕着人物快速转动时，背后的画面移动得很快而人物几乎不动，补帧会把人物的一部分当成背景一起拉动：头发和肩膀破碎，背后的东西弯进人物里。开启后，PushFPS 用一个抠像网络在每张真实画面里找出人物，补帧之后再把人物按它自己的运动从真实画面里原样放回。紧挨着人物的背景不会被修复；在屏幕上移动得很快的人，以及车辆，保持补帧原来的样子。它会占用一些显卡性能。")
+            readonly property int holdState: Number(quick.liveStats.characterHoldState || 0)
+            readonly property int holdBlocks: Number(quick.liveStats.characterHoldBlocks || 0)
+            readonly property string holdReason: String(quick.liveStats.characterHoldReason || "")
+            readonly property bool on: veyra.preferences.pushCharacterHold === true
+            readonly property bool methodOk: ["vfg", "amdfrc", "pushflow", "dlss", "fsr3", "fsr4"].indexOf(veyra.fgBackendName) >= 0
+            hint: !quick.ownTechPossible ? (quick.fgPossible ? qsTr("XeSS 自己生成画面，不能同时使用") : (Support.status(veyra, "frame-generation").reason || ""))
+                : on && !methodOk ? qsTr("这种补帧方式暂不支持，请换一种补帧方式")
+                : on && holdState === 2 ? (holdReason === "no-files" ? qsTr("这个安装里没有人物保持需要的模型文件，补帧照常运行")
+                                                                     : qsTr("没能在这台电脑上启动，补帧照常运行（原因见日志）"))
+                : on && holdState === 1 ? (holdBlocks > 0 ? qsTr("正在运行：已找到人物，补出的每一帧里都把人物原样放回")
+                                                           : qsTr("正在运行：画面里还没有找到人物"))
+                : on ? qsTr("已开启：有画面播放并且补帧开启后开始运行")
+                : qsTr("已关闭：镜头快速转动时人物的头发和轮廓可能破碎")
+            VSwitch {
+                objectName: "pushfps-character"
+                enabled: quick.ownTechPossible && veyra.fgEnabled
+                opacity: enabled ? 1 : 0.4
+                checked: quick.ownTechPossible && characterHold.on   // by id: a row's control is not the row's direct child
+                onToggled: checked => veyra.setPreference("pushCharacterHold", checked)
             }
         }
         // Smooth frame pacing: every frame waits for a refresh (V-Sync; variable refresh where the monitor

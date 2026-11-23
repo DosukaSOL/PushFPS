@@ -2006,6 +2006,102 @@
      "contains": "set(pushfps_shared_names"
     }
    ]
+  },
+  {
+   "id": "F69",
+   "what": "Character Hold (off unless switched on): a matting network finds the people in every real frame, and after NVIDIA VFG, AMD FRC, PushFlow, DLSS frame generation or FSR made a frame (never ANR or XeSS, never with PushFlow's Predict) each person is laid back from one real frame, moved by their own motion; frame generation is given what it always was and nothing is written away from a person; someone who moves further than the search reaches is left as the method made them; a picture without a person comes out as it does without the switch; the shaders give what the rule in plain C++ gives; the model is the published one with its sizes fixed, checked against it; the rows say what the engine says (running with people found or not, not started and why), never only that the switch is on.",
+   "guards": [
+    {
+     "file": "tests/unit/PushCharacterTests.cpp",
+     "ci": "veyra_push_character_tests",
+     "contains": "the figure's own motion is found, not the world's"
+    },
+    {
+     "file": "tests/unit/PushCharacterTests.cpp",
+     "ci": "veyra_push_character_tests",
+     "contains": "and nothing is touched where nothing is laid over"
+    },
+    {
+     "file": "tests/unit/PushCharacterTests.cpp",
+     "ci": "veyra_push_character_tests",
+     "contains": "a figure that moves further than the search reaches is left as the method made it"
+    },
+    {
+     "file": "tests/unit/PushCharacterTests.cpp",
+     "ci": "veyra_push_character_tests",
+     "contains": "a picture without a person is left alone"
+    },
+    {
+     "file": "tests/unit/PushCharacterTests.cpp",
+     "ci": "veyra_push_character_tests",
+     "contains": "Character Hold is off unless switched on"
+    },
+    {
+     "file": "tests/integration/PushCharacterGpu.h",
+     "ci": "veyra_push_gpu_tests",
+     "contains": "the network finds the drawn figure and nothing else"
+    },
+    {
+     "file": "tests/integration/PushCharacterGpu.h",
+     "ci": "veyra_push_gpu_tests",
+     "contains": ": the matte and the matted pictures are the header's"
+    },
+    {
+     "file": "tests/integration/PushCharacterGpu.h",
+     "ci": "veyra_push_gpu_tests",
+     "contains": "each block's motion is the header's"
+    },
+    {
+     "file": "tests/integration/PushCharacterGpu.h",
+     "ci": "veyra_push_gpu_tests",
+     "contains": ": every laid-over pixel is the header's"
+    },
+    {
+     "file": "tests/integration/PushCharacterGpu.h",
+     "ci": "veyra_push_gpu_tests",
+     "contains": ": nothing else in the generated frame is touched"
+    },
+    {
+     "file": "tests/integration/PushCharacterGpu.h",
+     "ci": "veyra_push_gpu_tests",
+     "contains": "a picture without a person leaves generated frames alone"
+    },
+    {
+     "file": "tests/integration/PushGpuTests.cpp",
+     "ci": "veyra_push_gpu_tests",
+     "contains": "testCharacter(gpu);"
+    },
+    {
+     "file": "tests/integration/PushFlowGraphTests.cpp",
+     "ci": "veyra_push_flow_graph_tests",
+     "contains": ": nothing is changed away from the figure ("
+    },
+    {
+     "file": "tests/integration/PushFlowGraphTests.cpp",
+     "ci": "veyra_push_flow_graph_tests",
+     "contains": ": nobody is found and nothing is laid over"
+    },
+    {
+     "file": "tests/qml/quick/tst_push_quick_setup.qml",
+     "ci": "tst_push_",
+     "contains": "function test_character_hold_is_off_unless_switched_on()"
+    },
+    {
+     "file": "tests/qml/quick/tst_push_pro_panel.qml",
+     "ci": "tst_push_",
+     "contains": "function test_character_hold_has_its_switch_in_the_frame_generation_list()"
+    },
+    {
+     "file": "scripts/pushflow/prepare_matte.py",
+     "ci": "prepare_matte.py",
+     "contains": "differs from the published model by"
+    },
+    {
+     "file": "src/pushflow/PushMatteBackend.cpp",
+     "ci": "veyra_push_gpu_tests",
+     "contains": "ep.dml.disable_graph_fusion"
+    }
+   ]
   }
  ]
 }

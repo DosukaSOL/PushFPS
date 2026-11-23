@@ -1257,6 +1257,25 @@ ship it in `runtime\experimental\pushflow` with each licence in its `licenses` f
   The release build checks each model on a test pattern and ships it unchanged; `models.json` next to the
   models records the source archive, version and SHA-256 of each file.
 
+## Character Hold: Robust Video Matting (PushFPS, 2026-11-23)
+
+Character Hold (`include/veyra/pipeline/PushCharacter.h`, `src/pipeline/PushCharacterPass.cpp`,
+`src/pushflow/PushMatteBackend.cpp`, `shaders/PushCharacter*.hlsl`, GPL-3.0-or-later) asks a matting network which
+pixels of a real frame are a person. The network is **Robust Video Matting** by Shanchuan Lin, Linjie Yang,
+Imran Saleemi and Soumyadip Sengupta ([PeterL1n/RobustVideoMatting](https://github.com/PeterL1n/RobustVideoMatting),
+[GPL-3.0](https://github.com/PeterL1n/RobustVideoMatting/blob/master/LICENSE)), its MobileNetV3 model as published
+in the project's own release v1.0.0 (`rvm_mobilenetv3_fp32.onnx`, SHA-256
+`88d4531297118f595bf2fd60f6f566aec2e559393802d1f436c380f0cbbd2828`). None of the project's code is used; the
+motion search, the checks and the compose are PushFPS's own.
+
+Nothing of it is committed to this repository. Release builds download the pinned file, check its SHA-256 and
+prepare it with `scripts/pushflow/prepare_matte.py`: the picture's size is fixed at 1 x 3 x 1080 x 1920, the
+downsample ratio becomes the constant 0.25, the recurrent states get the sizes the model itself gives them at that
+picture size, and the foreground output is dropped with the nodes only it needed. The weights are unchanged, and
+the build fails unless the prepared model gives what the published one gives. It ships as
+`runtime\experimental\pushflow\models\pushmatte.onnx` with `licenses\RobustVideoMatting_LICENSE.txt` beside the
+other licences there, and runs through the ONNX Runtime and DirectML recorded above.
+
 # Veyra virtual camera / OBS-derived components (2026-11-17)
 
 - OBS Studio: https://github.com/obsproject/obs-studio , pinned `7e3aa99811798255bd1a13a6da7260ada76a4d95`, GPL-2.0-or-later. Adapted `plugins/win-dshow/virtualcam-module/{virtualcam-filter.cpp,virtualcam-filter.hpp,virtualcam-module.cpp,sleepto.c,sleepto.h}`, `shared/obs-shared-memory-queue` and `shared/obs-tiny-nv12-scale` into `third_party/obs_virtualcam`. `libobs/util/threading-windows.h` and `util/windows/WinHandle.hpp` preserve Lain Bailey's ISC notice.

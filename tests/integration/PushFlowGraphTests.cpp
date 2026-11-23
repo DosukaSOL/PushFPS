@@ -14,6 +14,8 @@
 // usage: veyra_push_flow_graph_tests OUTDIR RUNTIMEDIR     (RUNTIMEDIR holds the "pushflow" folder)
 #include "veyra/pipeline/EnhanceGraph.h"
 #include "veyra/pipeline/PushOverlay.h"
+#include "veyra/pipeline/PushCharacter.h"
+#include "PushCharacterGpu.h"
 #include "veyra/gfx/D3D12DeviceContext.h"
 #include "veyra/gfx/CommandSlotRing.h"
 #include "veyra/sink/ImageExportSink.h"
@@ -423,6 +425,95 @@ int wmain(int argc, wchar_t** argv) {
         check(meanOf[1] >= 0 && worstOf[1] < 16.0, "with Crosshair Hold the reticle is where it stands in every generated frame (" + std::to_string(meanOf[1]) + " of 255 on average, worst frame " +
                                                     std::to_string(worstOf[1]) + "; without it " + std::to_string(meanOf[0]) + ")");
     }
+    // Character Hold through the real graph, with PushFlow at 2X (the pass alone, against the rule, is
+    // PushGpuTests' testCharacter). A drawn figure, the one the matting model's own check draws, moves slowly
+    // before a picture that changes. With the switch every pixel away from the figure must be what the run
+    // without the switch made (the pass writes nowhere else, and frame generation is given what it always was),
+    // the figure itself is at least as near the true in-between picture, and the pass says it found someone.
+    // Then a picture without a person: frame for frame the run without the switch, and nobody found. The debug
+    // layer checks the pass's resource states through the graph's own lists.
+    if (pushflow::PushMatteBackend::installed(argv[2])) {
+        for (int person = 1; person >= 0; --person) {
+            constexpr unsigned Frames = 9;
+            std::vector<std::vector<uint8_t>> plain;
+            double figureError[2] = {-1, -1};
+            for (int on = 0; on < 2; ++on) {
+                const std::string tag = std::string(person ? "a figure" : "a picture without a person") + (on ? " with Character Hold" : " without Character Hold");
+                pipeline::EnhanceGraph graph(ctx, ring);
+                pipeline::EnhanceGraphDesc desc; desc.sourceWidth = desc.workWidth = W; desc.sourceHeight = desc.workHeight = H;
+                desc.rgbInput = true; desc.enableNr = desc.enableSr = false; desc.enableFg = true; desc.fgMultiplier = 2;
+                desc.frameGenerationBackend = engine::FrameGenerationBackend::PushFlow;
+                desc.vfgQuality = 0;
+                desc.characterHold = on != 0; pipeline::character::setWanted(on != 0);
+                desc.runtimeAbsPath = argv[2]; desc.settingsRevision = 30u + unsigned(on) + 2u * unsigned(person);
+                const bool opened = graph.initialize(desc) && graph.createViews();
+                if (!check(opened && graph.pushFlowActive(), tag + ": the graph opens with PushFlow")) { graph.shutdown(); continue; }
+                check(graph.characterHoldState() == (on ? 1 : 0), tag + ": its state is " + std::to_string(graph.characterHoldState()) + (on ? " (" + graph.characterHoldReason() + ")" : ""));
+                bool ok = true; unsigned pairs = 0, generated = 0, compared = 0, measured = 0; size_t awayChanged = 0, figureChanged = 0; double sum = 0;
+                for (unsigned i = 0; ok && i < Frames; ++i) {
+                    fill(charactergpu::draw(int(W), int(H), float(i), person != 0).rgba);
+                    pipeline::EnhanceGraph::FrameOutputs out;
+                    ok = graph.process(frame, double(i) * 1000.0 / 30.0, i == 0, out, i + 1);
+                    if (!ok) { std::cout << "PUSHFLOW_GRAPH " << tag << " process failed frame=" << i << " failedBackend=" << int(graph.failedBackend()) << std::endl; break; }
+                    ok = ctx.waitForFenceValue(std::max(out.videoFenceValue, out.genFenceValue), 180000) && graph.resolveGeneration(out);
+                    if (!ok) { std::cout << "PUSHFLOW_GRAPH " << tag << " frame " << i << " did not finish" << std::endl; break; }
+                    if (i == 0) continue;
+                    ++pairs;
+                    if (!out.hasGenerated || out.fgEvaluated != 1) continue;
+                    ++generated;
+                    sink::RgbaImage image;
+                    if (!sink::readRgba8(ctx, ring, graph.generatedFrameResource(out.genSlot), image) || image.width != W || image.height != H) { ok = false; break; }
+                    if (i == 5 && person) sink::saveImage((std::filesystem::path(argv[1]) / (on ? L"figure-with-hold.png" : L"figure-without-hold.png")).wstring(), image);
+                    if (!on) { plain.push_back(image.pixels); }
+                    else if (plain.size() >= generated) {
+                        const auto& before = plain[generated - 1];
+                        ++compared;
+                        for (unsigned y = 0; y < H; ++y)
+                            for (unsigned x = 0; x < W; ++x) {
+                                const size_t k = (size_t(y) * W + x) * 4;
+                                if (std::memcmp(&before[k], &image.pixels[k], 4) == 0) continue;
+                                // Away from the figure in both real frames and between them (2 = well outside its outline).
+                                const float u = (float(x) + 0.5f) * 1920.0f / float(W), v = (float(y) + 0.5f) * 1080.0f / float(H);
+                                const bool away = !person || (charactergpu::figureInside(float(i), u, v) > 2.0f && charactergpu::figureInside(float(i) - 1.0f, u, v) > 2.0f);
+                                ++(away ? awayChanged : figureChanged);
+                            }
+                    }
+                    if (person) {
+                        // The figure's inside against the picture truly half-way between the two frames.
+                        const auto truth = charactergpu::draw(int(W), int(H), float(i) - 0.5f, true).rgba;
+                        double error = 0; unsigned pixels = 0;
+                        for (unsigned y = 0; y < H; ++y)
+                            for (unsigned x = 0; x < W; ++x) {
+                                const float u = (float(x) + 0.5f) * 1920.0f / float(W), v = (float(y) + 0.5f) * 1080.0f / float(H);
+                                if (charactergpu::figureInside(float(i) - 0.5f, u, v) > 0.8f) continue;
+                                const size_t k = (size_t(y) * W + x) * 4;
+                                error += (std::abs(int(image.pixels[k]) - int(truth[k])) + std::abs(int(image.pixels[k + 1]) - int(truth[k + 1])) + std::abs(int(image.pixels[k + 2]) - int(truth[k + 2]))) / 3.0;
+                                ++pixels;
+                            }
+                        if (pixels) { sum += error / double(pixels); ++measured; }
+                    }
+                }
+                check(ok, tag + ": every frame processed");
+                check(pairs == Frames - 1 && generated == pairs, tag + ": every pair comes back with its generated frame (" + std::to_string(generated) + "/" + std::to_string(pairs) + ")");
+                if (measured) figureError[on] = sum / double(measured);
+                if (on) {
+                    const unsigned blocks = graph.characterHoldBlocks();
+                    std::cout << "PUSHFLOW_GRAPH " << tag << ": the pass saw " << graph.characterHoldFrames() << " real frames and counts " << blocks << " blocks with a person; pixels changed away from the figure "
+                              << awayChanged << ", at the figure " << figureChanged << " (" << compared << " generated frames compared)" << std::endl;
+                    check(graph.characterHoldFrames() == Frames && compared == generated && awayChanged == 0, tag + ": nothing is changed away from the figure (" + std::to_string(awayChanged) + " pixels)");
+                    if (person) check(blocks > 0 && figureChanged > 0, tag + ": the figure is found and laid over (" + std::to_string(blocks) + " blocks, " + std::to_string(figureChanged) + " pixels)");
+                    else check(blocks == 0 && figureChanged == 0, tag + ": nobody is found and nothing is laid over");
+                } else check(graph.characterHoldFrames() == 0 && graph.characterHoldBlocks() == 0, tag + ": no pass, nothing counted");
+                ring.drainQueue(); graph.shutdown();
+            }
+            pipeline::character::setWanted(false);
+            if (person) {
+                std::cout << "PUSHFLOW_GRAPH a figure: its inside is off the true in-between picture by " << figureError[0] << " of 255 without Character Hold and " << figureError[1] << " with it" << std::endl;
+                check(figureError[0] >= 0 && figureError[1] >= 0 && figureError[1] <= figureError[0] + 3.0, "with Character Hold the figure is at least as near the true in-between picture (" +
+                      std::to_string(figureError[1]) + " against " + std::to_string(figureError[0]) + " of 255)");
+            }
+        }
+    } else std::cout << "PUSHFLOW_GRAPH SKIP Character Hold: the matting model is not in the runtime folder" << std::endl;
     unsigned errors = 0;
     if (info) for (UINT64 m = 0; m < info->GetNumStoredMessagesAllowedByRetrievalFilter(); ++m) {
         SIZE_T size = 0; info->GetMessage(m, nullptr, &size); std::vector<uint8_t> data(size);

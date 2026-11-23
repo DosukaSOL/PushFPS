@@ -79,7 +79,6 @@ def picture(step: int):
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
-    ap.add_argument("--folded", action="store_true", help="also write pushmatte-folded.onnx (ONNX Runtime's basic optimisations done beforehand; for tools/character_probe)")
     ap.add_argument("--variants", action="store_true", help="also write pushmatte-noexpand.onnx and pushmatte-nosplit.onnx (for tools/character_probe)")
     ap.add_argument("--describe", action="store_true", help="print the model's operators and the attributes that matter to a provider")
     args = ap.parse_args()
@@ -243,13 +242,6 @@ def main() -> None:
         onnx.save(model, str(models / "pushmatte-nosplit.onnx"))
         verify(models / "pushmatte-nosplit.onnx")
 
-    if args.folded:
-        folded = models / "pushmatte-folded.onnx"
-        fold = ort.SessionOptions()
-        fold.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_BASIC
-        fold.optimized_model_filepath = str(folded)
-        ort.InferenceSession(str(target), fold, providers=["CPUExecutionProvider"])
-        print(f"wrote {folded} ({folded.stat().st_size} bytes)")
     if args.describe:
         import collections
         for label, path in (("fixed", target),):

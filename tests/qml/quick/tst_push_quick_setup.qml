@@ -1170,6 +1170,51 @@ Item {
             veyra.fgBackendName = was
         }
 
+        // Character Hold (pipeline/PushCharacter.h): its own switch in the frame generation section, off unless
+        // switched on. The hint says what the engine says: on and waiting, running and nobody found, running with
+        // people found, could not start (and when it is the model that is missing, that), not with this method.
+        function test_character_hold_is_off_unless_switched_on() {
+            const was = veyra.fgBackendName
+            veyra.fgEnabled = true; veyra.fgMultiplier = 2; veyra.fgBackendName = "vfg"
+            const row = control("pushfps-character-row"), sw = control("pushfps-character")
+            verify(row.visible, "on the home page, in the frame generation section")
+            verify(!row.on && !sw.checked, "off by default")
+            const off = row.hint
+            verify(off.length > 0 && row.help.length > 0)
+            sw.toggled(true)
+            compare(veyra.preferences.pushCharacterHold, true); verify(row.on && sw.checked && row.hint !== off)
+            const waiting = row.hint
+            veyra.liveStats = ({ running: true, characterHoldState: 1, characterHoldBlocks: 0 }); quick.liveStats = veyra.liveStats
+            const looking = row.hint
+            verify(looking !== waiting && looking !== off, "a pass that runs and has found nobody says so")
+            veyra.liveStats = ({ running: true, characterHoldState: 1, characterHoldBlocks: 180 }); quick.liveStats = veyra.liveStats
+            const running = row.hint
+            verify(running !== looking && running !== waiting && running !== off, "a pass that has found people says so")
+            veyra.liveStats = ({ running: true, characterHoldState: 2, characterHoldReason: "session" }); quick.liveStats = veyra.liveStats
+            const failed = row.hint
+            verify(failed !== running && failed !== looking && failed !== waiting && failed !== off, "a pass that could not start says so")
+            veyra.liveStats = ({ running: true, characterHoldState: 2, characterHoldReason: "no-files" }); quick.liveStats = veyra.liveStats
+            verify(row.hint !== failed && row.hint !== running && row.hint !== looking && row.hint !== waiting && row.hint !== off, "an install without the model says that")
+            for (const idle of [0, 3]) {
+                veyra.liveStats = ({ running: true, characterHoldState: idle, characterHoldBlocks: 180 }); quick.liveStats = veyra.liveStats
+                compare(row.hint, waiting, "state " + idle)
+            }
+            veyra.liveStats = ({ running: true, characterHoldState: 1, characterHoldBlocks: 180 }); quick.liveStats = veyra.liveStats
+            for (const own of ["vfg", "amdfrc", "pushflow", "dlss", "fsr3", "fsr4"]) { veyra.fgBackendName = own; verify(row.methodOk, own); compare(row.hint, running, own) }
+            veyra.fgBackendName = "anr"
+            verify(!row.methodOk && row.hint !== running && row.hint !== looking && row.hint !== waiting && row.hint !== off, "a method it does not work with is said")
+            verify(sw.checked, "the choice itself is kept")
+            veyra.fgBackendName = "vfg"
+            // It is its own switch: Crosshair Hold, Live HUD Lock and the still rule are not touched by it.
+            verify(veyra.preferences.pushCrosshairHold !== true && veyra.preferences.pushHudStill !== true); compare(veyra.hudLock, false)
+            sw.toggled(false)
+            compare(veyra.preferences.pushCharacterHold, false); verify(!row.on && !sw.checked)
+            compare(row.hint, off)
+            veyra.fgEnabled = false
+            verify(!sw.enabled)
+            veyra.fgBackendName = was
+        }
+
         // The size AI picture enhancement works at: 1080p (the standard), 1440p or the picture's full size,
         // written to every enhancement layer as Professional mode's own setting.
         function test_enhancement_size_is_a_choice() {

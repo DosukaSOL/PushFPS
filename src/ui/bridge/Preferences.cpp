@@ -12,6 +12,7 @@
 #include "veyra/sink/PushAudioTrim.h"
 #include "veyra/pipeline/PushHudStill.h"
 #include "veyra/pipeline/PushOverlay.h"
+#include "veyra/pipeline/PushCharacter.h"
 #include "veyra/pipeline/NisSettings.h"
 #include "veyra/pipeline/PushEnhanceShape.h"
 #include "veyra/pushflow/PushFlow2.h"
@@ -339,7 +340,7 @@ bool QmlPlayerBridge::setPreference(const QString& key, const QVariant& value) {
                                    // 设置 → 外观 → 启动音乐 and the music button (Main.qml); unset = off in PushFPS.
                                    "introMusic", "exclusionOverlay",
                                    // PushFPS: on-screen latency readout, fullscreen on connect, window on top.
-                                   "pushLatencyOverlay", "pushHudStill", "pushCrosshairHold", "pushRecordAsk", "pushAutoFullscreen", "pushAlwaysOnTop", "pushSunset",
+                                   "pushLatencyOverlay", "pushHudStill", "pushCrosshairHold", "pushCharacterHold", "pushRecordAsk", "pushAutoFullscreen", "pushAlwaysOnTop", "pushSunset",
                                    // PushFPS ambient fill (engine/PushAmbient.h): the bars beside the picture.
                                    "pushAmbientFill",
                                    // PushFPS: the picture resized to the window with the fine path (engine/PushPresentScaling.h).
@@ -747,6 +748,18 @@ void QmlPlayerBridge::applyPreference(const QString& key) {
         pipeline::overlay::setWanted(on);
         const bool rebuilds = changed && impl_->snapshot.running && settings().multiplier > 1;
         veyra::log::info("crosshair-hold", std::format("switch={} changed={} playing={} multiplier={} method={} rebuilds the graph now={}", on, changed,
+                                                       impl_->snapshot.running, int(settings().multiplier), int(settings().frameGenerationBackend), rebuilds));
+        if (rebuilds) impl_->engine.refreshGraph();
+    }
+    else if (key == QLatin1String("pushCharacterHold")) {
+        // Character Hold (pipeline/PushCharacter.h): off unless switched on, and off for a run started with
+        // --safe-mode. Read when the graph is described; while frame generation plays, the engine is asked to
+        // describe the graph again (the matting network is then loaded or let go).
+        const bool on = impl_->prefBool("pushCharacterHold", false) && !pushflow2::emergencyOff();
+        const bool changed = pipeline::character::wanted() != on;
+        pipeline::character::setWanted(on);
+        const bool rebuilds = changed && impl_->snapshot.running && settings().multiplier > 1;
+        veyra::log::info("character-hold", std::format("switch={} changed={} playing={} multiplier={} method={} rebuilds the graph now={}", on, changed,
                                                        impl_->snapshot.running, int(settings().multiplier), int(settings().frameGenerationBackend), rebuilds));
         if (rebuilds) impl_->engine.refreshGraph();
     }
