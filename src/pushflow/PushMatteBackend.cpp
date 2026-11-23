@@ -329,7 +329,17 @@ bool PushMatteBackend::initialize(ID3D12Device* device, ID3D12CommandQueue* queu
     if (FAILED(createDml(device, DML_CREATE_DEVICE_FLAG_NONE, IID_PPV_ARGS(&p.dmlDevice)))) { veyra::log::error("character-hold", "DMLCreateDevice failed"); return false; }
     auto* api = p.api;
     if (!p.ok(api->GetExecutionProviderApi("DML", ORT_API_VERSION, reinterpret_cast<const void**>(&p.dml)), "GetExecutionProviderApi") || !p.dml) return false;
-    if (!p.ok(api->CreateEnv(ORT_LOGGING_LEVEL_WARNING, "pushmatte", &p.env), "CreateEnv")) return false;
+    // For developers (tools/character_probe): VEYRA_PUSHMATTE_VERBOSE=1 makes ONNX Runtime say what it does,
+    // VEYRA_PUSHMATTE_FUSION=0 gives every operator its own DirectML kernel, VEYRA_PUSHMATTE_OPTIMIZE=0|1|2|99
+    // sets the graph optimisation level. Never set in the product.
+    const auto setting = [](const wchar_t* name, int fallback) {
+        wchar_t text[16]{};
+        const DWORD n = GetEnvironmentVariableW(name, text, 16);
+        return n > 0 && n < 16 ? _wtoi(text) : fallback;
+    };
+    const bool verbose = setting(L"VEYRA_PUSHMATTE_VERBOSE", 0) != 0, fusion = setting(L"VEYRA_PUSHMATTE_FUSION", 1) != 0;
+    const int optimize = setting(L"VEYRA_PUSHMATTE_OPTIMIZE", 99);
+    if (!p.ok(api->CreateEnv(verbose ? ORT_LOGGING_LEVEL_VERBOSE : ORT_LOGGING_LEVEL_WARNING, "pushmatte", &p.env), "CreateEnv")) return false;
     if (!p.ok(api->CreateMemoryInfo("DML", OrtDeviceAllocator, 0, OrtMemTypeDefault, &p.memory), "memory info")) return false;
 
     // The session: the DirectML provider on the graph's queue, set up as PushFlow's.
@@ -337,7 +347,9 @@ bool PushMatteBackend::initialize(ID3D12Device* device, ID3D12CommandQueue* queu
     {
         OrtSessionOptions* options = nullptr;
         if (!p.ok(api->CreateSessionOptions(&options), "CreateSessionOptions")) return false;
-        bool good = p.ok(api->SetSessionGraphOptimizationLevel(options, ORT_ENABLE_ALL), "optimization level") &&
+        const GraphOptimizationLevel level = optimize == 0 ? ORT_DISABLE_ALL : optimize == 1 ? ORT_ENABLE_BASIC : optimize == 2 ? ORT_ENABLE_EXTENDED : ORT_ENABLE_ALL;
+        bool good = p.ok(api->SetSessionGraphOptimizationLevel(options, level), "optimization level") &&
+                    (fusion || p.ok(api->AddSessionConfigEntry(options, "ep.dml.disable_graph_fusion", "1"), "no graph fusion")) &&
                     p.ok(api->DisableMemPattern(options), "DisableMemPattern") &&
                     p.ok(api->SetSessionExecutionMode(options, ORT_SEQUENTIAL), "execution mode") &&
                     p.ok(api->SetIntraOpNumThreads(options, 1), "intra-op threads") &&
@@ -402,8 +414,9 @@ bool PushMatteBackend::initialize(ID3D12Device* device, ID3D12CommandQueue* queu
     p.status.queued = p.queued;
     p.status.loadMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - loadStart).count();
     p.status.ready = true; p.status.state = "on";
-    veyra::log::info("character-hold", std::format("matting network ready runtime={} picture={}x{} queued={} poolHeld={} firstRunMs={:.0f} loadMs={:.0f}", base->GetVersionString(),
-                                                    p.facts.width, p.facts.height, p.queued ? 1 : 0, p.status.poolHeld ? 1 : 0, p.runMs, p.status.loadMs));
+    veyra::log::info("character-hold", std::format("matting network ready runtime={} picture={}x{} queued={} poolHeld={} fusion={} optimize={} firstRunMs={:.0f} loadMs={:.0f}",
+                                                    base->GetVersionString(), p.facts.width, p.facts.height, p.queued ? 1 : 0, p.status.poolHeld ? 1 : 0, fusion ? 1 : 0, optimize,
+                                                    p.runMs, p.status.loadMs));
     return true;
 #endif
 }

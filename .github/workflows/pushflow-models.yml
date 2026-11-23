@@ -88,5 +88,20 @@ jobs:
         shell: pwsh
         run: |
           $env:VEYRA_PROBE_SHADERS = "$env:RUNNER_TEMP\probe\shaders"
-          & "$env:RUNNER_TEMP\probe\character_probe.exe" "$env:RUNNER_TEMP\matte\runtime"
-          if ($LASTEXITCODE -ne 0) { Write-Host "::error::Character Hold's probe failed"; exit 1 }
+          $probe = "$env:RUNNER_TEMP\probe\character_probe.exe"
+          & $probe "$env:RUNNER_TEMP\matte\runtime"
+          $code = $LASTEXITCODE
+          if ($code -ne 0) {
+            # What does the runtime say, and does it run another way? (information for whoever reads the log)
+            foreach ($try in @(@{ VEYRA_PUSHMATTE_FUSION = '0' }, @{ VEYRA_PUSHMATTE_OPTIMIZE = '1' }, @{ VEYRA_PUSHMATTE_OPTIMIZE = '0' }, @{ VEYRA_PUSHMATTE_FUSION = '0'; VEYRA_PUSHMATTE_OPTIMIZE = '1' })) {
+              $try.GetEnumerator() | ForEach-Object { Set-Item "Env:$($_.Key)" $_.Value }
+              Write-Host "=== another way: $(($try.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ' ')"
+              & $probe "$env:RUNNER_TEMP\matte\runtime" 2>&1 | Select-String -Pattern '^(PASS|FAIL|ALL PASS|FAILED|  |\[INFO\]|\[WARN\]|\[ERROR\]|D3D12)' | ForEach-Object { $_.Line.Substring(0, [Math]::Min(400, $_.Line.Length)) } | Out-Host
+              Write-Host "=== exit $LASTEXITCODE"
+              $try.GetEnumerator() | ForEach-Object { Remove-Item "Env:$($_.Key)" }
+            }
+            $env:VEYRA_PUSHMATTE_VERBOSE = '1'
+            Write-Host "=== what ONNX Runtime says (the lines about DirectML, fusion, partitions and errors)"
+            & $probe "$env:RUNNER_TEMP\matte\runtime" 2>&1 | Select-String -Pattern 'Dml|DML|fus|artition|xception|rror|assigned|placed|not supported|fallback' | Select-Object -First 120 | ForEach-Object { $_.Line.Substring(0, [Math]::Min(360, $_.Line.Length)) } | Out-Host
+            Write-Host "::error::Character Hold's probe failed"; exit 1
+          }
