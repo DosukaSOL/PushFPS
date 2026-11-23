@@ -22,7 +22,8 @@ provider works best with sizes known when the session is created. PushFPS runs o
     studied at),
   - the four states get the sizes the model itself gives them at that picture size (read from a run of the
     published model, never written down by hand),
-  - the foreground output ("fgr") is dropped: Character Hold takes colours from the real frame.
+  - the foreground output ("fgr") is dropped, with the nodes only it needed: Character Hold takes colours from
+    the real frame.
 The weights are untouched. The result is checked against the published model on the processor, over several
 frames with the states carried along; a difference fails the build.
 """
@@ -79,6 +80,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
     ap.add_argument("--folded", action="store_true", help="also write pushmatte-folded.onnx (ONNX Runtime's basic optimisations done beforehand; for tools/character_probe)")
+    ap.add_argument("--variants", action="store_true", help="also write pushmatte-noexpand.onnx (for tools/character_probe)")
     ap.add_argument("--describe", action="store_true", help="print the model's operators and the attributes that matter to a provider")
     args = ap.parse_args()
     out = Path(args.out).resolve()
@@ -145,30 +147,73 @@ def main() -> None:
     for info in graph.output:
         fix(info, shapes[info.name])
     del graph.value_info[:]          # the published sizes of the values in between no longer hold
+
+    def prune(g):
+        """Keeps only what the outputs need (the foreground's own nodes go; ONNX Runtime does not drop them itself)."""
+        needed = {o.name for o in g.output}
+        kept = []
+        for node in reversed(list(g.node)):
+            if any(o in needed for o in node.output):
+                kept.append(node)
+                needed.update(i for i in node.input if i)
+        kept.reverse()
+        dropped = len(g.node) - len(kept)
+        del g.node[:]
+        g.node.extend(kept)
+        constants = [i for i in g.initializer if i.name in needed]
+        del g.initializer[:]
+        g.initializer.extend(constants)
+        return dropped
+
+    print(f"nodes that only the foreground output needed, removed: {prune(graph)}")
     onnx.checker.check_model(model)
     target = models / "pushmatte.onnx"
     onnx.save(model, str(target))
 
-    fixed = ort.InferenceSession(str(target), options, providers=["CPUExecutionProvider"])
-    got = [(i.name, i.shape) for i in fixed.get_inputs()], [(o.name, o.shape) for o in fixed.get_outputs()]
-    print("fixed model:", got)
-    for name, shape in got[0] + got[1]:
-        if shape != shapes[name]:
-            sys.exit(f"::error::{name} is {shape} in the fixed model, not {shapes[name]}")
-    rec_a = [zero] * 4
-    rec_b = [np.zeros(state_shapes[s], np.float32) for s in STATES]
-    worst = 0.0
-    covered = []
-    for step in range(4):
-        src = picture(step)
-        a = published.run(None, {"src": src, "r1i": rec_a[0], "r2i": rec_a[1], "r3i": rec_a[2], "r4i": rec_a[3], "downsample_ratio": ratio})
-        b = fixed.run(["pha", "r1o", "r2o", "r3o", "r4o"], {"src": src, "r1i": rec_b[0], "r2i": rec_b[1], "r3i": rec_b[2], "r4i": rec_b[3]})
-        rec_a, rec_b = a[2:], b[1:]
-        worst = max(worst, float(np.abs(a[1] - b[0]).max()), *[float(np.abs(x - y).max()) for x, y in zip(a[2:], b[1:])])
-        covered.append(round(float((b[0] > 0.5).mean()) * 100, 2))
-    print(f"fixed against published over 4 frames: largest difference {worst:.2e}; matte above a half on {covered} % of the drawn pictures")
-    if not worst <= 1e-4:
-        sys.exit(f"::error::the fixed model differs from the published one by {worst}")
+    def verify(path):
+        fixed = ort.InferenceSession(str(path), options, providers=["CPUExecutionProvider"])
+        got = [(i.name, i.shape) for i in fixed.get_inputs()], [(o.name, o.shape) for o in fixed.get_outputs()]
+        for name, shape in got[0] + got[1]:
+            if shape != shapes[name]:
+                sys.exit(f"::error::{name} is {shape} in {path.name}, not {shapes[name]}")
+        if len(got[0]) != 5 or len(got[1]) != 5:
+            sys.exit(f"::error::{path.name} has {len(got[0])} inputs and {len(got[1])} outputs")
+        rec_a = [zero] * 4
+        rec_b = [np.zeros(state_shapes[s], np.float32) for s in STATES]
+        worst = 0.0
+        covered = []
+        for step in range(4):
+            src = picture(step)
+            a = published.run(None, {"src": src, "r1i": rec_a[0], "r2i": rec_a[1], "r3i": rec_a[2], "r4i": rec_a[3], "downsample_ratio": ratio})
+            b = fixed.run(["pha", "r1o", "r2o", "r3o", "r4o"], {"src": src, "r1i": rec_b[0], "r2i": rec_b[1], "r3i": rec_b[2], "r4i": rec_b[3]})
+            rec_a, rec_b = a[2:], b[1:]
+            worst = max(worst, float(np.abs(a[1] - b[0]).max()), *[float(np.abs(x - y).max()) for x, y in zip(a[2:], b[1:])])
+            covered.append(round(float((b[0] > 0.5).mean()) * 100, 2))
+        print(f"{path.name} against the published model over 4 frames: largest difference {worst:.2e}; matte above a half on {covered} % of the drawn pictures")
+        if not worst <= 1e-4:
+            sys.exit(f"::error::{path.name} differs from the published model by {worst}")
+
+    verify(target)
+    if args.variants:
+        # For tools/character_probe: the same model with one more thing taken out each, to see what a provider minds.
+        states_in = {s + "i" for s in STATES}
+        renamed = {}
+        kept = []
+        for node in graph.node:
+            if node.op_type == "Expand" and node.input[0] in states_in:
+                renamed[node.output[0]] = node.input[0]      # a state already has the size it is expanded to
+                continue
+            kept.append(node)
+        for node in kept:
+            for k, name in enumerate(node.input):
+                if name in renamed:
+                    node.input[k] = renamed[name]
+        del graph.node[:]
+        graph.node.extend(kept)
+        print(f"variant noexpand: Expand nodes of the states removed: {len(renamed)}; nodes then unused: {prune(graph)}")
+        onnx.checker.check_model(model)
+        onnx.save(model, str(models / "pushmatte-noexpand.onnx"))
+        verify(models / "pushmatte-noexpand.onnx")
 
     if args.folded:
         folded = models / "pushmatte-folded.onnx"
@@ -179,18 +224,16 @@ def main() -> None:
         print(f"wrote {folded} ({folded.stat().st_size} bytes)")
     if args.describe:
         import collections
-        for label, path in (("fixed", target),) + ((("folded", models / "pushmatte-folded.onnx"),) if args.folded else ()):
+        for label, path in (("fixed", target),):
             m = onnx.load(str(path))
             kinds = collections.Counter(n.op_type for n in m.graph.node)
             print(f"{label}: opsets {[(o.domain or 'ai.onnx', o.version) for o in m.opset_import]}; {len(m.graph.node)} nodes: {dict(sorted(kinds.items()))}")
             inits = {i.name for i in m.graph.initializer}
             outs = {o.name for o in m.graph.output}
             ins = {i.name for i in m.graph.input}
-            for n in m.graph.node:
-                if n.op_type in ("AveragePool", "Resize", "Expand", "Slice", "Split", "Clip", "ReduceMean", "Pad", "Upsample", "Identity", "Cast", "Shape", "Gather", "Unsqueeze", "Squeeze", "Reshape", "ConstantOfShape"):
-                    attrs = {a.name: (list(a.ints) if a.ints else a.s.decode() if a.s else a.i if a.type == 2 else a.f if a.type == 1 else "...") for a in n.attribute}
-                    flow = ["=" + x if x in inits else "<" + x if x in ins else ("" if x else "-") for x in n.input]
-                    print(f"  {n.op_type} {attrs} inputs {[f or 'value' for f in flow]}{' -> a graph output' if outs & set(n.output) else ''}")
+            produced = {o for n in m.graph.node for o in n.output}
+            used = {i for n in m.graph.node for i in n.input} | outs
+            print(f"{label}: values made and never used: {sorted(produced - used)[:8]}")
             direct = [o for o in outs if o in ins or o in inits]
             print(f"{label}: outputs that are an input or a constant: {direct}")
 

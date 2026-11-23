@@ -50,7 +50,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit 1 }
           New-Item -ItemType Directory -Force "$out\runtime\pushflow\models" | Out-Null
           Copy-Item "$out\ort\runtimes\win-x64\native\onnxruntime.dll", "$out\dml\bin\x64-win\DirectML.dll" "$out\runtime\pushflow"
-          & $py -I scripts/pushflow/prepare_matte.py --out $out --folded --describe
+          & $py -I scripts/pushflow/prepare_matte.py --out $out --variants --describe
           if ($LASTEXITCODE -ne 0) { exit 1 }
           Get-ChildItem "$out\runtime\pushflow" -Recurse -File | ForEach-Object { "{0,12} {1}" -f $_.Length, $_.FullName.Substring($out.Length) } | Out-Host
       - name: Character Hold's rule (the unit test) with this compiler
@@ -93,7 +93,7 @@ jobs:
           $code = $LASTEXITCODE
           if ($code -ne 0) {
             # What does the runtime say, and does it run another way? (information for whoever reads the log)
-            foreach ($try in @(@{ VEYRA_PUSHMATTE_FUSION = '0' }, @{ VEYRA_PUSHMATTE_MODEL = 'pushmatte-folded.onnx'; VEYRA_PUSHMATTE_OPTIMIZE = '0' }, @{ VEYRA_PUSHMATTE_MODEL = 'pushmatte-folded.onnx' })) {
+            foreach ($try in @(@{ VEYRA_PUSHMATTE_MODEL = 'pushmatte-noexpand.onnx' }, @{ VEYRA_PUSHMATTE_FUSION = '0' })) {
               $try.GetEnumerator() | ForEach-Object { Set-Item "Env:$($_.Key)" $_.Value }
               Write-Host "=== another way: $(($try.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ' ')"
               & $probe "$env:RUNNER_TEMP\matte\runtime" 2>&1 | Select-String -Pattern '^(FAIL|ALL PASS|FAILED|  |\[INFO\]|\[WARN\]|\[ERROR\]|D3D12)' | ForEach-Object { $_.Line.Substring(0, [Math]::Min(400, $_.Line.Length)) } | Out-Host
