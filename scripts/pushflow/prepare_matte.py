@@ -78,6 +78,8 @@ def picture(step: int):
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
+    ap.add_argument("--folded", action="store_true", help="also write pushmatte-folded.onnx (ONNX Runtime's basic optimisations done beforehand; for tools/character_probe)")
+    ap.add_argument("--describe", action="store_true", help="print the model's operators and the attributes that matter to a provider")
     args = ap.parse_args()
     out = Path(args.out).resolve()
     work = out / "download"
@@ -167,6 +169,30 @@ def main() -> None:
     print(f"fixed against published over 4 frames: largest difference {worst:.2e}; matte above a half on {covered} % of the drawn pictures")
     if not worst <= 1e-4:
         sys.exit(f"::error::the fixed model differs from the published one by {worst}")
+
+    if args.folded:
+        folded = models / "pushmatte-folded.onnx"
+        fold = ort.SessionOptions()
+        fold.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_BASIC
+        fold.optimized_model_filepath = str(folded)
+        ort.InferenceSession(str(target), fold, providers=["CPUExecutionProvider"])
+        print(f"wrote {folded} ({folded.stat().st_size} bytes)")
+    if args.describe:
+        import collections
+        for label, path in (("fixed", target),) + ((("folded", models / "pushmatte-folded.onnx"),) if args.folded else ()):
+            m = onnx.load(str(path))
+            kinds = collections.Counter(n.op_type for n in m.graph.node)
+            print(f"{label}: opsets {[(o.domain or 'ai.onnx', o.version) for o in m.opset_import]}; {len(m.graph.node)} nodes: {dict(sorted(kinds.items()))}")
+            inits = {i.name for i in m.graph.initializer}
+            outs = {o.name for o in m.graph.output}
+            ins = {i.name for i in m.graph.input}
+            for n in m.graph.node:
+                if n.op_type in ("AveragePool", "Resize", "Expand", "Slice", "Split", "Clip", "ReduceMean", "Pad", "Upsample", "Identity", "Cast", "Shape", "Gather", "Unsqueeze", "Squeeze", "Reshape", "ConstantOfShape"):
+                    attrs = {a.name: (list(a.ints) if a.ints else a.s.decode() if a.s else a.i if a.type == 2 else a.f if a.type == 1 else "...") for a in n.attribute}
+                    flow = ["=" + x if x in inits else "<" + x if x in ins else ("" if x else "-") for x in n.input]
+                    print(f"  {n.op_type} {attrs} inputs {[f or 'value' for f in flow]}{' -> a graph output' if outs & set(n.output) else ''}")
+            direct = [o for o in outs if o in ins or o in inits]
+            print(f"{label}: outputs that are an input or a constant: {direct}")
 
     facts = [f"width={WIDTH}", f"height={HEIGHT}", f"ratio={RATIO}", f"source_sha256={SHA256}", f"sha256={sha256(target)}"]
     for s in STATES:

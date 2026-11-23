@@ -309,7 +309,13 @@ bool PushMatteBackend::initialize(ID3D12Device* device, ID3D12CommandQueue* queu
     const auto loadStart = std::chrono::steady_clock::now();
     p.device = device; p.queue = queue;
     const mfs::path dir = matteDirectory(runtimeDir);
-    const mfs::path model = dir / L"models" / L"pushmatte.onnx";
+    mfs::path model = dir / L"models" / L"pushmatte.onnx";
+    {
+        // For developers: another file of the same model in the models folder (VEYRA_PUSHMATTE_MODEL=<name>.onnx).
+        wchar_t other[64]{};
+        const DWORD n = GetEnvironmentVariableW(L"VEYRA_PUSHMATTE_MODEL", other, 64);
+        if (n > 0 && n < 64 && !wcschr(other, L'\\') && !wcschr(other, L'/') && !wcsstr(other, L"..")) model = dir / L"models" / other;
+    }
     p.facts = readMatteFacts(dir / L"models" / L"pushmatte.onnx.txt");
     if (!p.facts.known) { veyra::log::error("character-hold", "pushmatte.onnx.txt does not say what the model takes"); p.status.state = "model"; return false; }
     p.status.width = p.facts.width; p.status.height = p.facts.height;
