@@ -335,15 +335,21 @@ bool PushMatteBackend::initialize(ID3D12Device* device, ID3D12CommandQueue* queu
     if (FAILED(createDml(device, DML_CREATE_DEVICE_FLAG_NONE, IID_PPV_ARGS(&p.dmlDevice)))) { veyra::log::error("character-hold", "DMLCreateDevice failed"); return false; }
     auto* api = p.api;
     if (!p.ok(api->GetExecutionProviderApi("DML", ORT_API_VERSION, reinterpret_cast<const void**>(&p.dml)), "GetExecutionProviderApi") || !p.dml) return false;
-    // For developers (tools/character_probe): VEYRA_PUSHMATTE_VERBOSE=1 makes ONNX Runtime say what it does,
-    // VEYRA_PUSHMATTE_FUSION=0 gives every operator its own DirectML kernel, VEYRA_PUSHMATTE_OPTIMIZE=0|1|2|99
-    // sets the graph optimisation level. Never set in the product.
+    // Every operator gets its own DirectML kernel ("ep.dml.disable_graph_fusion"). With the provider's default,
+    // one compiled graph for the whole model, DirectML refuses this model when the session is made
+    // (DmlGraphFusionHelper.cpp(576), "The parameter is incorrect": ONNX Runtime 1.20.1 on the software renderer,
+    // 23 November 2026; the same with the model optimised beforehand, with what the dropped output needed
+    // removed, and without the states' Expand nodes). Operator by operator the network runs and gives what the
+    // processor gives. What the whole-graph form would save on a graphics card is not known.
+    // For developers (tools/character_probe): VEYRA_PUSHMATTE_FUSION=1 asks for the whole-graph form,
+    // VEYRA_PUSHMATTE_VERBOSE=1 makes ONNX Runtime say what it does, VEYRA_PUSHMATTE_OPTIMIZE=0|1|2|99 sets the
+    // graph optimisation level. Never set in the product.
     const auto setting = [](const wchar_t* name, int fallback) {
         wchar_t text[16]{};
         const DWORD n = GetEnvironmentVariableW(name, text, 16);
         return n > 0 && n < 16 ? _wtoi(text) : fallback;
     };
-    const bool verbose = setting(L"VEYRA_PUSHMATTE_VERBOSE", 0) != 0, fusion = setting(L"VEYRA_PUSHMATTE_FUSION", 1) != 0;
+    const bool verbose = setting(L"VEYRA_PUSHMATTE_VERBOSE", 0) != 0, fusion = setting(L"VEYRA_PUSHMATTE_FUSION", 0) != 0;
     const int optimize = setting(L"VEYRA_PUSHMATTE_OPTIMIZE", 99);
     if (!p.ok(api->CreateEnv(verbose ? ORT_LOGGING_LEVEL_VERBOSE : ORT_LOGGING_LEVEL_WARNING, "pushmatte", &p.env), "CreateEnv")) return false;
     if (!p.ok(api->CreateMemoryInfo("DML", OrtDeviceAllocator, 0, OrtMemTypeDefault, &p.memory), "memory info")) return false;

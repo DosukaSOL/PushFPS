@@ -90,18 +90,20 @@ jobs:
           $env:VEYRA_PROBE_SHADERS = "$env:RUNNER_TEMP\probe\shaders"
           $probe = "$env:RUNNER_TEMP\probe\character_probe.exe"
           & $probe "$env:RUNNER_TEMP\matte\runtime"
-          $code = $LASTEXITCODE
-          if ($code -ne 0) {
-            # What does the runtime say, and does it run another way? (information for whoever reads the log)
-            foreach ($try in @(@{ VEYRA_PUSHMATTE_MODEL = 'pushmatte-noexpand.onnx' }, @{ VEYRA_PUSHMATTE_FUSION = '0' })) {
-              $try.GetEnumerator() | ForEach-Object { Set-Item "Env:$($_.Key)" $_.Value }
-              Write-Host "=== another way: $(($try.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ' ')"
-              & $probe "$env:RUNNER_TEMP\matte\runtime" 2>&1 | Select-String -Pattern '^(FAIL|ALL PASS|FAILED|  |\[INFO\]|\[WARN\]|\[ERROR\]|D3D12)' | ForEach-Object { $_.Line.Substring(0, [Math]::Min(400, $_.Line.Length)) } | Out-Host
-              Write-Host "=== exit $LASTEXITCODE"
-              $try.GetEnumerator() | ForEach-Object { Remove-Item "Env:$($_.Key)" }
-            }
-            $env:VEYRA_PUSHMATTE_VERBOSE = '1'
-            Write-Host "=== what ONNX Runtime says (the lines about DirectML, fusion, partitions and errors)"
-            & $probe "$env:RUNNER_TEMP\matte\runtime" 2>&1 | Select-String -Pattern 'modified: [1-9]|Dml|DML|artition|xception|\[E:|\[W:|assigned|placed|not supported|fallback' | Select-Object -First 80 | ForEach-Object { $_.Line.Substring(0, [Math]::Min(360, $_.Line.Length)) } | Out-Host
-            Write-Host "::error::Character Hold's probe failed"; exit 1
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::Character Hold's probe failed"; exit 1 }
+      # Information only: does DirectML take the model as one compiled graph (the provider's default, which the
+      # backend switches off because it was refused)? With the model as shipped and with the two variants.
+      - name: The whole-graph form (information)
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $env:VEYRA_PROBE_SHADERS = "$env:RUNNER_TEMP\probe\shaders"
+          $probe = "$env:RUNNER_TEMP\probe\character_probe.exe"
+          $env:VEYRA_PUSHMATTE_FUSION = '1'
+          foreach ($model in 'pushmatte.onnx', 'pushmatte-noexpand.onnx', 'pushmatte-nosplit.onnx') {
+            $env:VEYRA_PUSHMATTE_MODEL = $model
+            Write-Host "=== whole graph, $model"
+            & $probe "$env:RUNNER_TEMP\matte\runtime" 2>&1 | Select-String -Pattern '^(FAIL|ALL PASS|FAILED|\[INFO\] \[character-hold\] matting|\[ERROR\]|  real frames)' | ForEach-Object { $_.Line.Substring(0, [Math]::Min(300, $_.Line.Length)) } | Out-Host
+            Write-Host "=== exit $LASTEXITCODE"
           }
+          exit 0

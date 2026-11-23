@@ -80,7 +80,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
     ap.add_argument("--folded", action="store_true", help="also write pushmatte-folded.onnx (ONNX Runtime's basic optimisations done beforehand; for tools/character_probe)")
-    ap.add_argument("--variants", action="store_true", help="also write pushmatte-noexpand.onnx (for tools/character_probe)")
+    ap.add_argument("--variants", action="store_true", help="also write pushmatte-noexpand.onnx and pushmatte-nosplit.onnx (for tools/character_probe)")
     ap.add_argument("--describe", action="store_true", help="print the model's operators and the attributes that matter to a provider")
     args = ap.parse_args()
     out = Path(args.out).resolve()
@@ -214,6 +214,34 @@ def main() -> None:
         onnx.checker.check_model(model)
         onnx.save(model, str(models / "pushmatte-noexpand.onnx"))
         verify(models / "pushmatte-noexpand.onnx")
+        # ... and no Split that makes a value nobody reads: each part that is read becomes a Slice.
+        from onnx import helper
+        read = {i for n in graph.node for i in n.input} | {o.name for o in graph.output}
+        rebuilt = []
+        changed = 0
+        for node in graph.node:
+            if node.op_type != "Split" or all(o in read for o in node.output):
+                rebuilt.append(node)
+                continue
+            axis = next((a.i for a in node.attribute if a.name == "axis"), 0)
+            sizes = next((list(a.ints) for a in node.attribute if a.name == "split"), None)
+            if not sizes:
+                sys.exit(f"::error::Split {node.name} has no sizes to slice by")
+            start = 0
+            for part, (out_name, size) in enumerate(zip(node.output, sizes)):
+                if out_name in read:
+                    names = [f"{out_name}_slice_{k}" for k in ("starts", "ends", "axes")]
+                    for name, value in zip(names, ([start], [start + size], [axis])):
+                        graph.initializer.append(numpy_helper.from_array(np.array(value, np.int64), name=name))
+                    rebuilt.append(helper.make_node("Slice", [node.input[0]] + names, [out_name], name=f"{node.name or 'split'}_part{part}"))
+                start += size
+            changed += 1
+        del graph.node[:]
+        graph.node.extend(rebuilt)
+        print(f"variant nosplit: Split nodes with a part nobody reads, replaced by slices: {changed}")
+        onnx.checker.check_model(model)
+        onnx.save(model, str(models / "pushmatte-nosplit.onnx"))
+        verify(models / "pushmatte-nosplit.onnx")
 
     if args.folded:
         folded = models / "pushmatte-folded.onnx"
