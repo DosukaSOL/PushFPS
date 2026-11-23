@@ -2009,7 +2009,7 @@
   },
   {
    "id": "F69",
-   "what": "Character Hold (off unless switched on): a matting network finds the people in every real frame, and after NVIDIA VFG, AMD FRC, PushFlow, DLSS frame generation or FSR made a frame (never ANR or XeSS, never with PushFlow's Predict) each person is laid back from one real frame, moved by their own motion; frame generation is given what it always was and nothing is written away from a person; someone who moves further than the search reaches is left as the method made them; a picture without a person comes out as it does without the switch; the shaders give what the rule in plain C++ gives; the model is the published one with its sizes fixed, checked against it; the rows say what the engine says (running with people found or not, not started and why), never only that the switch is on.",
+   "what": "Character Hold (off unless switched on): a matting network finds the people in every real frame, and after NVIDIA VFG, AMD FRC, PushFlow, DLSS frame generation or FSR made a frame (never ANR or XeSS, never with PushFlow's Predict) each person is taken from one real frame, placed where the method itself put them (the search between the two real frames is only where the looking starts) and laid over only where the method's frame differs from them there: a frame in which a person is right is left alone, what the method broke comes back, and a block the method broke takes its neighbours' place; frame generation is given what it always was and nothing is written away from a person; someone who moves further than the search reaches is left as the method made them; a picture without a person comes out as it does without the switch; the shaders give what the rule in plain C++ gives, step by step; the model is the published one with its sizes fixed, checked against it; the rows say what the engine says (running with people found or not, not started and why), never only that the switch is on.",
    "guards": [
     {
      "file": "tests/unit/PushCharacterTests.cpp",
@@ -2100,6 +2100,46 @@
      "file": "src/pushflow/PushMatteBackend.cpp",
      "ci": "veyra_push_gpu_tests",
      "contains": "ep.dml.disable_graph_fusion"
+    },
+    {
+     "file": "tests/unit/PushCharacterTests.cpp",
+     "ci": "veyra_push_character_tests",
+     "contains": "a frame in which the figure is right is left alone"
+    },
+    {
+     "file": "tests/unit/PushCharacterTests.cpp",
+     "ci": "veyra_push_character_tests",
+     "contains": "what the method broke comes back from the real frame, to a few of 255"
+    },
+    {
+     "file": "tests/unit/PushCharacterTests.cpp",
+     "ci": "veyra_push_character_tests",
+     "contains": "the figure is placed where the method put it, not where the search said"
+    },
+    {
+     "file": "tests/integration/PushCharacterGpu.h",
+     "ci": "veyra_push_gpu_tests",
+     "contains": "a generated frame in which the figure is right is left alone"
+    },
+    {
+     "file": "tests/integration/PushCharacterGpu.h",
+     "ci": "veyra_push_gpu_tests",
+     "contains": "a head the method showed as the world comes back"
+    },
+    {
+     "file": "tests/integration/PushCharacterGpu.h",
+     "ci": "veyra_push_gpu_tests",
+     "contains": ": every block's table is the header's"
+    },
+    {
+     "file": "tests/integration/PushCharacterGpu.h",
+     "ci": "veyra_push_gpu_tests",
+     "contains": ": each block's place is the header's, as found and as settled"
+    },
+    {
+     "file": "tests/integration/PushFlowGraphTests.cpp",
+     "ci": "veyra_push_flow_graph_tests",
+     "contains": "with Character Hold the figure is at least as near the true in-between picture"
     }
    ]
   }

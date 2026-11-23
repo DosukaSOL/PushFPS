@@ -20,13 +20,16 @@
 //      this file cannot differ by a rounding. The field is then smoothed by how distinct each block's answer is.
 //   3. Three checks per region say whether it is laid over at all: do the two mattes agree where they were
 //      brought together, do the insides agree in colour, is the motion near what the search can reach.
-//   4. For a generated frame at time t the character is taken from ONE real frame, the nearer (the newer at a
-//      half), moved by that field, and laid over the method's frame with the matte times the trust.
+//   4. For a generated frame at time t the character comes from ONE real frame, the nearer (the newer at a
+//      half). It is placed where the method itself put the character (the search's answer is only where the
+//      looking starts), and laid over only where the method's frame differs from it there, with the matte
+//      times the trust. Where frame generation got the character right, its own pixels stay.
 // What it does not do: repair the world beside the character, follow anyone moving further than the search
 // reaches (128 pixels a real frame sideways and 64 up or down at 4K: those are left as the method made them),
 // or see anything that is not a person (a car, an animal).
 //
-// What failed on real frames, so it is not rebuilt: a motion per pixel (a noisy field makes hair wavy), mixing
+// What failed on real frames, so it is not rebuilt: laying the character over wherever a person is, at the
+// place the search gives (the first form: a jitter of 3 pixels on average, section 4), a motion per pixel (a noisy field makes hair wavy), mixing
 // both real frames (double edges wherever the motion is a little off), a pixel's own match cost as its trust,
 // a weighted mean of per-pixel answers (the matte's flicker and straight edges outvote the rest), and "the
 // answer is at the search's limit" per pixel as the sign of a miss.
@@ -272,7 +275,201 @@ inline Field search(const Picture& older0, const Picture& newer0, const Picture&
     return f;
 }
 
-// --- 4. laying the character over a generated frame -------------------------------------------------------
+// --- 4. where the character stands in the frame the method made ------------------------------------------
+// The first form of this rule laid the character over wherever a person was, at the place the search above
+// gives. On real play that place was 3 pixels off on average and up to 15 at 4K (measured frame by frame on
+// the owner's clips of 23 November 2026): a head that turns keeps its outline almost where it was while its
+// surface moves, the search follows the outline, and one smooth motion fits neither. The character then stood
+// still for two frames out of every four: a jitter. The method's own frame has the character in the right place
+// wherever the method did not break it (0.2 pixels off the middle on a clip without Character Hold). So:
+//   - the source frame's character is PLACED where the method put it: per block, round the search's answer,
+//     the whole-pixel offset at which the character's own pixels (matte from kSolid on) are nearest the
+//     generated frame, found for a neighbourhood of 3 x 3 blocks together so that both edges of a head count
+//     (an edge alone says nothing about a shift inwards), then brought under a pixel; a block the method
+//     broke has no such place and takes what the blocks round it found;
+//   - and it is LAID OVER only where the method's frame still differs from it there: where frame generation
+//     got the character right its own pixels stay, and only what it broke is taken from the real frame.
+// Measured against the method's own frames (the same clip): the head's inside 0.5 pixels from the method's
+// where the first form was 3.4; against a frame in which a turning head is right, 0.5 where it was 4.6.
+inline constexpr int kGreyByte = 117;                     // kGrey as a byte
+inline constexpr int kSolid = 230;                        // from this matte on a pixel is the character's own
+inline constexpr int kPlaceReach = 4;                     // offsets looked at round the search's answer, each way, in fine pixels
+inline constexpr int kPlaceAcross = 2 * kPlaceReach + 1;
+inline constexpr int kPlaceCandidates = kPlaceAcross * kPlaceAcross;
+inline constexpr uint32_t kPlaceLeast = 576;              // solid pixels a neighbourhood needs before an offset counts
+inline constexpr uint32_t kPlaceScale = 32;               // a mean difference is kept in 32nds
+inline constexpr uint32_t kPlaceStep = 48;                // a step away from the search's answer: 1.5 a pixel, in 32nds
+inline constexpr uint32_t kNoAnswer = 0xFFFFFFFFu;
+inline constexpr int kDifferLo = 24, kDifferHi = 48;      // a neighbourhood's mean difference: from nothing laid over to everything
+
+// The generated frame as the network would be given it (planar, kMatteW x kMatteH, 0..1), at the fine size:
+// the mean of four pixels, 8 bits, RGBA with the fourth byte full.
+inline void madeFine(const float* rgb, std::vector<uint8_t>& fine) {
+    const size_t plane = size_t(kMatteW) * kMatteH;
+    fine.resize(size_t(kFineW) * kFineH * 4);
+    for (int y = 0; y < kFineH; ++y)
+        for (int x = 0; x < kFineW; ++x) {
+            uint8_t* out = &fine[(size_t(y) * kFineW + x) * 4];
+            for (int c = 0; c < 3; ++c) {
+                float sum = 0.0f;
+                for (int k = 0; k < 4; ++k) sum += rgb[size_t(c) * plane + size_t(2 * y + (k >> 1)) * kMatteW + size_t(2 * x + (k & 1))];
+                out[c] = toByte(sum * 0.25f);
+            }
+            out[3] = 255;
+        }
+}
+// A pixel of the generated frame as a matted pixel with the source's matte, in whole numbers.
+inline int blended(int value, int matte) { return (value * matte + kGreyByte * (255 - matte) + 127) / 255; }
+// How far a pixel of the generated frame is from a pixel of the source's matted picture (0..kCap).
+inline int apartFrom(const uint8_t* made, const uint8_t* source) {
+    const int a = source[3];
+    const int d = std::abs(blended(made[0], a) - int(source[0])) + std::abs(blended(made[1], a) - int(source[1])) + std::abs(blended(made[2], a) - int(source[2]));
+    return std::min(2 * d, kCap);
+}
+// The source of a generated frame `t` of the way from the older real frame to the newer: the nearer one (the
+// newer at a half), and the share of the half-motion that leads from a generated pixel to it.
+inline bool sourceIsNewer(float t) { return t >= 0.5f; }
+inline float shareOf(float t) { return sourceIsNewer(t) ? 2.0f * (1.0f - t) : -2.0f * t; }
+// One block's table: for every offset e (kPlaceReach each way) round its centre, over the block's window at
+// the fine size, the summed difference between the generated frame at p and the source at p + centre + e where
+// the source is solid, and how many pixels that was.
+struct Table {
+    int cx = 0, cy = 0;
+    bool judged = false;
+    uint32_t apart[kPlaceCandidates]{}, solid[kPlaceCandidates]{};
+};
+inline Table tableOf(const Picture& source1, const Picture& made1, int bx, int by, Motion m, float share) {
+    Table t;
+    t.judged = true;
+    t.cx = nearest(share * m.x); t.cy = nearest(share * m.y);
+    const Span w = fineWindow(bx, by);
+    for (int ey = -kPlaceReach; ey <= kPlaceReach; ++ey)
+        for (int ex = -kPlaceReach; ex <= kPlaceReach; ++ex) {
+            uint32_t apart = 0, solid = 0;
+            for (int y = w.y0; y < w.y1; ++y)
+                for (int x = w.x0; x < w.x1; ++x) {
+                    const uint8_t* s = source1.at(x + t.cx + ex, y + t.cy + ey);
+                    if (s[3] < kSolid) continue;
+                    apart += uint32_t(apartFrom(made1.at(x, y), s)); ++solid;
+                }
+            const int i = (ey + kPlaceReach) * kPlaceAcross + ex + kPlaceReach;
+            t.apart[i] = apart; t.solid[i] = solid;
+        }
+    return t;
+}
+struct Placed {
+    float x = 0.0f, y = 0.0f;     // from a generated pixel to its place in the source frame, in fine pixels
+    float left = 0.0f;            // what is still apart there, a pixel (0..kCap)
+    bool found = false;
+};
+// The place of one block: the tables of its 3 x 3 neighbourhood added up offset by offset (each neighbour's
+// table stands round its own centre), the cheapest offset within kPlaceReach - 1 with a step's cost for
+// leaving the search's answer, and a parabola. Whole numbers decide.
+inline Placed placeBlock(const Table* tables, int bx, int by, Motion m, float share) {
+    Placed out;
+    out.x = share * m.x; out.y = share * m.y;
+    const Table& own = tables[by * kBlocksX + bx];
+    if (!own.judged) return out;
+    uint32_t apart[kPlaceCandidates]{}, solid[kPlaceCandidates]{};
+    for (int j = -1; j <= 1; ++j)
+        for (int i = -1; i <= 1; ++i) {
+            const int x = bx + i, y = by + j;
+            if (x < 0 || x >= kBlocksX || y < 0 || y >= kBlocksY) continue;
+            const Table& n = tables[y * kBlocksX + x];
+            if (!n.judged) continue;
+            const int sx = own.cx - n.cx, sy = own.cy - n.cy;          // this block's offset e is the neighbour's e + s
+            for (int ey = -kPlaceReach; ey <= kPlaceReach; ++ey) {
+                const int ny = ey + sy;
+                if (ny < -kPlaceReach || ny > kPlaceReach) continue;
+                for (int ex = -kPlaceReach; ex <= kPlaceReach; ++ex) {
+                    const int nx = ex + sx;
+                    if (nx < -kPlaceReach || nx > kPlaceReach) continue;
+                    const int to = (ey + kPlaceReach) * kPlaceAcross + ex + kPlaceReach, from = (ny + kPlaceReach) * kPlaceAcross + nx + kPlaceReach;
+                    apart[to] += n.apart[from]; solid[to] += n.solid[from];
+                }
+            }
+        }
+    const auto mean = [&](int ex, int ey) {                              // in 32nds; kNoAnswer where too little is solid
+        const int i = (ey + kPlaceReach) * kPlaceAcross + ex + kPlaceReach;
+        return solid[i] >= kPlaceLeast ? (kPlaceScale * apart[i]) / solid[i] : kNoAnswer;
+    };
+    uint32_t best = kNoAnswer;
+    int bex = 0, bey = 0;
+    for (int ey = 1 - kPlaceReach; ey <= kPlaceReach - 1; ++ey)
+        for (int ex = 1 - kPlaceReach; ex <= kPlaceReach - 1; ++ex) {
+            const uint32_t q = mean(ex, ey);
+            if (q == kNoAnswer) continue;
+            const uint32_t cost = q + kPlaceStep * uint32_t(std::abs(ex) + std::abs(ey));
+            if (cost < best) { best = cost; bex = ex; bey = ey; }
+        }
+    if (best == kNoAnswer) return out;
+    const uint32_t q = mean(bex, bey), l = mean(bex - 1, bey), r = mean(bex + 1, bey), u = mean(bex, bey - 1), d = mean(bex, bey + 1);
+    out.found = true;
+    out.x = float(own.cx + bex) + (l != kNoAnswer && r != kNoAnswer ? parabola(l, q, r) : 0.0f);
+    out.y = float(own.cy + bey) + (u != kNoAnswer && d != kNoAnswer ? parabola(u, q, d) : 0.0f);
+    out.left = float(q) / float(kPlaceScale);
+    return out;
+}
+// A block whose neighbourhood the method broke has no place of its own: nothing of the character fits there.
+// How far a block's own place is believed: it was found, and little is left apart there.
+inline constexpr float kFitGood = 32.0f, kFitBad = 64.0f;
+inline float fitOf(float left, bool found) { return found ? 1.0f - smoothStep(left, kFitGood, kFitBad) : 0.0f; }
+// The place a block ends with: its own as far as it is believed, and for the rest what the believed blocks of
+// the 7 x 7 round it found (a head the method broke whole is some five blocks across at 4K), as a correction
+// to the search's answer (nothing believed near: the search's answer).
+inline constexpr float kSettleTent[7] = {1.0f, 2.0f, 3.0f, 4.0f, 3.0f, 2.0f, 1.0f};
+// placedX/Y, fit: per block as found; startX/Y: the search's answer times the share.
+inline Motion settleAt(const float* placedX, const float* placedY, const float* fit, const float* startX, const float* startY, int bx, int by) {
+    float weight = 0.0f, cx = 0.0f, cy = 0.0f;
+    for (int j = -3; j <= 3; ++j)
+        for (int i = -3; i <= 3; ++i) {
+            const int x = bx + i, y = by + j;
+            if (x < 0 || x >= kBlocksX || y < 0 || y >= kBlocksY) continue;
+            const int n = y * kBlocksX + x;
+            const float w = kSettleTent[i + 3] * kSettleTent[j + 3] * fit[n];
+            weight += w; cx += w * (placedX[n] - startX[n]); cy += w * (placedY[n] - startY[n]);
+        }
+    if (weight > 0.0f) { cx /= weight; cy /= weight; } else { cx = 0.0f; cy = 0.0f; }
+    const int own = by * kBlocksX + bx;
+    const float f = fit[own];
+    return {startX[own] + f * (placedX[own] - startX[own]) + (1.0f - f) * cx, startY[own] + f * (placedY[own] - startY[own]) + (1.0f - f) * cy};
+}
+// Everything one generated frame needs of its pair: per block the place (fine pixels) and the trust.
+struct Placing {
+    std::vector<float> x, y, trust;
+    std::vector<float> placedX, placedY, left, fit;       // as each block found it (tests)
+    std::vector<uint8_t> found;
+    std::vector<Table> tables;                            // (tests)
+};
+// source1: the matted fine picture of the source frame (the newer real frame when sourceIsNewer(t)); made1: madeFine().
+inline Placing place(const Field& f, const Picture& source1, const Picture& made1, float t) {
+    Placing p;
+    const float share = shareOf(t);
+    p.x.resize(kBlockCount); p.y.resize(kBlockCount); p.trust = f.trust;
+    p.placedX.resize(kBlockCount); p.placedY.resize(kBlockCount); p.left.assign(kBlockCount, 0.0f); p.fit.assign(kBlockCount, 0.0f); p.found.assign(kBlockCount, 0);
+    p.tables.resize(kBlockCount);
+    std::vector<float> startX(kBlockCount), startY(kBlockCount);
+    for (int by = 0; by < kBlocksY; ++by)
+        for (int bx = 0; bx < kBlocksX; ++bx) {
+            const int i = by * kBlocksX + bx;
+            startX[i] = share * f.x[i]; startY[i] = share * f.y[i];
+            if (f.blocks[i].active) p.tables[i] = tableOf(source1, made1, bx, by, {f.x[i], f.y[i]}, share);
+        }
+    for (int by = 0; by < kBlocksY; ++by)
+        for (int bx = 0; bx < kBlocksX; ++bx) {
+            const int i = by * kBlocksX + bx;
+            const Placed at = placeBlock(p.tables.data(), bx, by, {f.x[i], f.y[i]}, share);
+            p.placedX[i] = at.x; p.placedY[i] = at.y; p.left[i] = at.left; p.found[i] = at.found ? 1 : 0; p.fit[i] = fitOf(at.left, at.found);
+        }
+    for (int by = 0; by < kBlocksY; ++by)
+        for (int bx = 0; bx < kBlocksX; ++bx) {
+            const Motion m = settleAt(p.placedX.data(), p.placedY.data(), p.fit.data(), startX.data(), startY.data(), bx, by);
+            p.x[by * kBlocksX + bx] = m.x; p.y[by * kBlocksX + bx] = m.y;
+        }
+    return p;
+}
+
+// --- 5. where the method's frame differs from the placed character ------------------------------------------
 // A value of a grid of `w` x `h` at (x, y), between its four neighbours, the edge repeated.
 inline float between(const float* grid, int w, int h, float x, float y) {
     x = x < 0.0f ? 0.0f : (x > float(w - 1) ? float(w - 1) : x);
@@ -283,25 +480,53 @@ inline float between(const float* grid, int w, int h, float x, float y) {
     const float bottom = grid[y1 * w + x0] + (grid[y1 * w + x1] - grid[y1 * w + x0]) * fx;
     return top + (bottom - top) * fy;
 }
-struct Lay {
-    float x = 0.0f, y = 0.0f;     // where in the source frame this pixel's character comes from (pixel centres at whole numbers)
-    float trust = 0.0f;
-    bool newer = true;            // the source: the newer real frame, or the older
-};
-// Pixel (x, y) of a generated frame of width x height, `t` of the way from the older real frame to the newer.
-inline Lay layAt(const Field& f, int x, int y, int width, int height, float t) {
-    Lay out;
-    const float bx = (float(x) + 0.5f) * float(kBlocksX) / float(width) - 0.5f;
-    const float by = (float(y) + 0.5f) * (float(kFineH) / float(2 * kBlock)) / float(height) - 0.5f;
-    const float mx = between(f.x.data(), kBlocksX, kBlocksY, bx, by) * float(width) / float(kFineW);
-    const float my = between(f.y.data(), kBlocksX, kBlocksY, bx, by) * float(height) / float(kFineH);
-    out.trust = between(f.trust.data(), kBlocksX, kBlocksY, bx, by);
-    out.newer = t >= 0.5f;
-    const float k = out.newer ? 2.0f * (1.0f - t) : -2.0f * t;
-    out.x = float(x) + k * mx;
-    out.y = float(y) + k * my;
-    return out;
+// Where pixel (x, y) of a picture of width x height lies among the blocks.
+inline float blockX(int x, int width) { return (float(x) + 0.5f) * float(kBlocksX) / float(width) - 0.5f; }
+inline float blockY(int y, int height) { return (float(y) + 0.5f) * (float(kFineH) / float(2 * kBlock)) / float(height) - 0.5f; }
+// For a pixel of the fine size: 0 where the placed source is not solid (or the region is not trusted at all),
+// else 1 + how far the generated frame is from it (the source read at the nearest whole pixel). A place often
+// lies exactly half-way between two pixels (the parabola stops at a half): kTie decides those the same way
+// whatever the last bit of the arithmetic says, so shader and this file read the same pixel.
+inline constexpr float kTie = 1.0f / 512.0f;
+inline int nearestTied(float v) { return int(std::floor(v + (0.5f + kTie))); }
+inline uint16_t apartAt(const Placing& p, const Picture& source1, const Picture& made1, int x, int y) {
+    const float bx = blockX(x, kFineW), by = blockY(y, kFineH);
+    if (between(p.trust.data(), kBlocksX, kBlocksY, bx, by) < kLeast) return 0;
+    const int sx = x + nearestTied(between(p.x.data(), kBlocksX, kBlocksY, bx, by)), sy = y + nearestTied(between(p.y.data(), kBlocksX, kBlocksY, bx, by));
+    const uint8_t* s = source1.at(sx, sy);
+    if (s[3] < kSolid) return 0;
+    return uint16_t(1 + apartFrom(made1.at(x, y), s));
 }
+// For a pixel of the fine size, 0..255: the largest, over the 5 x 5 pixels round it, of how far above kDifferLo
+// (255 at kDifferHi) the mean difference of that pixel's 3 x 3 solid neighbours is. A single pixel says little,
+// and what differs is laid over with a margin.
+inline uint8_t differAt(const Placing& p, const uint16_t* apart, int x, int y) {
+    if (between(p.trust.data(), kBlocksX, kBlocksY, blockX(x, kFineW), blockY(y, kFineH)) < kLeast) return 0;
+    uint32_t most = 0;
+    for (int ny = y - 2; ny <= y + 2; ++ny)
+        for (int nx = x - 2; nx <= x + 2; ++nx) {
+            if (nx < 0 || nx >= kFineW || ny < 0 || ny >= kFineH) continue;
+            uint32_t sum = 0, count = 0;
+            for (int my = ny - 1; my <= ny + 1; ++my)
+                for (int mx = nx - 1; mx <= nx + 1; ++mx) {
+                    if (mx < 0 || mx >= kFineW || my < 0 || my >= kFineH) continue;
+                    const uint32_t v = apart[size_t(my) * kFineW + mx];
+                    if (v) { sum += v - 1; ++count; }
+                }
+            if (count < 3 || sum <= uint32_t(kDifferLo) * count) continue;
+            most = std::max(most, std::min<uint32_t>(255u, (255u * (sum - uint32_t(kDifferLo) * count)) / (uint32_t(kDifferHi - kDifferLo) * count)));
+        }
+    return uint8_t(most);
+}
+inline void differMap(const Placing& p, const Picture& source1, const Picture& made1, std::vector<uint16_t>& apart, std::vector<uint8_t>& differ) {
+    apart.resize(size_t(kFineW) * kFineH); differ.resize(size_t(kFineW) * kFineH);
+    for (int y = 0; y < kFineH; ++y)
+        for (int x = 0; x < kFineW; ++x) apart[size_t(y) * kFineW + x] = apartAt(p, source1, made1, x, y);
+    for (int y = 0; y < kFineH; ++y)
+        for (int x = 0; x < kFineW; ++x) differ[size_t(y) * kFineW + x] = differAt(p, apart.data(), x, y);
+}
+
+// --- 6. laying the character over a generated frame -------------------------------------------------------
 // The 8-bit matte of the source frame at a point of a frame of width x height (0..1).
 inline float matteAt(const uint8_t* matte8, float x, float y, int width, int height) {
     float u = (x + 0.5f) * float(kMatteW) / float(width) - 0.5f, v = (y + 0.5f) * float(kMatteH) / float(height) - 0.5f;
@@ -313,8 +538,35 @@ inline float matteAt(const uint8_t* matte8, float x, float y, int width, int hei
     const float top = at(x0, y0) + (at(x1, y0) - at(x0, y0)) * fx, bottom = at(x0, y1) + (at(x1, y1) - at(x0, y1)) * fx;
     return top + (bottom - top) * fy;
 }
-// What the pass keeps of the search for one frame: nothing is laid over where this is under kLeast.
-inline float weightOf(float matte, float trust) { return matte * trust; }
+// The differ map (kFineW x kFineH, bytes) at a pixel of a frame of width x height, between its four
+// neighbours, as a smooth step 0..1.
+inline float differsAt(const uint8_t* differ, int x, int y, int width, int height) {
+    float u = (float(x) + 0.5f) * float(kFineW) / float(width) - 0.5f, v = (float(y) + 0.5f) * float(kFineH) / float(height) - 0.5f;
+    u = u < 0.0f ? 0.0f : (u > float(kFineW - 1) ? float(kFineW - 1) : u);
+    v = v < 0.0f ? 0.0f : (v > float(kFineH - 1) ? float(kFineH - 1) : v);
+    const int x0 = int(u), y0 = int(v), x1 = std::min(x0 + 1, kFineW - 1), y1 = std::min(y0 + 1, kFineH - 1);
+    const float fx = u - float(x0), fy = v - float(y0);
+    const auto at = [&](int px, int py) { return float(differ[size_t(py) * kFineW + px]) * (1.0f / 255.0f); };
+    const float top = at(x0, y0) + (at(x1, y0) - at(x0, y0)) * fx, bottom = at(x0, y1) + (at(x1, y1) - at(x0, y1)) * fx;
+    const float d = top + (bottom - top) * fy;
+    return d * d * (3.0f - 2.0f * d);
+}
+struct Laid {
+    float x = 0.0f, y = 0.0f;     // where in the source frame this pixel's character comes from (pixel centres at whole numbers)
+    float weight = 0.0f;          // how much of it: the matte there, times the region's trust, times how far the method's frame differs
+};
+// Pixel (x, y) of a generated frame of width x height. sourceMatte8: the 8-bit matte of the source frame.
+// Nothing is laid over where the weight is under kLeast.
+inline Laid laidAt(const Placing& p, const uint8_t* differ, const uint8_t* sourceMatte8, int x, int y, int width, int height) {
+    Laid out;
+    const float bx = blockX(x, width), by = blockY(y, height);
+    const float trust = between(p.trust.data(), kBlocksX, kBlocksY, bx, by);
+    if (trust < kLeast) return out;
+    out.x = float(x) + between(p.x.data(), kBlocksX, kBlocksY, bx, by) * float(width) / float(kFineW);
+    out.y = float(y) + between(p.y.data(), kBlocksX, kBlocksY, bx, by) * float(height) / float(kFineH);
+    out.weight = matteAt(sourceMatte8, out.x, out.y, width, height) * trust * differsAt(differ, x, y, width, height);
+    return out;
+}
 
 // Character Hold is a choice of the user's (preference pushCharacterHold, process-wide like the other PushFPS
 // switches, so the settings record shared with the engine release keeps its shape). Off unless switched on.

@@ -7,7 +7,11 @@
 //   - the network, through DirectML, finds a drawn figure and nothing else;
 //   - the shaders give what pipeline/PushCharacter.h gives: the matte and the matted pictures from the
 //     network's own answer, the blocks' motion (whole numbers decide, so it must be the same), the field and
-//     the trust, and every pixel of a generated frame the figure is laid over, at a half and at a third;
+//     the trust; and for a generated frame the frame at the fine size, every block's table, its place as found
+//     and as settled, how far the frame is apart from the placed figure, where it differs, and every pixel the
+//     figure is laid over, at a half and at a third;
+//   - a generated frame in which the figure is right is left alone, a head the method showed as the world
+//     comes back, and a frame that is neither real frame gets the figure laid over whole;
 //   - nothing is written where nothing is laid over; a start-over forgets the frame before; a picture
 //     without a person leaves generated frames untouched.
 // `Gpu` is the test's device: device, queue, list, begin(), submitAndWait(), debugErrors().
@@ -291,45 +295,164 @@ bool run(Gpu& gpu, const std::wstring& runtimeDir, const std::function<void(bool
         check(figureBlocks > 10 && std::fabs(mx - 2.25) < 0.6 && std::fabs(my - 0.75) < 0.6 && trust > 0.9, name + "the figure's own motion is found and trusted");
         check(pass.activeBlocks() == unsigned(active) && pass.samplesWithPeople() >= 1, name + "the pass counts the blocks that have a person");
     }
-    // A generated frame, at a half and at a third of the way: every pixel against the header.
-    const Drawn made = stripes(W, H);
-    const auto composeAt = [&](float t, const std::string& which) {
-        if (!gpu.begin()) { check(false, name + which + ": list"); return; }
+    // A generated frame through every step of its own, each step against the header from what the step before
+    // left on the card. `truth`: the frame in which the figure is right (the same drawing at that time).
+    struct Result { bool ok = false; size_t laid = 0; double changedInFigure = 0, patchError = 0, patchMade = 0; size_t figurePixels = 0, patchPixels = 0; };
+    const auto composeAt = [&](const Drawn& made, const Drawn& truth, float t, float step, const std::string& which, int px0 = 0, int py0 = 0, int px1 = 0, int py1 = 0) {
+        Result res;
+        if (!gpu.begin()) { check(false, name + which + ": list"); return res; }
         auto upload = fill(device, gpu.list.Get(), generated.Get(), made.rgba);
         const bool can = pass.composes(0, 1);
         const bool done = can && pass.compose(gpu.list.Get(), tracker, 0, 1, t);
+        const Shot madeShot = shoot(device, gpu.list.Get(), pass.madeTexture(), kCommon, 4), tablesShot = shoot(device, gpu.list.Get(), pass.tablesTexture(), kCommon, 4);
+        const Shot placedShot = shoot(device, gpu.list.Get(), pass.placedTexture(), kCommon, 16), placeShot = shoot(device, gpu.list.Get(), pass.placeTexture(), kCommon, 16);
+        const Shot apartShot = shoot(device, gpu.list.Get(), pass.apartTexture(), kCommon, 2), differShot = shoot(device, gpu.list.Get(), pass.differTexture(), kCommon, 1);
         const Shot out = shoot(device, gpu.list.Get(), generated.Get(), kCommon, 4);
-        if (!gpu.submitAndWait() || !done) { check(false, name + which + ": the generated frame is composed"); return; }
-        const std::vector<uint8_t> result = out.develop();
-        size_t laid = 0, one = 0, more = 0, touched = 0, alphaOff = 0;
+        if (!gpu.submitAndWait() || !done) { check(false, name + which + ": the generated frame is composed"); return res; }
+        const std::vector<uint8_t> made1 = madeShot.develop(), tablesRaw = tablesShot.develop(), placedRaw = placedShot.develop(), placeRaw = placeShot.develop(), apartRaw = apartShot.develop(),
+                                   differ = differShot.develop(), result = out.develop();
+        if (made1.empty() || tablesRaw.empty() || placedRaw.empty() || placeRaw.empty() || apartRaw.empty() || differ.empty() || result.empty()) { check(false, name + which + ": read back"); return res; }
+        const bool newer = ch::sourceIsNewer(t);
+        const float share = ch::shareOf(t);
+        const Frame& source = newer ? b : a;
+        const ch::Picture source1{ch::kFineW, ch::kFineH, source.fine.data()}, madePicture{ch::kFineW, ch::kFineH, made1.data()};
+        // The frame at the fine size: the header's, from the frame as the network would be given it.
+        {
+            std::vector<float> planar(size_t(plane) * 3);
+            for (int y = 0; y < ch::kMatteH; ++y)
+                for (int x = 0; x < ch::kMatteW; ++x)
+                    for (int c = 0; c < 3; ++c)
+                        planar[size_t(c) * plane + size_t(y) * ch::kMatteW + x] = byteBetween(made.rgba, W, H, c, (float(x) + 0.5f) * float(W) / float(ch::kMatteW) - 0.5f, (float(y) + 0.5f) * float(H) / float(ch::kMatteH) - 0.5f);
+            std::vector<uint8_t> want1;
+            ch::madeFine(planar.data(), want1);
+            size_t one = 0, more = 0;
+            for (size_t i = 0; i < want1.size(); ++i) { const int d = std::abs(int(want1[i]) - int(made1[i])); one += d == 1 ? 1u : 0u; more += d > 1 ? 1u : 0u; }
+            check(more == 0 && one <= want1.size() / 500, name + which + ": the generated frame at the fine size is the header's (" + std::to_string(one) + " values one apart)");
+        }
+        // Every judged block's table, from the pictures the shaders themselves made: whole numbers, so the same.
+        std::vector<ch::Table> tables(ch::kBlockCount);
+        size_t tableOff = 0, judged = 0;
+        for (int by = 0; by < ch::kBlocksY; ++by)
+            for (int bx = 0; bx < ch::kBlocksX; ++bx) {
+                const int i = by * ch::kBlocksX + bx;
+                if (floatAt(b.blocks, size_t(i) * 4 + 3) < 0.5f) continue;
+                ++judged;
+                tables[i] = ch::tableOf(source1, madePicture, bx, by, {got.x[i], got.y[i]}, share);
+                for (int e = 0; e < ch::kPlaceCandidates; ++e) {
+                    uint32_t v = 0;
+                    std::memcpy(&v, tablesRaw.data() + (size_t(by * ch::kPlaceAcross + e / ch::kPlaceAcross) * size_t(ch::kBlocksX * ch::kPlaceAcross) + size_t(bx * ch::kPlaceAcross + e % ch::kPlaceAcross)) * 4, 4);
+                    if (v != tables[i].apart[e] * 2048u + tables[i].solid[e]) ++tableOff;
+                }
+            }
+        check(judged > 20 && tableOff == 0, name + which + ": every block's table is the header's (" + std::to_string(tableOff) + " of " + std::to_string(judged * ch::kPlaceCandidates) + " differ)");
+        // Each block's place as found, and as settled with its neighbours.
+        ch::Placing placing;
+        placing.x.resize(ch::kBlockCount); placing.y.resize(ch::kBlockCount); placing.trust.resize(ch::kBlockCount);
+        {
+            std::vector<float> px(ch::kBlockCount), py(ch::kBlockCount), fit(ch::kBlockCount), sx(ch::kBlockCount), sy(ch::kBlockCount);
+            double placedOff = 0, settledOff = 0; size_t foundOff = 0, found = 0;
+            for (int by = 0; by < ch::kBlocksY; ++by)
+                for (int bx = 0; bx < ch::kBlocksX; ++bx) {
+                    const int i = by * ch::kBlocksX + bx;
+                    const ch::Placed want = ch::placeBlock(tables.data(), bx, by, {got.x[i], got.y[i]}, share);
+                    px[i] = floatAt(placedRaw, size_t(i) * 4); py[i] = floatAt(placedRaw, size_t(i) * 4 + 1);
+                    const float left = floatAt(placedRaw, size_t(i) * 4 + 2); const bool was = floatAt(placedRaw, size_t(i) * 4 + 3) >= 0.5f;
+                    foundOff += was != want.found ? 1u : 0u; found += was ? 1u : 0u;
+                    placedOff = (std::max)({placedOff, double(std::fabs(px[i] - want.x)), double(std::fabs(py[i] - want.y)), double(std::fabs(left - want.left))});
+                    fit[i] = ch::fitOf(left, was); sx[i] = share * got.x[i]; sy[i] = share * got.y[i];
+                }
+            for (int by = 0; by < ch::kBlocksY; ++by)
+                for (int bx = 0; bx < ch::kBlocksX; ++bx) {
+                    const int i = by * ch::kBlocksX + bx;
+                    const ch::Motion want = ch::settleAt(px.data(), py.data(), fit.data(), sx.data(), sy.data(), bx, by);
+                    placing.x[i] = floatAt(placeRaw, size_t(i) * 4); placing.y[i] = floatAt(placeRaw, size_t(i) * 4 + 1); placing.trust[i] = floatAt(placeRaw, size_t(i) * 4 + 2);
+                    settledOff = (std::max)({settledOff, double(std::fabs(placing.x[i] - want.x)), double(std::fabs(placing.y[i] - want.y)), double(std::fabs(placing.trust[i] - got.trust[i])),
+                                             double(std::fabs(floatAt(placeRaw, size_t(i) * 4 + 3) - fit[i]))});
+                }
+            std::printf("  %s: %zu blocks placed (found differs in %zu); largest difference: as found %.2g, settled %.2g\n", which.c_str(), found, foundOff, placedOff, settledOff);
+            check(found > 20 && foundOff == 0 && placedOff < 1e-3 && settledOff < 5e-3, name + which + ": each block's place is the header's, as found and as settled");
+        }
+        // How far apart, and where it differs: whole numbers from the places the shader wrote.
+        {
+            std::vector<uint16_t> apart(size_t(ch::kFineW) * ch::kFineH);
+            std::memcpy(apart.data(), apartRaw.data(), apart.size() * 2);
+            size_t apartOff = 0, differOff = 0, solid = 0;
+            for (int y = 0; y < ch::kFineH; ++y)
+                for (int x = 0; x < ch::kFineW; ++x) {
+                    const size_t i = size_t(y) * ch::kFineW + x;
+                    apartOff += ch::apartAt(placing, source1, madePicture, x, y) != apart[i] ? 1u : 0u;
+                    solid += apart[i] ? 1u : 0u;
+                }
+            for (int y = 0; y < ch::kFineH; ++y)
+                for (int x = 0; x < ch::kFineW; ++x) differOff += ch::differAt(placing, apart.data(), x, y) != differ[size_t(y) * ch::kFineW + x] ? 1u : 0u;
+            std::printf("  %s: solid pixels %zu; apart values that differ %zu, differ values that differ %zu\n", which.c_str(), solid, apartOff, differOff);
+            // A place that falls right between two pixels may round either way: a few values may differ.
+            check(solid > 2000 && apartOff <= solid / 500 && differOff <= solid / 100, name + which + ": how far apart and where it differs are the header's");
+        }
+        // Every pixel of the frame that comes out.
+        size_t one = 0, more = 0, touched = 0, alphaOff = 0, changed = 0;
+        const uint8_t* sourceMatte = source.matte8.data();
         for (int y = 0; y < H; ++y)
             for (int x = 0; x < W; ++x) {
-                const ch::Lay lay = ch::layAt(got, x, y, W, H, t);
-                const Frame& source = lay.newer ? b : a;
-                const float weight = ch::weightOf(ch::matteAt(source.matte8.data(), lay.x, lay.y, W, H), lay.trust);
+                const ch::Laid laid = ch::laidAt(placing, differ.data(), sourceMatte, x, y, W, H);
                 const uint8_t* g = &made.rgba[(size_t(y) * W + x) * 4];
                 const uint8_t* r = &result[(size_t(y) * W + x) * 4];
+                const uint8_t* want = &truth.rgba[(size_t(y) * W + x) * 4];
+                const float u = (float(x) + 0.5f) * 1920.0f / float(W), v = (float(y) + 0.5f) * 1080.0f / float(H);
+                const bool inFigure = figureInside(step, u, v) < 0.85f;
+                if (inFigure) {
+                    ++res.figurePixels;
+                    int moved = 0; double error = 0, before = 0;
+                    for (int c = 0; c < 3; ++c) { moved = (std::max)(moved, std::abs(int(r[c]) - int(g[c]))); error += std::abs(int(r[c]) - int(want[c])); before += std::abs(int(g[c]) - int(want[c])); }
+                    if (moved > 3) ++changed;
+                    if (x >= px0 && x < px1 && y >= py0 && y < py1) { ++res.patchPixels; res.patchError += error / 3; res.patchMade += before / 3; }
+                }
                 // Right at the least weight the two may decide differently by a rounding: those pixels may be either.
-                const bool edge = std::fabs(weight - ch::kLeast) < 2e-4f;
-                if (weight < ch::kLeast || edge) {
+                const bool edge = std::fabs(laid.weight - ch::kLeast) < 2e-4f;
+                if (laid.weight < ch::kLeast || edge) {
                     if (std::memcmp(g, r, 4) != 0 && !edge) ++touched;
                     if (!edge) continue;
                     if (std::memcmp(g, r, 4) == 0) continue;
                 }
-                ++laid;
+                ++res.laid;
                 for (int c = 0; c < 3; ++c) {
-                    const float want8 = float(g[c]) * (1.0f / 255.0f) * (1.0f - weight) + byteBetween(source.drawn.rgba, W, H, c, lay.x, lay.y) * weight;
+                    const float want8 = float(g[c]) * (1.0f / 255.0f) * (1.0f - laid.weight) + byteBetween(source.drawn.rgba, W, H, c, laid.x, laid.y) * laid.weight;
                     const int d = std::abs(int(ch::toByte(want8)) - int(r[c]));
                     one += d == 1 ? 1u : 0u; more += d > 1 ? 1u : 0u;
                 }
                 alphaOff += r[3] != g[3] ? 1u : 0u;
             }
-        std::printf("  %s: laid over %zu pixels; values one apart %zu, more %zu; pixels changed where nothing is laid over %zu\n", which.c_str(), laid, one, more, touched);
-        check(laid > 5000 && more == 0 && one < laid / 4 && alphaOff == 0, name + which + ": every laid-over pixel is the header's");
+        if (res.figurePixels) res.changedInFigure = double(changed) / double(res.figurePixels);
+        if (res.patchPixels) { res.patchError /= double(res.patchPixels); res.patchMade /= double(res.patchPixels); }
+        std::printf("  %s: laid over %zu pixels; values one apart %zu, more %zu; pixels changed where nothing is laid over %zu; %.2f %% of the figure changed\n", which.c_str(), res.laid, one, more, touched,
+                    100.0 * res.changedInFigure);
+        check(more <= res.laid / 2000 && one <= res.laid / 4 + 16 && alphaOff == 0, name + which + ": every laid-over pixel is the header's");
         check(touched == 0, name + which + ": nothing else in the generated frame is touched");
+        res.ok = true;
+        return res;
     };
-    composeAt(0.5f, "at a half");
-    composeAt(1.0f / 3.0f, "at a third");
+    // The method's frame as it should be: the same drawing half-way. It is left alone.
+    const Drawn right = draw(W, H, 0.5f, true), world = draw(W, H, 0.5f, false);
+    {
+        const Result r = composeAt(right, right, 0.5f, 0.5f, "a frame that is right");
+        check(r.ok && r.figurePixels > 20000 && r.changedInFigure < 0.01, name + "a generated frame in which the figure is right is left alone");
+    }
+    // The method showed the world where the head is: the head comes back, from the newer real frame.
+    {
+        float cx = 0, cy = 0; figureCentre(0.5f, cx, cy);
+        const int x0 = int((cx - 100.0f) * float(W) / 1920.0f), x1 = int((cx + 100.0f) * float(W) / 1920.0f), y0 = int((cy - 360.0f) * float(H) / 1080.0f), y1 = int((cy - 150.0f) * float(H) / 1080.0f);
+        Drawn broken = right;
+        for (int y = y0; y < y1; ++y) std::memcpy(&broken.rgba[(size_t(y) * W + x0) * 4], &world.rgba[(size_t(y) * W + x0) * 4], size_t(x1 - x0) * 4);
+        const Result r = composeAt(broken, right, 0.5f, 0.5f, "a head shown as the world", x0, y0, x1, y1);
+        std::printf("  the head: %.2f of 255 from the right frame where the made frame is %.2f (%zu pixels)\n", r.patchError, r.patchMade, r.patchPixels);
+        check(r.ok && r.patchPixels > 3000 && r.patchMade > 15.0 && r.patchError < 6.0 && r.patchError * 4 < r.patchMade, name + "a head the method showed as the world comes back");
+    }
+    // A frame that is neither real frame (stripes): the figure is laid over whole, at a half and at a third.
+    const Drawn striped = stripes(W, H);
+    {
+        const Result half = composeAt(striped, right, 0.5f, 0.5f, "at a half"), third = composeAt(striped, draw(W, H, 1.0f / 3.0f, true), 1.0f / 3.0f, 1.0f / 3.0f, "at a third");
+        check(half.ok && third.ok && half.laid > 5000 && third.laid > 5000 && half.changedInFigure > 0.8 && third.changedInFigure > 0.8, name + "a frame that is nothing like the figure gets it laid over whole");
+    }
     check(!pass.composes(0, 0), name + "a generated frame of the other parity is not composed from this pair");
 
     // Starting over forgets the frame before; the pair comes back with the frame after.

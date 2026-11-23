@@ -11,6 +11,9 @@ constexpr DXGI_FORMAT kMatteFormat = DXGI_FORMAT_R8_UNORM;
 constexpr DXGI_FORMAT kPictureFormat = DXGI_FORMAT_R8G8B8A8_UNORM;       // a matted picture
 constexpr DXGI_FORMAT kBlockFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;     // per block: found, smoothed, the field
 constexpr DXGI_FORMAT kSumFormat = DXGI_FORMAT_R32G32B32A32_UINT;        // per block: the four sums
+constexpr DXGI_FORMAT kTableFormat = DXGI_FORMAT_R32_UINT;               // per block and offset: the sum times 2048, plus the count
+constexpr DXGI_FORMAT kApartFormat = DXGI_FORMAT_R16_UINT;               // per fine pixel: 0, or 1 + the difference
+constexpr DXGI_FORMAT kDifferFormat = DXGI_FORMAT_R8_UINT;               // per fine pixel: 0..255
 constexpr D3D12_RESOURCE_STATES kRead = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 constexpr D3D12_RESOURCE_STATES kWrite = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 // Descriptor slots of each pass (the layouts createViews fills and the steps bind).
@@ -20,8 +23,14 @@ constexpr D3D12_RESOURCE_STATES kWrite = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 //   search:  5 parity: older coarse, newer coarse, older fine, newer fine; then the found blocks (UAV).
 //   smooth:  5 parity: the found blocks, older fine, newer fine; then the smoothed motion and the sums (UAVs).
 //   trust:   0 the smoothed motion, 1 the sums, 2 the field (UAV).
-//   compose: 7 (2 slot + parity): the copy, older frame, newer frame, older matte, newer matte, the field; then the generated frame (UAV).
-constexpr UINT kComposeStride = 7;
+//   made:    0 the copy; 1 the generated frame at the fine size (UAV).
+//   tables:  6 parity: the made frame, older fine, newer fine, the found blocks, the field; then the tables (UAV).
+//   place:   0 the tables, 1 the found blocks, 2 the field; 3 the places as found (UAV).
+//   settle:  0 the places as found, 1 the field; 2 the places (UAV).
+//   apart:   5 parity: the made frame, older fine, newer fine, the places; then how far apart (UAV).
+//   differ:  0 how far apart, 1 the places; 2 where it differs (UAV).
+//   compose: 8 (2 slot + parity): the copy, older frame, newer frame, older matte, newer matte, the places, where it differs; then the generated frame (UAV).
+constexpr UINT kComposeStride = 8;
 constexpr UINT kGroups16 = 16, kGroups8 = 8, kGroups4 = 4;
 UINT groups(uint32_t size, UINT per) { return (size + per - 1) / per; }
 void bufferUav(ID3D12Device* device, ID3D12Resource* buffer, uint64_t floats, D3D12_CPU_DESCRIPTOR_HANDLE at) {
@@ -67,7 +76,15 @@ bool PushCharacterPass::initialize(ID3D12Device* device, ID3D12CommandQueue* que
     sums_ = makeTexture(device, character::kBlocksX, character::kBlocksY, kSumFormat, true);
     field_ = makeTexture(device, character::kBlocksX, character::kBlocksY, kBlockFormat, true);
     copy_ = makeTexture(device, width_, height_, format_, false);
-    if (!matte8_[0] || !matte8_[1] || !fine_[0] || !fine_[1] || !coarse_[0] || !coarse_[1] || !blocks_ || !smooth_ || !sums_ || !field_ || !copy_) return false;
+    made1_ = makeTexture(device, character::kFineW, character::kFineH, kPictureFormat, true);
+    tables_ = makeTexture(device, character::kBlocksX * character::kPlaceAcross, character::kBlocksY * character::kPlaceAcross, kTableFormat, true);
+    placed_ = makeTexture(device, character::kBlocksX, character::kBlocksY, kBlockFormat, true);
+    place_ = makeTexture(device, character::kBlocksX, character::kBlocksY, kBlockFormat, true);
+    apart_ = makeTexture(device, character::kFineW, character::kFineH, kApartFormat, true);
+    differ_ = makeTexture(device, character::kFineW, character::kFineH, kDifferFormat, true);
+    if (!matte8_[0] || !matte8_[1] || !fine_[0] || !fine_[1] || !coarse_[0] || !coarse_[1] || !blocks_ || !smooth_ || !sums_ || !field_ || !copy_ || !made1_ || !tables_ || !placed_ ||
+        !place_ || !apart_ || !differ_)
+        return false;
     std::vector<uint8_t> cs;
     if (!packPass_.loadShader("PushCharacterPack.dxil", cs) || !packPass_.create(device, cs, 3, 1, 1, kConstants)) return false;
     if (!mattePass_.loadShader("PushCharacterMatte.dxil", cs) || !mattePass_.create(device, cs, 1 + 2 * 4, 1, 4, kConstants)) return false;
@@ -75,7 +92,13 @@ bool PushCharacterPass::initialize(ID3D12Device* device, ID3D12CommandQueue* que
     if (!searchPass_.loadShader("PushCharacterSearch.dxil", cs) || !searchPass_.create(device, cs, 10, 4, 1, kConstants)) return false;
     if (!smoothPass_.loadShader("PushCharacterSmooth.dxil", cs) || !smoothPass_.create(device, cs, 10, 3, 2, kConstants)) return false;
     if (!trustPass_.loadShader("PushCharacterTrust.dxil", cs) || !trustPass_.create(device, cs, 3, 2, 1, kConstants)) return false;
-    if (!composePass_.loadShader("PushCharacterCompose.dxil", cs) || !composePass_.create(device, cs, kMaxGenerated * 2 * kComposeStride, 6, 1, kConstants)) return false;
+    if (!madePass_.loadShader("PushCharacterMade.dxil", cs) || !madePass_.create(device, cs, 2, 1, 1, kConstants)) return false;
+    if (!tablesPass_.loadShader("PushCharacterTables.dxil", cs) || !tablesPass_.create(device, cs, 12, 5, 1, kConstants)) return false;
+    if (!placePass_.loadShader("PushCharacterPlace.dxil", cs) || !placePass_.create(device, cs, 4, 3, 1, kConstants)) return false;
+    if (!settlePass_.loadShader("PushCharacterSettle.dxil", cs) || !settlePass_.create(device, cs, 3, 2, 1, kConstants)) return false;
+    if (!apartPass_.loadShader("PushCharacterApart.dxil", cs) || !apartPass_.create(device, cs, 10, 4, 1, kConstants)) return false;
+    if (!differPass_.loadShader("PushCharacterDiffer.dxil", cs) || !differPass_.create(device, cs, 3, 2, 1, kConstants)) return false;
+    if (!composePass_.loadShader("PushCharacterCompose.dxil", cs) || !composePass_.create(device, cs, kMaxGenerated * 2 * kComposeStride, 7, 1, kConstants)) return false;
     // What the pass found comes back through a small buffer that stays mapped; without it the pass works, uncounted.
     {
         const auto desc = blocks_->GetDesc();
@@ -131,7 +154,31 @@ void PushCharacterPass::createViews(ID3D12Device* device, DescriptorStager& stag
     stager.stageSrv(smooth_.Get(), nullptr, trustPass_.heap.Get(), 0);
     stager.stageSrv(sums_.Get(), nullptr, trustPass_.heap.Get(), 1);
     makeUav(device, field_.Get(), kBlockFormat, cpuHandleOf(trustPass_, 2));
+    stager.stageSrv(copy_.Get(), nullptr, madePass_.heap.Get(), 0);
+    makeUav(device, made1_.Get(), kPictureFormat, cpuHandleOf(madePass_, 1));
+    stager.stageSrv(tables_.Get(), nullptr, placePass_.heap.Get(), 0);
+    stager.stageSrv(blocks_.Get(), nullptr, placePass_.heap.Get(), 1);
+    stager.stageSrv(field_.Get(), nullptr, placePass_.heap.Get(), 2);
+    makeUav(device, placed_.Get(), kBlockFormat, cpuHandleOf(placePass_, 3));
+    stager.stageSrv(placed_.Get(), nullptr, settlePass_.heap.Get(), 0);
+    stager.stageSrv(field_.Get(), nullptr, settlePass_.heap.Get(), 1);
+    makeUav(device, place_.Get(), kBlockFormat, cpuHandleOf(settlePass_, 2));
+    stager.stageSrv(apart_.Get(), nullptr, differPass_.heap.Get(), 0);
+    stager.stageSrv(place_.Get(), nullptr, differPass_.heap.Get(), 1);
+    makeUav(device, differ_.Get(), kDifferFormat, cpuHandleOf(differPass_, 2));
     for (unsigned parity = 0; parity < 2; ++parity) {
+        const UINT tableBase = 6 * parity, apartBase = 5 * parity;
+        stager.stageSrv(made1_.Get(), nullptr, tablesPass_.heap.Get(), tableBase);
+        stager.stageSrv(fine_[1 - parity].Get(), nullptr, tablesPass_.heap.Get(), tableBase + 1);
+        stager.stageSrv(fine_[parity].Get(), nullptr, tablesPass_.heap.Get(), tableBase + 2);
+        stager.stageSrv(blocks_.Get(), nullptr, tablesPass_.heap.Get(), tableBase + 3);
+        stager.stageSrv(field_.Get(), nullptr, tablesPass_.heap.Get(), tableBase + 4);
+        makeUav(device, tables_.Get(), kTableFormat, cpuHandleOf(tablesPass_, tableBase + 5));
+        stager.stageSrv(made1_.Get(), nullptr, apartPass_.heap.Get(), apartBase);
+        stager.stageSrv(fine_[1 - parity].Get(), nullptr, apartPass_.heap.Get(), apartBase + 1);
+        stager.stageSrv(fine_[parity].Get(), nullptr, apartPass_.heap.Get(), apartBase + 2);
+        stager.stageSrv(place_.Get(), nullptr, apartPass_.heap.Get(), apartBase + 3);
+        makeUav(device, apart_.Get(), kApartFormat, cpuHandleOf(apartPass_, apartBase + 4));
         stager.stageSrv(real_[parity], nullptr, packPass_.heap.Get(), 1 + parity);
         const UINT matteBase = 1 + 4 * parity;
         bufferUav(device, matte_.pictureBuffer(), plane * 3, cpuHandleOf(mattePass_, matteBase));
@@ -163,8 +210,9 @@ void PushCharacterPass::createViews(ID3D12Device* device, DescriptorStager& stag
             stager.stageSrv(real_[parity], nullptr, composePass_.heap.Get(), base + 2);
             stager.stageSrv(matte8_[1 - parity].Get(), nullptr, composePass_.heap.Get(), base + 3);
             stager.stageSrv(matte8_[parity].Get(), nullptr, composePass_.heap.Get(), base + 4);
-            stager.stageSrv(field_.Get(), nullptr, composePass_.heap.Get(), base + 5);
-            makeUav(device, generated_[slot], format_, cpuHandleOf(composePass_, base + 6));
+            stager.stageSrv(place_.Get(), nullptr, composePass_.heap.Get(), base + 5);
+            stager.stageSrv(differ_.Get(), nullptr, composePass_.heap.Get(), base + 6);
+            makeUav(device, generated_[slot], format_, cpuHandleOf(composePass_, base + 7));
         }
         writable_[slot] = true;
     }
@@ -265,21 +313,89 @@ bool PushCharacterPass::composes(unsigned slot, unsigned parity) const {
 bool PushCharacterPass::compose(ID3D12GraphicsCommandList* list, StateTracker& tracker, unsigned slot, unsigned parity, float t) {
     if (!list || !composes(slot, parity) || !real_[0] || !real_[1]) return false;
     auto* generated = generated_[slot];
+    t = std::clamp(t, 0.0f, 1.0f);
+    const uint32_t newer = character::sourceIsNewer(t) ? 1u : 0u;
+    const float share = character::shareOf(t);
+    const UINT blockGroupsX = groups(character::kBlocksX, kGroups4), blockGroupsY = groups(character::kBlocksY, kGroups4);
+    const UINT fineGroupsX = groups(character::kFineW, kGroups8), fineGroupsY = groups(character::kFineH, kGroups8);
     // The generated frame as it was made: the frame itself is written in place.
     tracker.transition(list, generated, D3D12_RESOURCE_STATE_COPY_SOURCE);
     tracker.transition(list, copy_.Get(), D3D12_RESOURCE_STATE_COPY_DEST);
     list->CopyResource(copy_.Get(), generated);
-    ID3D12Resource* const reads[] = {copy_.Get(), real_[0], real_[1], matte8_[0].Get(), matte8_[1].Get(), field_.Get()};
+    // It at the fine size, as the network would be given it.
+    tracker.transition(list, copy_.Get(), kRead);
+    tracker.transition(list, made1_.Get(), kWrite);
+    {
+        float c[kConstants]{};
+        c[0] = std::bit_cast<float>(width_); c[1] = std::bit_cast<float>(height_); c[2] = std::bit_cast<float>(uint32_t(encoding_));
+        madePass_.bind(list, c, gpuHandleOf(madePass_, 0).ptr, gpuHandleOf(madePass_, 1).ptr);
+        list->Dispatch(fineGroupsX, fineGroupsY, 1);
+        tracker.uavBarrier(list, made1_.Get());
+    }
+    // Per block and offset: how well the source frame's character fits the made frame there (one group a block).
+    for (ID3D12Resource* r : {made1_.Get(), fine_[0].Get(), fine_[1].Get(), blocks_.Get(), field_.Get()}) tracker.transition(list, r, kRead);
+    tracker.transition(list, tables_.Get(), kWrite);
+    {
+        float c[kConstants]{};
+        c[0] = share; c[1] = std::bit_cast<float>(newer);
+        tablesPass_.bind(list, c, gpuHandleOf(tablesPass_, 6 * parity).ptr, gpuHandleOf(tablesPass_, 6 * parity + 5).ptr);
+        list->Dispatch(character::kBlocksX, character::kBlocksY, 1);
+        tracker.uavBarrier(list, tables_.Get());
+    }
+    // Each block's place, from its neighbourhood's tables together.
+    tracker.transition(list, tables_.Get(), kRead);
+    tracker.transition(list, placed_.Get(), kWrite);
+    {
+        float c[kConstants]{};
+        c[0] = share;
+        placePass_.bind(list, c, gpuHandleOf(placePass_, 0).ptr, gpuHandleOf(placePass_, 3).ptr);
+        list->Dispatch(blockGroupsX, blockGroupsY, 1);
+        tracker.uavBarrier(list, placed_.Get());
+    }
+    // Settled with the neighbours where the method broke the frame.
+    tracker.transition(list, placed_.Get(), kRead);
+    tracker.transition(list, place_.Get(), kWrite);
+    {
+        float c[kConstants]{};
+        c[0] = share;
+        settlePass_.bind(list, c, gpuHandleOf(settlePass_, 0).ptr, gpuHandleOf(settlePass_, 2).ptr);
+        list->Dispatch(blockGroupsX, blockGroupsY, 1);
+        tracker.uavBarrier(list, place_.Get());
+    }
+    // Where the made frame differs from the placed character.
+    tracker.transition(list, place_.Get(), kRead);
+    tracker.transition(list, apart_.Get(), kWrite);
+    {
+        float c[kConstants]{};
+        c[0] = std::bit_cast<float>(newer);
+        apartPass_.bind(list, c, gpuHandleOf(apartPass_, 5 * parity).ptr, gpuHandleOf(apartPass_, 5 * parity + 4).ptr);
+        list->Dispatch(fineGroupsX, fineGroupsY, 1);
+        tracker.uavBarrier(list, apart_.Get());
+    }
+    tracker.transition(list, apart_.Get(), kRead);
+    tracker.transition(list, differ_.Get(), kWrite);
+    {
+        float c[kConstants]{};
+        differPass_.bind(list, c, gpuHandleOf(differPass_, 0).ptr, gpuHandleOf(differPass_, 2).ptr);
+        list->Dispatch(fineGroupsX, fineGroupsY, 1);
+        tracker.uavBarrier(list, differ_.Get());
+    }
+    // The character laid over there.
+    ID3D12Resource* const reads[] = {copy_.Get(), real_[0], real_[1], matte8_[0].Get(), matte8_[1].Get(), place_.Get(), differ_.Get()};
     for (ID3D12Resource* r : reads) tracker.transition(list, r, kRead);
     tracker.transition(list, generated, kWrite);
-    float c[kConstants]{};
-    c[0] = std::bit_cast<float>(width_); c[1] = std::bit_cast<float>(height_); c[2] = std::clamp(t, 0.0f, 1.0f);
-    const UINT base = (slot * 2 + parity) * kComposeStride;
-    composePass_.bind(list, c, gpuHandleOf(composePass_, base).ptr, gpuHandleOf(composePass_, base + 6).ptr);
-    list->Dispatch(groups(width_, kGroups8), groups(height_, kGroups8), 1);
-    tracker.uavBarrier(list, generated);
+    {
+        float c[kConstants]{};
+        c[0] = std::bit_cast<float>(width_); c[1] = std::bit_cast<float>(height_); c[2] = std::bit_cast<float>(newer);
+        const UINT base = (slot * 2 + parity) * kComposeStride;
+        composePass_.bind(list, c, gpuHandleOf(composePass_, base).ptr, gpuHandleOf(composePass_, base + 7).ptr);
+        list->Dispatch(groups(width_, kGroups8), groups(height_, kGroups8), 1);
+        tracker.uavBarrier(list, generated);
+    }
     tracker.transition(list, generated, D3D12_RESOURCE_STATE_COMMON);
     for (ID3D12Resource* r : reads) tracker.transition(list, r, D3D12_RESOURCE_STATE_COMMON);
+    for (ID3D12Resource* r : {made1_.Get(), fine_[0].Get(), fine_[1].Get(), blocks_.Get(), field_.Get(), tables_.Get(), placed_.Get(), apart_.Get()})
+        tracker.transition(list, r, D3D12_RESOURCE_STATE_COMMON);
     return true;
 }
 }

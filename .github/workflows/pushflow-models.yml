@@ -69,7 +69,7 @@ jobs:
           $dxc = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\dxc.exe" | Sort-Object FullName -Descending | Select-Object -First 1
           if (-not $dxc) { Write-Host "::error::dxc.exe not found"; exit 1 }
           New-Item -ItemType Directory -Force "$env:RUNNER_TEMP\probe\shaders" | Out-Null
-          foreach ($name in 'Pack', 'Matte', 'Coarse', 'Search', 'Smooth', 'Trust', 'Compose') {
+          foreach ($name in 'Pack', 'Matte', 'Coarse', 'Search', 'Smooth', 'Trust', 'Made', 'Tables', 'Place', 'Settle', 'Apart', 'Differ', 'Compose') {
             & $dxc.FullName -T cs_6_0 -E main -O3 -Qstrip_debug -Qstrip_reflect -Fo "$env:RUNNER_TEMP\probe\shaders\PushCharacter$name.dxil" "shaders\PushCharacter$name.hlsl"
             if ($LASTEXITCODE -ne 0) { Write-Host "::error::PushCharacter$name.hlsl did not compile"; exit 1 }
           }

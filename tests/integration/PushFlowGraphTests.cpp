@@ -501,7 +501,9 @@ int wmain(int argc, wchar_t** argv) {
                     std::cout << "PUSHFLOW_GRAPH " << tag << ": the pass saw " << graph.characterHoldFrames() << " real frames and counts " << blocks << " blocks with a person; pixels changed away from the figure "
                               << awayChanged << ", at the figure " << figureChanged << " (" << compared << " generated frames compared)" << std::endl;
                     check(graph.characterHoldFrames() == Frames && compared == generated && awayChanged == 0, tag + ": nothing is changed away from the figure (" + std::to_string(awayChanged) + " pixels)");
-                    if (person) check(blocks > 0 && figureChanged > 0, tag + ": the figure is found and laid over (" + std::to_string(blocks) + " blocks, " + std::to_string(figureChanged) + " pixels)");
+                    // PushFlow has this figure right, and what is right is left alone: the pass must find the figure, and
+                    // whatever it lays over must not move it away from the true picture (checked below).
+                    if (person) check(blocks > 0, tag + ": the figure is found (" + std::to_string(blocks) + " blocks; " + std::to_string(figureChanged) + " pixels laid over)");
                     else check(blocks == 0 && figureChanged == 0, tag + ": nobody is found and nothing is laid over");
                 } else check(graph.characterHoldFrames() == 0 && graph.characterHoldBlocks() == 0, tag + ": no pass, nothing counted");
                 ring.drainQueue(); graph.shutdown();
@@ -509,7 +511,7 @@ int wmain(int argc, wchar_t** argv) {
             pipeline::character::setWanted(false);
             if (person) {
                 std::cout << "PUSHFLOW_GRAPH a figure: its inside is off the true in-between picture by " << figureError[0] << " of 255 without Character Hold and " << figureError[1] << " with it" << std::endl;
-                check(figureError[0] >= 0 && figureError[1] >= 0 && figureError[1] <= figureError[0] + 3.0, "with Character Hold the figure is at least as near the true in-between picture (" +
+                check(figureError[0] >= 0 && figureError[1] >= 0 && figureError[1] <= figureError[0] + 0.5, "with Character Hold the figure is at least as near the true in-between picture (" +
                       std::to_string(figureError[1]) + " against " + std::to_string(figureError[0]) + " of 255)");
             }
         }

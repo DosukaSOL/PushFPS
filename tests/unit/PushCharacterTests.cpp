@@ -2,9 +2,10 @@
 // Copyright (C) 2026 DosukaSOL and the PushFPS contributors. Part of PushFPS, a modified version of Veyra.
 //
 // Character Hold (pipeline/PushCharacter.h): a figure the camera follows keeps its own small motion while the
-// world behind it passes quickly; with its matte it is taken from one real frame, moved by its own motion and
-// laid over what frame generation made. Here the rule itself on drawn pictures with known motions, so the true
-// in-between picture is known. The matte is the drawn figure's own shape (the network that makes it in the
+// world behind it passes quickly; with its matte it is taken from one real frame, placed where frame generation
+// put the figure, and laid over what frame generation made wherever that differs from it. Here the rule itself
+// on drawn pictures with known motions, so the true in-between picture is known: a frame that is right must be
+// left alone, and what is broken in a frame must come back. The matte is the drawn figure's own shape (the network that makes it in the
 // program is not part of the rule). The shaders are compared with these same functions on a graphics card in
 // tests/integration/PushGpuTests.cpp. Pure: builds anywhere.
 #include "veyra/pipeline/PushCharacter.h"
@@ -77,28 +78,62 @@ static Scene draw(float wx, float wy, const std::vector<Figure>& figures) {
     return s;
 }
 static float planar(const Scene& s, int c, float x, float y) { return between(s.rgb.data() + size_t(c) * kMatteW * kMatteH, kMatteW, kMatteH, x, y); }
-// The generated frame as a method that breaks the figure up would make it: the plain mix of the two real frames.
-struct Held { double figureError = 0, mixError = 0, outside = 0; size_t figurePixels = 0; };
-static Held hold(const Scene& older, const Scene& newer, const Scene& truth, const Field& field, float t) {
+// One generated frame through the rule. made: the frame as the method made it (planar, the matte's size).
+struct Held {
+    double figureError = 0, madeError = 0;      // inside the true figure: the result and the made frame against the truth, of 255
+    double changedInFigure = 0;                 // share of the true figure's pixels the rule changed by more than 3 of 255
+    double outside = 0;                         // values written where nothing is laid over
+    double changedAway = 0;                     // pixels changed where the true figure is not, and not beside it
+    double patchError = 0, patchMade = 0;       // the same two errors inside `patch` (a region the method broke)
+    size_t figurePixels = 0, patchPixels = 0, placed = 0;
+};
+struct Patch { float x0 = 0, y0 = 0, x1 = 0, y1 = 0; bool has(int x, int y) const { return float(x) >= x0 && float(x) < x1 && float(y) >= y0 && float(y) < y1; } };
+static Held hold(const Scene& older, const Scene& newer, const std::vector<float>& made, const Scene& truth, const Field& field, float t, Patch patch = {}) {
     Held h;
+    const Scene& source = sourceIsNewer(t) ? newer : older;
+    std::vector<uint8_t> made1;
+    madeFine(made.data(), made1);
+    const Placing p = place(field, source.p1(), {kFineW, kFineH, made1.data()}, t);
+    std::vector<uint16_t> apart; std::vector<uint8_t> differ;
+    differMap(p, source.p1(), {kFineW, kFineH, made1.data()}, apart, differ);
+    for (uint8_t f : p.found) h.placed += f;
+    const size_t plane = size_t(kMatteW) * kMatteH;
+    size_t changed = 0;
     for (int y = 0; y < kMatteH; ++y)
         for (int x = 0; x < kMatteW; ++x) {
             const size_t i = size_t(y) * kMatteW + x;
-            const Lay lay = layAt(field, x, y, kMatteW, kMatteH, t);
-            const Scene& source = lay.newer ? newer : older;
-            const float weight = weightOf(matteAt(source.matte8.data(), lay.x, lay.y, kMatteW, kMatteH), lay.trust);
-            double error = 0, mixed = 0;
+            const Laid laid = laidAt(p, differ.data(), source.matte8.data(), x, y, kMatteW, kMatteH);
+            double error = 0, before = 0, moved = 0;
             for (int c = 0; c < 3; ++c) {
-                const size_t k = size_t(c) * kMatteW * kMatteH + i;
-                const float made = older.rgb[k] * (1 - t) + newer.rgb[k] * t;
-                const float out = weight < kLeast ? made : made * (1 - weight) + planar(source, c, lay.x, lay.y) * weight;
-                error += std::fabs(out - truth.rgb[k]); mixed += std::fabs(made - truth.rgb[k]);
-                if (weight < kLeast && out != made) h.outside += 1;
+                const size_t k = size_t(c) * plane + i;
+                const float out = laid.weight < kLeast ? made[k] : made[k] * (1 - laid.weight) + planar(source, c, laid.x, laid.y) * laid.weight;
+                error += std::fabs(out - truth.rgb[k]); before += std::fabs(made[k] - truth.rgb[k]); moved = std::max<double>(moved, std::fabs(out - made[k]));
+                if (laid.weight < kLeast && out != made[k]) h.outside += 1;
             }
-            if (truth.matte[i] > 0.5f) { h.figureError += error / 3; h.mixError += mixed / 3; ++h.figurePixels; }
+            const bool inFigure = truth.matte[i] > 0.5f;
+            if (inFigure) { h.figureError += error / 3; h.madeError += before / 3; ++h.figurePixels; if (moved > 3.0 / 255.0) ++changed; }
+            else if (truth.matte[i] == 0.0f && older.matte[i] == 0.0f && newer.matte[i] == 0.0f && moved > 3.0 / 255.0) h.changedAway += 1;
+            if (inFigure && patch.has(x, y)) { h.patchError += error / 3; h.patchMade += before / 3; ++h.patchPixels; }
         }
-    if (h.figurePixels) { h.figureError = h.figureError / double(h.figurePixels) * 255.0; h.mixError = h.mixError / double(h.figurePixels) * 255.0; }
+    if (h.figurePixels) { h.figureError = h.figureError / double(h.figurePixels) * 255.0; h.madeError = h.madeError / double(h.figurePixels) * 255.0; h.changedInFigure = double(changed) / double(h.figurePixels); }
+    if (h.patchPixels) { h.patchError = h.patchError / double(h.patchPixels) * 255.0; h.patchMade = h.patchMade / double(h.patchPixels) * 255.0; }
     return h;
+}
+// The plain mix of the two real frames: what a method makes of a figure it cannot follow at all.
+static std::vector<float> mixOf(const Scene& older, const Scene& newer, float t) {
+    std::vector<float> made(older.rgb.size());
+    for (size_t k = 0; k < made.size(); ++k) made[k] = older.rgb[k] * (1 - t) + newer.rgb[k] * t;
+    return made;
+}
+// A frame that is right, except that inside `patch` the method showed the world where the figure is (what
+// frame generation does to hair and shoulders before a fast world).
+static std::vector<float> broken(const Scene& truth, const Scene& worldOnly, Patch patch) {
+    std::vector<float> made = truth.rgb;
+    const size_t plane = size_t(kMatteW) * kMatteH;
+    for (int y = 0; y < kMatteH; ++y)
+        for (int x = 0; x < kMatteW; ++x)
+            if (patch.has(x, y)) for (int c = 0; c < 3; ++c) made[size_t(c) * plane + size_t(y) * kMatteW + x] = worldOnly.rgb[size_t(c) * plane + size_t(y) * kMatteW + x];
+    return made;
 }
 struct Seen { double x = 0, y = 0, trust = 0, least = 1; int blocks = 0; };
 // The field over the blocks that lie well inside a figure of the newer frame.
@@ -129,6 +164,31 @@ int main() {
         const Span w = coarseWindow(0, 0), last = coarseWindow(kBlocksX - 1, kBlocksY - 1), f = fineWindow(3, 2), own = fineBlock(kBlocksX - 1, kBlocksY - 1);
         check(w.x0 == 0 && w.y0 == 0 && w.x1 == 12 && w.y1 == 12 && last.x1 == kCoarseW && last.y1 == kCoarseH && f.x0 == 40 && f.x1 == 72 && f.y0 == 24 && f.y1 == 56 && own.y1 == kFineH && own.count() == 16 * 12,
               "a block's windows stay inside the picture");
+        const uint8_t solid[4] = {200, 100, 50, 255}, half[4] = {158, 108, 83, 128}, same[3] = {200, 100, 50}, other[3] = {210, 100, 44};
+        check(blended(200, 255) == 200 && blended(200, 0) == kGreyByte && blended(200, 128) == (200 * 128 + kGreyByte * 127 + 127) / 255 && apartFrom(same, solid) == 0 && apartFrom(other, solid) == 2 * 16 &&
+              apartFrom(same, half) <= 2 && apartFrom(other, other) >= 0 && apartFrom(solid, other) <= kCap,
+              "a generated pixel is compared as a matted pixel with the source's matte");
+        check(sourceIsNewer(0.5f) && !sourceIsNewer(0.49f) && shareOf(0.5f) == 1.0f && std::fabs(shareOf(2.0f / 3) - 2.0f / 3) < 1e-6f && std::fabs(shareOf(1.0f / 3) + 2.0f / 3) < 1e-6f,
+              "the nearer real frame is the source, and its share of the half-motion follows the time");
+        // The differ map of one pixel: nothing under the lower bound, everything from the upper one, and it reaches two pixels.
+        Placing all; all.trust.assign(kBlockCount, 1.0f); all.x.assign(kBlockCount, 0.0f); all.y.assign(kBlockCount, 0.0f);
+        // A block's place: its own where the frame fits it, its neighbours' where it does not.
+        {
+            std::vector<float> px(kBlockCount, 2.0f), py(kBlockCount, -1.0f), fit(kBlockCount, 1.0f), sx(kBlockCount, 0.5f), sy(kBlockCount, 0.0f);
+            const int lost = 10 * kBlocksX + 20, odd = 10 * kBlocksX + 30;
+            px[lost] = 9.0f; fit[lost] = 0.0f; px[odd] = 3.0f;
+            const Motion a = settleAt(px.data(), py.data(), fit.data(), sx.data(), sy.data(), 20, 10), b = settleAt(px.data(), py.data(), fit.data(), sx.data(), sy.data(), 30, 10);
+            std::fill(fit.begin(), fit.end(), 0.0f);
+            const Motion c = settleAt(px.data(), py.data(), fit.data(), sx.data(), sy.data(), 20, 10);
+            check(std::fabs(a.x - 2.0f) < 1e-5f && std::fabs(a.y + 1.0f) < 1e-5f && b.x == 3.0f && c.x == 0.5f && c.y == 0.0f && fitOf(10.0f, true) == 1.0f && fitOf(10.0f, false) == 0.0f && fitOf(kFitBad, true) == 0.0f,
+                  "a block the frame does not fit takes its neighbours' place, a block it fits keeps its own, and with nothing near the search's answer stands");
+        }
+        std::vector<uint16_t> apart(size_t(kFineW) * kFineH, uint16_t(1 + kDifferLo));
+        const bool quiet = differAt(all, apart.data(), 100, 100) == 0;
+        for (int y = 99; y <= 101; ++y) for (int x = 199; x <= 201; ++x) apart[size_t(y) * kFineW + x] = uint16_t(1 + kDifferHi);
+        const bool loud = differAt(all, apart.data(), 200, 100) == 255 && differAt(all, apart.data(), 202, 102) == 255 && differAt(all, apart.data(), 204, 100) == 85 && differAt(all, apart.data(), 205, 100) == 0;
+        Placing none = all; none.trust.assign(kBlockCount, 0.0f);
+        check(quiet && loud && differAt(none, apart.data(), 200, 100) == 0, "the differ map starts above the lower bound, is full at the upper one, reaches a little beyond what differs and is nothing where nothing is trusted");
     }
     // One figure, followed by the camera: it moves 6 across and 2 down a frame (at the matte's size) while the
     // world passes at 90. Half its motion at the fine size is 1.5 and 0.5.
@@ -154,16 +214,48 @@ int main() {
         std::printf("  followed figure: %d blocks inside, half-motion %.2f, %.2f (true 1.50, 0.50), trust mean %.2f least %.2f\n", s.blocks, s.x, s.y, s.trust, s.least);
         check(s.blocks > 40 && std::fabs(s.x - 1.5) < 0.3 && std::fabs(s.y - 0.5) < 0.3, "the figure's own motion is found, not the world's");
         check(s.trust > 0.95 && s.least > 0.8, "and it is trusted");
-        const Held h = hold(older, newer, half, f, 0.5f);
-        std::printf("  at a half: the figure is %.2f of 255 from the true picture where the plain mix is %.2f; changed outside the matte: %.0f\n", h.figureError, h.mixError, h.outside);
-        check(h.figureError < 6.0 && h.figureError * 3 < h.mixError, "laid over a broken frame the figure is the true one to a few of 255");
-        check(h.outside == 0, "and nothing is touched where nothing is laid over");
+        // A frame that is right is left alone: the figure's own pixels stay the method's.
+        const Scene worldHalf = draw(45, 2, {});
+        const Held right = hold(older, newer, half.rgb, half, f, 0.5f);
+        std::printf("  a frame that is right: %zu blocks placed; %.2f %% of the figure changed by more than 3 of 255; the figure %.2f of 255 from the truth\n", right.placed, 100.0 * right.changedInFigure, right.figureError);
+        check(right.placed > 100 && right.changedInFigure < 0.01 && right.figureError < 0.5, "a frame in which the figure is right is left alone");
+        check(right.outside == 0 && right.changedAway == 0, "and nothing is touched where nothing is laid over");
+        // The method showed the world where the head is: the head comes back from the real frame, the rest stays.
+        const Figure at = moved(0.5f, 6, 2);
+        const Patch head{at.cx - 110.0f, at.cy - 380.0f, at.cx + 110.0f, at.cy - 150.0f};
+        const Held mended = hold(older, newer, broken(half, worldHalf, head), half, f, 0.5f, head);
+        std::printf("  the head shown as the world: %.2f of 255 from the truth where the made frame is %.2f (%zu pixels); the whole figure %.2f\n", mended.patchError, mended.patchMade, mended.patchPixels, mended.figureError);
+        check(mended.patchPixels > 5000 && mended.patchMade > 20.0 && mended.patchError < 6.0, "what the method broke comes back from the real frame, to a few of 255");
+        check(mended.outside == 0 && mended.changedAway == 0, "and the world away from the figure stays the method's");
+        // The search's answer is only where the looking starts: with it a pixel and a half off, both still hold.
+        Field off = f;
+        for (int i = 0; i < kBlockCount; ++i) off.x[i] += 1.5f;
+        const Held rightOff = hold(older, newer, half.rgb, half, off, 0.5f), mendedOff = hold(older, newer, broken(half, worldHalf, head), half, off, 0.5f, head);
+        std::printf("  with the search 1.5 off: a right frame changed on %.2f %% of the figure; the broken head %.2f of 255 from the truth\n", 100.0 * rightOff.changedInFigure, mendedOff.patchError);
+        check(rightOff.changedInFigure < 0.01 && rightOff.figureError < 0.5 && mendedOff.patchError < 6.0, "the figure is placed where the method put it, not where the search said");
+        // A method that cannot follow the figure at all (the plain mix of the two frames) leaves a faint double
+        // picture when the figure moves this little: it is not made worse.
+        const Held h = hold(older, newer, mixOf(older, newer, 0.5f), half, f, 0.5f);
+        std::printf("  the plain mix: the figure is %.2f of 255 from the true picture where the mix is %.2f\n", h.figureError, h.madeError);
+        check(h.figureError < 6.0 && h.figureError <= h.madeError && h.outside == 0, "a faint double picture is not made worse");
         // A third and two thirds of the way: the nearer real frame is the source.
         const Scene third = draw(30, 4.0f / 3, {moved(1.0f / 3, 6, 2)}), twoThirds = draw(60, 8.0f / 3, {moved(2.0f / 3, 6, 2)});
-        const Held a = hold(older, newer, third, f, 1.0f / 3), b = hold(older, newer, twoThirds, f, 2.0f / 3);
-        std::printf("  at a third %.2f, at two thirds %.2f of 255\n", a.figureError, b.figureError);
-        check(!layAt(f, 900, 500, kMatteW, kMatteH, 1.0f / 3).newer && layAt(f, 900, 500, kMatteW, kMatteH, 2.0f / 3).newer && layAt(f, 900, 500, kMatteW, kMatteH, 0.5f).newer &&
-              a.figureError < 6.0 && b.figureError < 6.0, "at other times the nearer real frame is moved by its share of the motion");
+        const Figure at3 = moved(1.0f / 3, 6, 2), at6 = moved(2.0f / 3, 6, 2);
+        const Patch head3{at3.cx - 110.0f, at3.cy - 380.0f, at3.cx + 110.0f, at3.cy - 150.0f}, head6{at6.cx - 110.0f, at6.cy - 380.0f, at6.cx + 110.0f, at6.cy - 150.0f};
+        const Held a = hold(older, newer, broken(third, draw(30, 4.0f / 3, {}), head3), third, f, 1.0f / 3, head3), b = hold(older, newer, broken(twoThirds, draw(60, 8.0f / 3, {}), head6), twoThirds, f, 2.0f / 3, head6);
+        const Held a0 = hold(older, newer, third.rgb, third, f, 1.0f / 3), b0 = hold(older, newer, twoThirds.rgb, twoThirds, f, 2.0f / 3);
+        std::printf("  at a third the broken head %.2f, at two thirds %.2f of 255; right frames changed on %.2f %% and %.2f %% of the figure\n", a.patchError, b.patchError, 100.0 * a0.changedInFigure, 100.0 * b0.changedInFigure);
+        check(a.patchError < 6.0 && b.patchError < 6.0 && a0.changedInFigure < 0.01 && b0.changedInFigure < 0.01, "at other times the nearer real frame is placed by its share of the motion");
+    }
+    // A figure that moves visibly (28 across and 8 down a frame), not followed at all: the mix is two figures, and one comes back.
+    {
+        const Scene older = draw(0, 0, {moved(0, 28, 8)}), newer = draw(90, 4, {moved(1, 28, 8)}), half = draw(45, 2, {moved(0.5f, 28, 8)});
+        const Field f = search(older.p0(), newer.p0(), older.p1(), newer.p1());
+        const Seen s = inside(newer, f);
+        const Held h = hold(older, newer, mixOf(older, newer, 0.5f), half, f, 0.5f);
+        std::printf("  a fast figure: half-motion %.2f, %.2f (true 7.00, 2.00); as the plain mix it is %.2f of 255 from the truth, laid over %.2f\n", s.x, s.y, h.madeError, h.figureError);
+        check(std::fabs(s.x - 7.0) < 0.4 && std::fabs(s.y - 2.0) < 0.4 && h.madeError > 8.0 && h.figureError < 6.0 && h.figureError * 2 < h.madeError && h.outside == 0,
+              "a figure the method did not follow at all comes back to a few of 255");
     }
     // The figure stands still on the screen: nothing is invented.
     {
@@ -176,23 +268,26 @@ int main() {
     {
         const Scene older = draw(0, 0, {}), newer = draw(70, 9, {});
         const Field f = search(older.p0(), newer.p0(), older.p1(), newer.p1());
-        int active = 0; float weight = 0.0f;
+        int active = 0;
         for (const Block& b : f.blocks) active += b.active ? 1 : 0;
-        for (int y = 0; y < kMatteH; y += 9)
-            for (int x = 0; x < kMatteW; x += 11) { const Lay l = layAt(f, x, y, kMatteW, kMatteH, 0.5f); weight = std::max(weight, weightOf(matteAt(newer.matte8.data(), l.x, l.y, kMatteW, kMatteH), l.trust)); }
-        check(active == 0 && weight == 0.0f, "a picture without a person is left alone");
+        const Held h = hold(older, newer, mixOf(older, newer, 0.5f), draw(35, 4.5f, {}), f, 0.5f);
+        check(active == 0 && h.placed == 0 && h.outside == 0 && h.changedAway == 0, "a picture without a person is left alone");
     }
     // A figure that crosses the screen further than the search reaches: it is not laid over.
     {
         const Scene older = draw(0, 0, {moved(0, 260, 0)}), newer = draw(20, 0, {moved(1, 260, 0)});
         const Field f = search(older.p0(), newer.p0(), older.p1(), newer.p1());
-        double most = 0; size_t over = 0, pixels = 0;
+        const std::vector<float> made = mixOf(older, newer, 0.5f);
+        std::vector<uint8_t> made1;
+        madeFine(made.data(), made1);
+        const Placing p = place(f, newer.p1(), {kFineW, kFineH, made1.data()}, 0.5f);
+        std::vector<uint16_t> apart; std::vector<uint8_t> differ;
+        differMap(p, newer.p1(), {kFineW, kFineH, made1.data()}, apart, differ);
+        size_t over = 0, pixels = 0;
         for (int y = 0; y < kMatteH; y += 3)
             for (int x = 0; x < kMatteW; x += 3) {
-                const Lay l = layAt(f, x, y, kMatteW, kMatteH, 0.5f);
-                const float w = weightOf(matteAt(newer.matte8.data(), l.x, l.y, kMatteW, kMatteH), l.trust);
-                if (matteAt(newer.matte8.data(), l.x, l.y, kMatteW, kMatteH) > 0.5f) { ++pixels; if (w > 0.5f) ++over; }
-                most = std::max<double>(most, w);
+                const Laid l = laidAt(p, differ.data(), newer.matte8.data(), x, y, kMatteW, kMatteH);
+                if (newer.matte[size_t(y) * kMatteW + x] > 0.5f) { ++pixels; if (l.weight > 0.5f) ++over; }
             }
         std::printf("  out of reach: laid over on %.1f %% of where its matte would land\n", pixels ? 100.0 * double(over) / double(pixels) : 0.0);
         check(pixels > 1000 && double(over) < 0.25 * double(pixels), "a figure that moves further than the search reaches is left as the method made it");

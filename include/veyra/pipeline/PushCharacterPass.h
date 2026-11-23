@@ -8,8 +8,11 @@
 //     run    (no list): the network is queued on the same queue
 //     finish (in a later list): its answer becomes the matte and the matted pictures, and with the frame
 //            before, the character's own motion and how far it is trusted (once a pair, whatever the multiplier)
-//   Once a generated frame: compose lays the character over what frame generation made, written in place at
-//   the pixels that have something laid over, from a copy of the frame as it was made.
+//   Once a generated frame, compose, from a copy of the frame as the method made it:
+//     the frame at the fine size; per block the table of how well the source frame's character fits it at each
+//     offset round the search's answer; the place of each block (its neighbourhood's tables together), settled
+//     with its neighbours where the method broke the frame; where the frame differs from the placed character;
+//     and the character laid over there, written in place at the pixels that have something laid over.
 // The real frames are never changed, and frame generation is given exactly what it always was.
 #include "veyra/pipeline/GpuPassUtils.h"
 #include "veyra/pipeline/PushCharacter.h"
@@ -58,6 +61,12 @@ public:
     ID3D12Resource* coarseTexture(unsigned parity) const { return parity < 2 ? coarse_[parity].Get() : nullptr; }
     ID3D12Resource* blocksTexture() const { return blocks_.Get(); }
     ID3D12Resource* fieldTexture() const { return field_.Get(); }
+    ID3D12Resource* madeTexture() const { return made1_.Get(); }
+    ID3D12Resource* tablesTexture() const { return tables_.Get(); }
+    ID3D12Resource* placedTexture() const { return placed_.Get(); }
+    ID3D12Resource* placeTexture() const { return place_.Get(); }
+    ID3D12Resource* apartTexture() const { return apart_.Get(); }
+    ID3D12Resource* differTexture() const { return differ_.Get(); }
     int pairParity() const { return pair_; }
 
 private:
@@ -65,10 +74,12 @@ private:
     unsigned encoding_ = 0, generatedCount_ = 0;
     DXGI_FORMAT format_ = DXGI_FORMAT_UNKNOWN;
     pushflow::PushMatteBackend matte_;
-    ComputePass packPass_, mattePass_, coarsePass_, searchPass_, smoothPass_, trustPass_, composePass_;
+    ComputePass packPass_, mattePass_, coarsePass_, searchPass_, smoothPass_, trustPass_;
+    ComputePass madePass_, tablesPass_, placePass_, settlePass_, apartPass_, differPass_, composePass_;
     ComPtr<ID3D12Resource> matte8_[2], fine_[2], coarse_[2];   // per real frame, by parity
     ComPtr<ID3D12Resource> blocks_, smooth_, sums_, field_;    // per pair
     ComPtr<ID3D12Resource> copy_;                              // a generated frame as it was made
+    ComPtr<ID3D12Resource> made1_, tables_, placed_, place_, apart_, differ_;   // per generated frame
     bool writable_[kMaxGenerated]{};
     bool have_[2]{};          // the matted pictures of that parity are this run's
     bool packed_ = false, ran_ = false, failed_ = false, startOver_ = true;
