@@ -1169,6 +1169,10 @@ target_include_directories(veyra_push_audio_trim_tests PRIVATE ${CMAKE_CURRENT_S
 add_executable(veyra_push_overlay_tests tests/unit/PushOverlayTests.cpp)
 target_compile_features(veyra_push_overlay_tests PRIVATE cxx_std_20)
 target_include_directories(veyra_push_overlay_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+# PushFPS Character Hold, the rule itself (pipeline/PushCharacter.h, pure; also builds with g++).
+add_executable(veyra_push_character_tests tests/unit/PushCharacterTests.cpp)
+target_compile_features(veyra_push_character_tests PRIVATE cxx_std_20)
+target_include_directories(veyra_push_character_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 # PushFPS still rule (pipeline/PushHudStill.h, pure; also builds with g++).
 add_executable(veyra_push_hud_still_tests tests/unit/PushHudStillTests.cpp)
 target_compile_features(veyra_push_hud_still_tests PRIVATE cxx_std_20)
