@@ -328,7 +328,21 @@ jobs:
             @{ name = 'R-appearance'; size = '1440x900'; args = @('--page', 'home', '--dialog', 'appearance', '--lang', 'en', '--pref', 'pushQuickFolded=fg,picture,hud') },
             @{ name = 'R-legacy'; size = '1440x900'; args = @('--page', 'home', '--lang', 'en', '--pref', 'pushDesign=legacy', '--pref', 'pushSunset=false') },
             @{ name = 'R-sides-folded'; size = '1440x900'; args = @('--page', 'home', '--lang', 'en', '--pref', 'pushSideCollapsed=true', '--pref', 'pushNavCollapsed=true') },
-            @{ name = 'R-pro-folded'; size = '1440x900'; args = @('--page', 'pro', '--lang', 'en', '--pref', 'pushProFolded=quality,fg,audio') }
+            @{ name = 'R-pro-folded'; size = '1440x900'; args = @('--page', 'pro', '--lang', 'en', '--pref', 'pushProFolded=quality,fg,audio') },
+            # The 4.4.5 tour video (scratch branch video/tour).
+            @{ name = 'T-00-warmup'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en') },
+            @{ name = 'T-01-home'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en', '--pref', 'pushCrosshairHold=true') },
+            @{ name = 'T-02-home-hud'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en', '--scroll-to', 'pushfps-crosshair-row', '--pref', 'pushCrosshairHold=true') },
+            @{ name = 'T-03-pro-fg'; size = '1600x900'; args = @('--page', 'pro', '--tab', 'fg', '--lang', 'en', '--scroll-to', 'list-fg-crosshair-row', '--pref', 'pushCrosshairHold=true') },
+            @{ name = 'T-04-nav-folded'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en', '--pref', 'pushNavCollapsed=true', '--pref', 'pushCrosshairHold=true') },
+            @{ name = 'T-05-side-folded'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en', '--pref', 'pushSideCollapsed=true', '--pref', 'pushCrosshairHold=true') },
+            @{ name = 'T-06-both-folded'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en', '--pref', 'pushSideCollapsed=true', '--pref', 'pushNavCollapsed=true') },
+            @{ name = 'T-07-pro-all'; size = '1600x900'; args = @('--page', 'pro', '--lang', 'en', '--pref', 'pushCrosshairHold=true') },
+            @{ name = 'T-08-pro-folded'; size = '1600x900'; args = @('--page', 'pro', '--lang', 'en', '--pref', 'pushProFolded=quality,color,audio,display', '--pref', 'pushCrosshairHold=true') },
+            @{ name = 'T-09-translation'; size = '1600x900'; args = @('--page', 'home', '--dialog', 'translation', '--lang', 'en') },
+            @{ name = 'T-10-diagnose'; size = '1600x900'; args = @('--page', 'home', '--dialog', 'diagnose', '--lang', 'en') },
+            @{ name = 'T-11-home-playing'; size = '1600x900'; sender = $true; args = @('frameinput:default', '--page', 'home', '--tab', 'home-preview', '--lang', 'en', '--pref', 'pushCrosshairHold=true') },
+            @{ name = 'T-12-ps5'; size = '1600x900'; args = @('--page', 'home', '--dialog', 'ps5', '--lang', 'en') }
           )
           if ($env:ONLY) { $list = @($list | Where-Object { $_.name -match $env:ONLY }); Write-Host "Only: $($list.name -join ', ')" }
           foreach ($s in $list) {
