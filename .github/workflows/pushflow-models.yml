@@ -23,31 +23,70 @@ jobs:
           python -m venv /tmp/pf && /tmp/pf/bin/python -m pip install --disable-pip-version-check -q onnx==1.17.0 onnxconverter-common==1.14.0 onnxruntime==1.20.1 numpy==1.26.4
           /tmp/pf/bin/python -I scripts/pushflow/prepare_runtime.py --out /tmp/pushflow --study
           cat /tmp/pushflow/runtime/pushflow/models.json
-  # The matting model of Character Hold (scripts/pushflow/prepare_matte.py): prepared, checked on the processor
-  # against the published model, and run under the DirectML provider on a Windows runner (the software renderer
-  # there), with the onnxruntime-directml wheel of the pinned ONNX Runtime version.
+  # Character Hold without a Windows build of PushFPS, in a few minutes: the matting model prepared and checked
+  # on the processor against the published one (scripts/pushflow/prepare_matte.py), then tools/character_probe
+  # built with the compiler alone (the pass, the network's backend, the seven shaders) and run on the software
+  # renderer with the pinned ONNX Runtime and DirectML: the network through DirectML, and every shader against
+  # pipeline/PushCharacter.h (tests/integration/PushCharacterGpu.h, which the Windows build runs too).
   matte:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - uses: ilammy/msvc-dev-cmd@v1
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Prepare the matting model and check it on the processor
+      - name: The runtime packages and the matting model
         shell: pwsh
         run: |
           python -m venv "$env:RUNNER_TEMP\pm"
           $py = "$env:RUNNER_TEMP\pm\Scripts\python.exe"
-          & $py -m pip install --disable-pip-version-check -q onnx==1.17.0 onnxruntime-directml==1.20.1 numpy==1.26.4
+          & $py -m pip install --disable-pip-version-check -q onnx==1.17.0 onnxruntime==1.20.1 numpy==1.26.4
           if ($LASTEXITCODE -ne 0) { exit 1 }
-          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP\matte\runtime\pushflow\models" | Out-Null
-          & $py -I scripts/pushflow/prepare_matte.py --out "$env:RUNNER_TEMP\matte"
+          $out = "$env:RUNNER_TEMP\matte"
+          & $py -I -c "import sys; sys.path.insert(0, 'scripts/pushflow'); import prepare_runtime as p; from pathlib import Path; out = Path(sys.argv[1]); work = out / 'download'; work.mkdir(parents=True, exist_ok=True); p.nuget(p.ORT_ID, p.ORT_VERSION, work, out); p.nuget(p.DML_ID, p.DML_VERSION, work, out)" $out
           if ($LASTEXITCODE -ne 0) { exit 1 }
-      - name: Run it under DirectML
+          New-Item -ItemType Directory -Force "$out\runtime\pushflow\models" | Out-Null
+          Copy-Item "$out\ort\runtimes\win-x64\native\onnxruntime.dll", "$out\dml\bin\x64-win\DirectML.dll" "$out\runtime\pushflow"
+          & $py -I scripts/pushflow/prepare_matte.py --out $out
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-ChildItem "$out\runtime\pushflow" -Recurse -File | ForEach-Object { "{0,12} {1}" -f $_.Length, $_.FullName.Substring($out.Length) } | Out-Host
+      - name: Character Hold's rule (the unit test) with this compiler
         shell: pwsh
         run: |
-          $py = "$env:RUNNER_TEMP\pm\Scripts\python.exe"
-          & $py -I scripts/pushflow/check_matte_directml.py "$env:RUNNER_TEMP\matte\runtime\pushflow\models\pushmatte.onnx"
+          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP\probe" | Out-Null
+          Push-Location "$env:RUNNER_TEMP\probe"
+          cl /nologo /std:c++20 /EHsc /O2 /MD /utf-8 /W3 /I "$env:GITHUB_WORKSPACE\include" "$env:GITHUB_WORKSPACE\tests\unit\PushCharacterTests.cpp" /Fe:rule.exe
           if ($LASTEXITCODE -ne 0) { exit 1 }
+          .\rule.exe
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Pop-Location
+      - name: The shaders
+        shell: pwsh
+        run: |
+          $dxc = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\dxc.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $dxc) { Write-Host "::error::dxc.exe not found"; exit 1 }
+          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP\probe\shaders" | Out-Null
+          foreach ($name in 'Pack', 'Matte', 'Coarse', 'Search', 'Smooth', 'Trust', 'Compose') {
+            & $dxc.FullName -T cs_6_0 -E main -O3 -Qstrip_debug -Qstrip_reflect -Fo "$env:RUNNER_TEMP\probe\shaders\PushCharacter$name.dxil" "shaders\PushCharacter$name.hlsl"
+            if ($LASTEXITCODE -ne 0) { Write-Host "::error::PushCharacter$name.hlsl did not compile"; exit 1 }
+          }
+      - name: The probe (pass, backend and test, compiled and linked)
+        shell: pwsh
+        run: |
+          $out = "$env:RUNNER_TEMP\matte"
+          Push-Location "$env:RUNNER_TEMP\probe"
+          cl /nologo /std:c++20 /EHsc /O2 /MD /utf-8 /W3 /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX /DVEYRA_HAVE_ONNXRUNTIME=1 `
+            /I "$env:GITHUB_WORKSPACE\tools\character_probe\stubs" /I "$env:GITHUB_WORKSPACE\include" /I "$out\ort\build\native\include" /I "$out\dml\include" `
+            "$env:GITHUB_WORKSPACE\tools\character_probe\main.cpp" "$env:GITHUB_WORKSPACE\src\pipeline\PushCharacterPass.cpp" "$env:GITHUB_WORKSPACE\src\pushflow\PushMatteBackend.cpp" `
+            /Fe:character_probe.exe /link d3d12.lib dxgi.lib dxguid.lib d3dcompiler.lib
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Pop-Location
+      - name: Character Hold on the software renderer
+        shell: pwsh
+        run: |
+          $env:VEYRA_PROBE_SHADERS = "$env:RUNNER_TEMP\probe\shaders"
+          & "$env:RUNNER_TEMP\probe\character_probe.exe" "$env:RUNNER_TEMP\matte\runtime"
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::Character Hold's probe failed"; exit 1 }
