@@ -8,7 +8,9 @@ import QtTest
 import Veyra
 Item {
     id: root
-    width: 1100; height: 700
+    // High enough for the quick setup's short form down to the row the tour points at last (AI picture
+    // enhancement): nothing scrolls here, and the frame generation section grew by a row (Character Hold).
+    width: 1100; height: 800
     PushTour { id: tour }
     PushQuickSetup { id: quick; x: 20; y: 20; width: 560; compact: true }
     property var asked: []
