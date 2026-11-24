@@ -50,6 +50,15 @@ jobs:
             "{0}`t{1}`t{2}`t{3}" -f $_.FullName.Substring($env:ROOT.Length), $_.Length, $v.FileVersion, $v.ProductName
           }
 
+      - name: Every other file (size and SHA-256)
+        run: |
+          $base = $env:ROOT
+          $exe = Get-ChildItem $base -Recurse -Filter veyra_qml_ui.exe | Select-Object -First 1
+          if ($exe) { $base = $exe.DirectoryName }
+          Get-ChildItem $base -Recurse -File | Where-Object { $_.Extension -notin '.dll','.exe' -and $_.FullName -notmatch '\\(qml|translations|licenses|docs)\\' } | ForEach-Object {
+            "{0}`t{1}`t{2}" -f $_.FullName.Substring($base.Length), $_.Length, (Get-FileHash $_.FullName -Algorithm SHA256).Hash.Substring(0,16)
+          }
+
       - name: Imports of the main program and its direct dependencies
         run: |
           python -m pip install --quiet pefile
