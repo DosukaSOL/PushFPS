@@ -328,7 +328,14 @@ jobs:
             @{ name = 'R-appearance'; size = '1440x900'; args = @('--page', 'home', '--dialog', 'appearance', '--lang', 'en', '--pref', 'pushQuickFolded=fg,picture,hud') },
             @{ name = 'R-legacy'; size = '1440x900'; args = @('--page', 'home', '--lang', 'en', '--pref', 'pushDesign=legacy', '--pref', 'pushSunset=false') },
             @{ name = 'R-sides-folded'; size = '1440x900'; args = @('--page', 'home', '--lang', 'en', '--pref', 'pushSideCollapsed=true', '--pref', 'pushNavCollapsed=true') },
-            @{ name = 'R-pro-folded'; size = '1440x900'; args = @('--page', 'pro', '--lang', 'en', '--pref', 'pushProFolded=quality,fg,audio') }
+            @{ name = 'R-pro-folded'; size = '1440x900'; args = @('--page', 'pro', '--lang', 'en', '--pref', 'pushProFolded=quality,fg,audio') },
+            # The 4.5.0 video (scratch branch video/v45).
+            @{ name = 'V-00-warmup'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en') },
+            @{ name = 'V-01-home'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en', '--pref', 'pushSubtitleHold=true', '--pref', 'pushCrosshairHold=true') },
+            @{ name = 'V-02-home-hud'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en', '--scroll-to', 'pushfps-subtitle-row', '--pref', 'pushSubtitleHold=true', '--pref', 'pushCrosshairHold=true') },
+            @{ name = 'V-03-ps5'; size = '1600x900'; args = @('--page', 'home', '--dialog', 'ps5', '--lang', 'en') },
+            @{ name = 'V-04-home-playing'; size = '1600x900'; sender = $true; args = @('frameinput:default', '--page', 'home', '--tab', 'home-preview', '--lang', 'en', '--pref', 'pushSubtitleHold=true') },
+            @{ name = 'V-05-pro-fg'; size = '1600x900'; args = @('--page', 'pro', '--tab', 'fg', '--lang', 'en', '--pref', 'pushSubtitleHold=true') }
           )
           if ($env:ONLY) { $list = @($list | Where-Object { $_.name -match $env:ONLY }); Write-Host "Only: $($list.name -join ', ')" }
           foreach ($s in $list) {
