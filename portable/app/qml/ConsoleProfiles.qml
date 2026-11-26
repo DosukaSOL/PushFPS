@@ -13,6 +13,7 @@
 // a profile's other keys (from a newer version) are kept as they are.
 import QtQuick
 import QtQuick.Layouts
+import "PushCaptureCards.js" as Cards
 
 ColumnLayout {
     id: prof
@@ -154,6 +155,44 @@ ColumnLayout {
         writeProfiles(p)
     }
 
+    // The capture card chosen, and what is known of it: the Windows row (`pushfps-card-row`) with its list
+    // (PushCaptureCards.js, shared) and its words. The tag is only for a card that was tested or reported
+    // working; a card with nothing known only offers the report.
+    VRow {
+        id: cardRow
+        objectName: "pushfps-card-row"
+        readonly property string deviceName: app.videoDeviceIndex >= 0 && app.videoDeviceIndex < app.videoDevices.length
+                                             ? String(app.videoDevices[app.videoDeviceIndex]) : ""
+        readonly property var card: Cards.find(deviceName)
+        visible: deviceName.length > 0
+        label: qsTr("采集卡")
+        hint: card && card.status === "tested" ? qsTr("PushFPS 已实测")
+            : card && card.status === "veyra" ? qsTr("Veyra 作者已实测")
+            : card && card.status === "reported" ? qsTr("有 PushFPS 用户报告可用")
+            : qsTr("欢迎在 GitHub 上分享这张卡的使用结果")
+        hintBelow: true
+        RowLayout {
+            spacing: 6
+            Text {
+                text: cardRow.deviceName
+                color: Theme.t1; font.family: Theme.fontUi; font.pixelSize: 12
+                elide: Text.ElideRight; Layout.maximumWidth: 180
+            }
+            VTag {
+                objectName: "pushfps-card-status"
+                visible: cardRow.card !== null && cardRow.card.status !== "untested"
+                kind: "ok"
+                text: qsTr("已测试")
+            }
+            VButton {
+                objectName: "pushfps-card-report"
+                visible: !(cardRow.card && cardRow.card.status === "tested")
+                ghost: true
+                text: qsTr("报告")
+                onClicked: Qt.openUrlExternally(Cards.reportUrl)
+            }
+        }
+    }
     VRow {
         objectName: "pushfps-console-row"
         label: qsTr("游戏主机")
