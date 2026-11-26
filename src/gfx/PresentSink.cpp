@@ -450,7 +450,13 @@ PresentSink::FrameStatisticsDelta PresentSink::sampleFrameStatistics(){
     // DXGI_ERROR_FRAME_STATISTICS_DISJOINT: mode change or first frames; a
     // proxy swapchain may also refuse the query. Restart the baseline.
     if(FAILED(delta.result)){frameStatisticsBaseValid_=false;return delta;}
-    if(frameStatisticsBaseValid_){
+    // A counter that went back (DXGI starts its statistics again when the way the window is shown changes)
+    // gives no delta: the UINT subtraction made one of about 4.29 billion in the log (issue 30). That sample
+    // only becomes the new baseline.
+    const bool forward=stats.PresentCount>=frameStatisticsBaseDisplayed_
+        &&stats.PresentRefreshCount>=frameStatisticsBasePresentRefresh_
+        &&stats.SyncRefreshCount>=frameStatisticsBaseSyncRefresh_;
+    if(frameStatisticsBaseValid_&&forward){
         delta.supported=true;
         delta.presents=presentCount_-frameStatisticsBasePresents_;
         // PresentCount is the one that counts frames the display actually

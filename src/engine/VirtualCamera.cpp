@@ -174,19 +174,41 @@ struct VirtualCamera::State {
         if(code)log::error("virtual-camera",std::format("setup completed remove={} code=0x{:08X} machineRegistered={}",setupRemoves,code,systemInstalled.load()));
         else log::info("virtual-camera",std::format("setup completed remove={} machineRegistered={}",setupRemoves,systemInstalled.load()));
     }
+    // The window Windows' consent prompt belongs to: PushFPS's own window in front, so the prompt opens in
+    // front of it instead of as a flashing button in the taskbar. Null when PushFPS is not in front.
+    static HWND consentOwner(){
+        const HWND window=GetForegroundWindow();DWORD process=0;
+        if(window)GetWindowThreadProcessId(window,&process);
+        return process==GetCurrentProcessId()?window:nullptr;
+    }
     bool setup(bool remove,std::wstring& why){
-        std::lock_guard lock(control);pollSetupLocked();if(setupProcess){why=L"正在安装摄像机组件，请等待";return false;}
-        const auto file=modules()/L"pushfps-camera-setup.exe";std::error_code ec;
-        if(!std::filesystem::is_regular_file(file,ec)){why=L"虚拟摄像机组件不完整，请重新安装 PushFPS";return false;}
+        const auto file=modules()/L"pushfps-camera-setup.exe";
+        {
+            std::lock_guard lock(control);pollSetupLocked();
+            if(setupProcess||installing){why=L"正在安装摄像机组件，请等待";return false;}
+            std::error_code ec;
+            if(!std::filesystem::is_regular_file(file,ec)){why=L"虚拟摄像机组件不完整，请重新安装 PushFPS";return false;}
+            setupRemoves=remove;installing=true;
+            {std::lock_guard text(textMutex);setupError.clear();}
+        }
+        // ShellExecuteExW only returns once Windows' consent prompt is answered, and meanwhile the shell runs
+        // this thread's messages: the interface's timer reads status(), which takes `control`. With `control`
+        // held here that read waited on its own thread for good, and PushFPS froze until it was closed (issue 29).
+        // So nothing is locked during the launch; `installing` tells a status read and a second click about it.
         SHELLEXECUTEINFOW launch{sizeof(launch)};launch.fMask=SEE_MASK_NOCLOSEPROCESS|SEE_MASK_FLAG_NO_UI;
+        launch.hwnd=consentOwner();
         launch.lpVerb=L"runas";launch.lpFile=file.c_str();launch.lpParameters=remove?L"--uninstall":L"--install";launch.nShow=SW_HIDE;
-        if(!ShellExecuteExW(&launch)){
-            const auto code=GetLastError();why=code==ERROR_CANCELLED?L"已取消摄像机组件的管理员授权":L"无法启动摄像机安装程序，请查看日志";
+        const bool launched=ShellExecuteExW(&launch)!=FALSE;
+        const DWORD code=!launched?GetLastError():launch.hProcess?DWORD(ERROR_SUCCESS):DWORD(ERROR_INVALID_HANDLE);
+        std::lock_guard lock(control);
+        if(code!=ERROR_SUCCESS){
+            if(launch.hProcess)CloseHandle(launch.hProcess);
+            installing=false;
+            why=code==ERROR_CANCELLED?L"已取消摄像机组件的管理员授权":L"无法启动摄像机安装程序，请查看日志";
             log::warn("virtual-camera",std::format("setup launch remove={} win32={}",remove,code));return false;
         }
-        setupProcess=launch.hProcess;setupRemoves=remove;installing=true;
-        {std::lock_guard text(textMutex);setupError.clear();}
-        log::info("virtual-camera",std::format("setup requested remove={} elevation=Windows-consent",remove));return true;
+        setupProcess=launch.hProcess;
+        log::info("virtual-camera",std::format("setup requested remove={} elevation=Windows-consent owner={}",remove,launch.hwnd!=nullptr));return true;
     }
     void fail(std::wstring why){
         const int length=WideCharToMultiByte(CP_UTF8,0,why.data(),int(why.size()),nullptr,0,nullptr,nullptr);
