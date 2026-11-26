@@ -337,6 +337,11 @@ void Engine::waitIdle() {
     idle_.wait(lk, [&] { return jobs_.empty() && !busy_; });
 }
 
+std::shared_ptr<const Bgra> Engine::newestImage() const {
+    std::lock_guard lk(m_);
+    return frames_.empty() ? nullptr : frames_.back()->image;
+}
+
 Pick Engine::pick(int64_t displayNs) {
     std::lock_guard lk(m_);
     Pick p;

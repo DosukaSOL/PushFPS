@@ -74,6 +74,7 @@ Rectangle {
             open: root.isOpen("picture")
             onToggled: open => root.setOpen("picture", open)
             UpscaleRow {}
+            CropRow {}
         }
         // HUD and Latency and sound, as the Windows build's quick setup sections (their rows are written
         // once, in QuickSettings.qml).

@@ -186,6 +186,8 @@ public:
     Q_INVOKABLE QString newScreenshotPath() const;
     Q_INVOKABLE void openScreenshotFolder() const;
     Q_INVOKABLE void resetPicture();
+    // A dialog of the main window asked for by a part that cannot reach it ("crop"): Main.qml opens it.
+    Q_INVOKABLE void openDialog(const QString& key) { emit dialogRequested(key); }
     Q_INVOKABLE void clearError();
 
     // Self-test (command line) access.
@@ -200,6 +202,7 @@ signals:
     void errorTextChanged();
     void preferencesChanged();
     void upscaleChanged();
+    void dialogRequested(const QString& key);
 
 private:
     void applyEngineSettings();

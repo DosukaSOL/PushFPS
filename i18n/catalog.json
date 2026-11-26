@@ -66192,6 +66192,24 @@
    "ru": "Обрезка (пиксели)"
   },
   {
+   "zh": "裁掉画面的任意一边，例如游戏自带的黑边或采集卡多出来的边框，并调整画面在屏幕上的大小和位置。只改变屏幕上的显示",
+   "src": "portable/app/qml/CropRow.qml",
+   "zh-TW": "裁掉畫面的任意一邊，例如遊戲自帶的黑邊或擷取卡多出來的邊框，並調整畫面在螢幕上的大小和位置。只改變螢幕上的顯示",
+   "en": "Cut any side of the picture, for example a game's own black bars or a border your capture card adds, and set how large and where the picture is shown. This changes only what you see on screen",
+   "ja": "映像の任意の辺を切り抜きます（ゲーム自体の黒帯や、キャプチャカードが付ける余白など）。画面上の大きさと位置も調整できます。変わるのは画面の表示だけです",
+   "ko": "영상의 어느 변이든 잘라 냅니다. 예를 들어 게임 자체의 검은 띠나 캡처 카드가 더한 테두리입니다. 그리고 영상을 얼마나 크게, 어디에 표시할지 정합니다. 화면에 보이는 것만 바뀝니다",
+   "nl": "Snijd elke kant van het beeld weg, bijvoorbeeld de zwarte balken van een game of een rand die je capturekaart toevoegt, en kies hoe groot en waar het beeld wordt getoond. Dit verandert alleen wat je op het scherm ziet",
+   "de": "Schneiden Sie eine beliebige Seite des Bildes ab, z. B. die schwarzen Balken eines Spiels oder einen Rand, den Ihre Capture-Karte hinzufügt, und legen Sie fest, wie groß und wo das Bild angezeigt wird. Dies ändert nur, was Sie auf dem Bildschirm sehen",
+   "es": "Recorta cualquier lado de la imagen, por ejemplo las barras negras de un juego o un borde que añade tu capturadora, y elige el tamaño y la posición de la imagen. Solo cambia lo que ves en pantalla",
+   "fr": "Rognez n'importe quel côté de l'image, par exemple les bandes noires d'un jeu ou une bordure ajoutée par votre carte de capture, et choisissez la taille et la position de l'image. Seul ce que vous voyez à l'écran change",
+   "it": "Ritaglia qualsiasi lato dell'immagine, ad esempio le bande nere di un gioco o un bordo aggiunto dalla scheda di acquisizione, e scegli quanto è grande l'immagine e dove viene mostrata. Cambia solo ciò che vedi sullo schermo",
+   "pt-BR": "Corte qualquer lado da imagem, por exemplo as barras pretas de um jogo ou uma borda que a sua placa de captura adiciona, e defina o tamanho e a posição da imagem. Isto muda apenas o que você vê na tela",
+   "tr": "Görüntünün herhangi bir kenarını kırpın, örneğin bir oyunun kendi siyah şeritlerini ya da yakalama kartınızın eklediği bir kenarlığı; görüntünün ne kadar büyük ve nerede gösterileceğini ayarlayın. Yalnızca ekranda gördüğünüz değişir",
+   "ar": "اقصص أي جانب من الصورة، مثل الأشرطة السوداء الخاصة باللعبة أو إطار تضيفه بطاقة الالتقاط، واضبط حجم الصورة ومكان عرضها. يتغير ما تراه على الشاشة فقط",
+   "pl": "Przytnij dowolną krawędź obrazu, na przykład czarne pasy samej gry albo ramkę dodaną przez kartę przechwytującą, i ustaw, jak duży i gdzie ma być obraz. Zmienia to tylko to, co widzisz na ekranie",
+   "ru": "Обрежьте любую сторону изображения, например собственные чёрные полосы игры или рамку, которую добавляет карта захвата, и задайте размер и положение изображения. Меняется только то, что вы видите на экране"
+  },
+  {
    "zh": "裁掉画面的任意一边，例如游戏自带的黑边或采集卡多出来的边框，并调整画面在屏幕上的大小和位置。只改变屏幕上的显示；录制和直播默认保留完整画面，可以在里面改",
    "src": "qml/PushQuickSetup.qml",
    "zh-TW": "裁掉畫面的任意一邊，例如遊戲自帶的黑邊或擷取卡多出來的邊框，並調整畫面在螢幕上的大小和位置。只改變螢幕上的顯示；錄製和直播預設保留完整畫面，可以在裡面改",

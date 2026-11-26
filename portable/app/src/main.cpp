@@ -31,6 +31,7 @@
 #include <QIcon>
 #include <QMediaDevices>
 #include <QQmlApplicationEngine>
+#include <QQuickImageProvider>
 #include <memory>
 #include <QQmlContext>
 #include <QQuickItem>
@@ -95,6 +96,25 @@ double psnr(const QImage& a, const QImage& b, int border) {
     const double mse = se / double(n);
     return mse < 1e-9 ? 99.0 : 10.0 * std::log10(255.0 * 255.0 / mse);
 }
+
+// image://pushfps-frame/<anything>: the newest real frame the engine keeps, at most 960 wide (the crop
+// dialog's picture). Empty before a picture has arrived.
+class NewestFrameProvider : public QQuickImageProvider {
+public:
+    explicit NewestFrameProvider(AppController& controller) : QQuickImageProvider(QQuickImageProvider::Image), controller_(controller) {}
+    QImage requestImage(const QString&, QSize* size, const QSize& requested) override {
+        QImage out;
+        if (auto engine = controller_.engine())
+            if (auto image = engine->newestImage(); image && image->width > 0 && image->height > 0) out = imageFromBgra(*image);
+        const int wide = requested.width() > 0 ? std::min(requested.width(), 960) : 960;
+        if (!out.isNull() && out.width() > wide) out = out.scaledToWidth(wide, Qt::SmoothTransformation);
+        if (size) *size = out.size();
+        return out;
+    }
+
+private:
+    AppController& controller_;
+};
 
 // Runs the pipeline without a window: a 120 Hz "display" asks the engine every 8.3 ms.
 int selftest(QGuiApplication& app, double seconds, const QString& sourceSpec, int target, bool pacing, bool hud, const QString& saveFrame) {
@@ -422,7 +442,8 @@ int main(int argc, char** argv) {
     QCommandLineOption shot(QStringLiteral("screenshot"), QStringLiteral("Open the interface, save a screenshot, quit."), QStringLiteral("png"));
     QCommandLineOption page(QStringLiteral("page"), QStringLiteral("Start page: home, pro, min or set."), QStringLiteral("page"), QStringLiteral("home"));
     QCommandLineOption lang(QStringLiteral("lang"), QStringLiteral("Interface language code."), QStringLiteral("code"));
-    cli.addOptions({list, self, src, target, pacing, hud, gpu, nis, save, shot, page, lang});
+    QCommandLineOption dialog(QStringLiteral("dialog"), QStringLiteral("With --screenshot: open a dialog first (crop or diagnose)."), QStringLiteral("key"));
+    cli.addOptions({list, self, src, target, pacing, hud, gpu, nis, save, shot, page, lang, dialog});
     cli.process(app);
 
     if (cli.isSet(list)) return listDevices();
@@ -450,6 +471,7 @@ int main(int argc, char** argv) {
     AppController controller(&qml, &translator, startPage);
     if (cli.isSet(lang)) translator.load(cli.value(lang));  // a one-off choice, not saved
     qml.rootContext()->setContextProperty(QStringLiteral("app"), &controller);
+    qml.addImageProvider(QStringLiteral("pushfps-frame"), new NewestFrameProvider(controller));
     // What the interface parts shared with the Windows build read as `veyra` (VeyraShim.h).
     VeyraShim shim(&controller);
     qml.rootContext()->setContextProperty(QStringLiteral("veyra"), &shim);
@@ -461,7 +483,8 @@ int main(int argc, char** argv) {
         auto* window = qobject_cast<QQuickWindow*>(qml.rootObjects().first());
         if (startPage == QStringLiteral("min") || startPage == QStringLiteral("pro")) controller.startTestPattern(false);
         const QString path = cli.value(shot);
-        QTimer::singleShot(2500, &app, [&, window, path] {
+        if (cli.isSet(dialog)) QTimer::singleShot(1500, &app, [&controller, key = cli.value(dialog)] { controller.openDialog(key); });
+        QTimer::singleShot(3000, &app, [&, window, path] {
             const QImage image = window ? window->grabWindow() : QImage();
             const bool ok = !image.isNull() && image.save(path);
             print(QStringLiteral("screenshot %1: %2").arg(path, ok ? QStringLiteral("saved") : QStringLiteral("FAILED")));
