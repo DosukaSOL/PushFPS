@@ -39,8 +39,8 @@ ColumnLayout {
     readonly property var games: Array.isArray(profiles.games) ? profiles.games.filter(g => g && typeof g.name === "string") : []
     readonly property string activeGame: typeof profiles.game === "string" && games.some(g => g.name === profiles.game) ? profiles.game : ""
     readonly property int maxGames: 50
-    // app.targetMode 0..3 under the Windows build's target names.
-    readonly property var targetIds: ["off", "60", "120", "monitor"]
+    // app.targetMode 0..4 under the Windows build's target names (4 = 90 FPS came last).
+    readonly property var targetIds: ["off", "60", "120", "monitor", "90"]
 
     function snapshot() {
         return { target: prof.targetIds[app.targetMode] || "monitor", pacing: app.pacingRepair === true,

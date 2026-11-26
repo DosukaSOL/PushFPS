@@ -48,7 +48,7 @@ Popup {
     function readState() {
         const game = Diagnose.mean(diag.samples, "contentFps", 0)
         const output = Diagnose.mean(diag.samples, "outputFps", 0)
-        const target = app.targetMode === 1 ? 60 : app.targetMode === 2 ? 120 : 0
+        const target = app.targetMode === 1 ? 60 : app.targetMode === 2 ? 120 : app.targetMode === 4 ? 90 : 0
         const cap = target > 0 ? target : diag.refreshHz
         const comparing = app.compareMode !== 0   // frame generation pauses while comparing
         const sharper = app.sharperFormat()

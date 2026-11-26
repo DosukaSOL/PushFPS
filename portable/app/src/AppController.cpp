@@ -52,7 +52,7 @@ AppController::AppController(QQmlEngine* qml, CatalogTranslator* translator, QSt
     : QObject(parent), qml_(qml), translator_(translator), startPage_(std::move(startPage)) {
     settings_ = Storage::open();
     auto& s = *settings_;
-    targetMode_ = std::clamp(s.value(QStringLiteral("targetMode"), 3).toInt(), 0, 3);
+    targetMode_ = std::clamp(s.value(QStringLiteral("targetMode"), 3).toInt(), 0, 4);
     pacing_ = s.value(QStringLiteral("pacingRepair"), false).toBool();
     hud_ = s.value(QStringLiteral("hudLock"), false).toBool();
     crosshairHold_ = s.value(QStringLiteral("crosshairHold"), false).toBool();
@@ -174,7 +174,8 @@ void AppController::clearError() { setError({}); }
 void AppController::applyEngineSettings() {
     veyra::portable::EngineSettings s;
     s.frameGeneration = targetMode_ != 0 && compareMode_ == 0;  // paused while comparing, as on Windows
-    s.targetFps = targetMode_ == 1 ? 60.0 : (targetMode_ == 2 ? 120.0 : 0.0);
+    // 0 off, 1 60 FPS, 2 120 FPS, 3 the screen, 4 90 FPS (added after the others, so a saved value keeps its meaning).
+    s.targetFps = targetMode_ == 1 ? 60.0 : targetMode_ == 2 ? 120.0 : targetMode_ == 4 ? 90.0 : 0.0;
     s.pacingRepair = pacing_;
     s.hudLock = hud_;
     s.crosshairHold = crosshairHold_;
@@ -536,7 +537,7 @@ void AppController::setPreference(const QString& key, const QVariant& value) {
 }
 
 void AppController::setTargetMode(int m) {
-    m = std::clamp(m, 0, 3);
+    m = std::clamp(m, 0, 4);
     if (m == targetMode_) return;
     targetMode_ = m;
     save(QStringLiteral("targetMode"), m);

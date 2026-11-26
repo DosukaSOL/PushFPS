@@ -61,7 +61,7 @@ Rectangle {
         PushSection {
             sectionId: "fg"
             title: qsTr("补帧")
-            summary: app.targetMode === 0 ? qsTr("关") : app.targetMode === 1 ? "60 FPS" : app.targetMode === 2 ? "120 FPS" : qsTr("匹配显示器")
+            summary: app.targetMode === 0 ? qsTr("关") : app.targetMode === 1 ? "60 FPS" : app.targetMode === 2 ? "120 FPS" : app.targetMode === 4 ? "90 FPS" : qsTr("匹配显示器")
             open: root.isOpen("fg")
             onToggled: open => root.setOpen("fg", open)
             QuickSettings { part: "fg" }
