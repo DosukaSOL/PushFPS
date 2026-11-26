@@ -194,7 +194,8 @@ Which capture card
   PCIe ......... 4K60 HDR. AVerMedia GC573, Elgato 4K Pro
   Tested with PushFPS: Elgato 4K X, HD60 X and 4K S. Reported working by users: Elgato HD60 S,
   Elgato HD60 Pro, AVerMedia Live Gamer Ultra 2.1 (GC553G2), AVerMedia Live Streamer Ultra HD
-  (GC571), ezcap Game Link Raw and FEELWORLD C4K. The other models are Veyra's developer's picks.
+  (GC571), ezcap Game Link Raw, FEELWORLD C4K and the Monster Capture Card. The other models are
+  Veyra's developer's picks.
   Any card that shows up as a camera in Windows works.
 
 NVIDIA Video Frame Generation: Medium or High?

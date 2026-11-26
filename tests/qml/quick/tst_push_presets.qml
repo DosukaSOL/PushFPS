@@ -370,6 +370,9 @@ Item {
             // Reported on 23 November 2026 (issue 19): a FEELWORLD C4K.
             veyra.captureDeviceLabel = "FEELWORLD C4K"
             compare(row.hint, qsTr("有 PushFPS 用户报告可用"))
+            // Reported on 26 November 2026 (issue 32): a Monster Capture Card.
+            veyra.captureDeviceLabel = "Monster Capture Card"
+            compare(row.hint, qsTr("有 PushFPS 用户报告可用"))
             veyra.captureDeviceLabel = "AVerMedia Live Gamer Ultra-Video"
             verify(!findChild(quick, "pushfps-card-status").visible)
             veyra.captureDeviceLabel = "USB Video"
