@@ -177,6 +177,48 @@ void FrameView::setCompareSplit(qreal v) {
     v = std::clamp(v, qreal(0), qreal(1));
     if (v != compareSplit_) { compareSplit_ = v; emit pictureChanged(); update(); }
 }
+FrameView::Placement FrameView::place(double w, double h, double fw, double fh, int fill, const QRectF& keep,
+                                      double zoom, const QPointF& shift) {
+    Placement out;
+    out.source = QRectF(0, 0, 1, 1);
+    if (!(w > 0 && h > 0 && fw > 0 && fh > 0)) return out;
+    const QRectF k = keep.isValid() ? keep.intersected(QRectF(0, 0, 1, 1)) : QRectF(0, 0, 1, 1);
+    if (!(k.width() > 0 && k.height() > 0)) return out;
+    const double z = std::isfinite(zoom) && zoom > 0 ? zoom : 1.0;
+    // The kept part's size on screen: fitted (bars), filling the item (cut), or the item itself, then zoomed.
+    const double kw = fw * k.width(), kh = fh * k.height();
+    double sw = w, sh = h;
+    if (fill != 2) {
+        const double scale = fill == 1 ? std::max(w / kw, h / kh) : std::min(w / kw, h / kh);
+        sw = kw * scale;
+        sh = kh * scale;
+    }
+    sw *= z;
+    sh *= z;
+    const double cx = w / 2 + (std::isfinite(shift.x()) ? shift.x() : 0) * w;
+    const double cy = h / 2 + (std::isfinite(shift.y()) ? shift.y() : 0) * h;
+    const QRectF whole(cx - sw / 2, cy - sh / 2, sw, sh);
+    // Cut to the item; the source follows the same cut.
+    const QRectF shown = whole.intersected(QRectF(0, 0, w, h));
+    if (shown.isEmpty()) { out.rect = QRectF(); return out; }
+    out.rect = shown;
+    out.source = QRectF(k.x() + (shown.x() - whole.x()) / sw * k.width(), k.y() + (shown.y() - whole.y()) / sh * k.height(),
+                        shown.width() / sw * k.width(), shown.height() / sh * k.height());
+    return out;
+}
+
+void FrameView::setKeep(const QRectF& v) {
+    const QRectF k = v.isValid() && v.width() > 0 && v.height() > 0 ? v : QRectF(0, 0, 1, 1);
+    if (k != keep_) { keep_ = k; emit pictureChanged(); update(); }
+}
+void FrameView::setZoom(qreal v) {
+    v = std::isfinite(v) ? std::clamp(v, 0.05, 16.0) : 1.0;
+    if (v != zoom_) { zoom_ = v; emit pictureChanged(); update(); }
+}
+void FrameView::setShift(const QPointF& v) {
+    if (v != shift_) { shift_ = v; emit pictureChanged(); update(); }
+}
+
 void FrameView::setCompareSwap(bool v) { if (v != compareSwap_) { compareSwap_ = v; emit pictureChanged(); update(); } }
 void FrameView::setBrightness(qreal v) { if (v != brightness_) { brightness_ = v; emit pictureChanged(); update(); } }
 void FrameView::setContrast(qreal v) { if (v != contrast_) { contrast_ = v; emit pictureChanged(); update(); } }
@@ -304,17 +346,12 @@ QSGNode* FrameView::updatePaintNode(QSGNode* old, UpdatePaintNodeData*) {
     // The picture in the item: whole with black bars, filling it with the sides cut, or stretched.
     // source is the part of the picture drawn, as shares of it.
     const double fw = pick.a->width, fh = pick.a->height;
-    QRectF rect, source(0, 0, 1, 1);
-    if (fill_ == 2) {
-        rect = QRectF(0, 0, width(), height());
-    } else if (fill_ == 1) {
-        rect = QRectF(0, 0, width(), height());
-        const double scale = std::max(width() / fw, height() / fh);
-        const double sw = std::clamp(width() / (fw * scale), 0.0, 1.0), sh = std::clamp(height() / (fh * scale), 0.0, 1.0);
-        source = QRectF((1 - sw) / 2, (1 - sh) / 2, sw, sh);
-    } else {
-        const double scale = std::min(width() / fw, height() / fh);
-        rect = QRectF((width() - fw * scale) / 2, (height() - fh * scale) / 2, fw * scale, fh * scale);
+    const Placement placed = place(width(), height(), fw, fh, fill_, keep_, zoom_, shift_);
+    const QRectF rect = placed.rect, source = placed.source;
+    if (rect.width() <= 0 || rect.height() <= 0) {  // moved wholly out of the window
+        delete old;
+        reportUpscale(upscale_ ? UpscaleNotNeeded : UpscaleOff, {});
+        return nullptr;
     }
     const quint64 keyA = pick.aId << 4, keyB = pick.bId << 4;
 

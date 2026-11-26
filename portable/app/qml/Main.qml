@@ -17,6 +17,7 @@ import QtQuick.Shapes
 import QtQuick.Window
 import PushFPS
 import "PushShell.js" as PushShell
+import "PushCrop.js" as Crop
 
 Window {
     id: root
@@ -144,6 +145,20 @@ Window {
     }
     // Check my setup (CheckSetupDialog.qml), opened from the home page, Professional mode and Settings.
     CheckSetupDialog { id: checkSetup; parent: Overlay.overlay }
+    CropDialog { id: cropDialog; parent: Overlay.overlay }
+    // A dialog asked for by a part that cannot reach this window (app.openDialog).
+    Connections {
+        target: app
+        function onDialogRequested(key) {
+            if (key === "crop") cropDialog.open()
+            else if (key === "diagnose") checkSetup.open()
+        }
+    }
+    // Crop and resize (PushCrop.js): for a capture card's picture, and the test pattern that stands in for
+    // one (the Windows build crops a console picture, its Frame Input test pattern included, never a file).
+    readonly property var crop: Crop.read(root.prefs)
+    readonly property bool cropShown: root.crop.on && !Crop.neutral(root.crop)
+                                      && (app.sourceKind === "camera" || app.sourceKind === "test")
 
     // ---- the one picture ----
     readonly property Item viewport: page === "home" ? homePage.videoViewport
@@ -162,6 +177,10 @@ Window {
         saturation: app.saturation
         gamma: app.gamma
         fill: app.fillMode
+        keep: root.cropShown ? Qt.rect(root.crop.l / 1000, root.crop.t / 1000, (1000 - root.crop.l - root.crop.r) / 1000,
+                                       (1000 - root.crop.t - root.crop.b) / 1000) : Qt.rect(0, 0, 1, 1)
+        zoom: root.cropShown ? root.crop.zoom / 100 : 1
+        shift: root.cropShown ? Qt.point(root.crop.x / 1000, root.crop.y / 1000) : Qt.point(0, 0)
         // Upscaling with NVIDIA Image Scaling (NisNode.h); the Windows build's names.
         upscale: app.srEnabled && app.videoSrQuality === 6
         upscaleTarget: app.srTargetIndex

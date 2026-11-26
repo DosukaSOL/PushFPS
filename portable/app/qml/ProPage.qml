@@ -231,6 +231,7 @@ Rectangle {
                 Block {
                     blockId: "quality"; title: qsTr("画质"); tab: root.tab; shown: root.blockShown("quality"); onFoldToggled: open => root.setFolded("quality", !open)
                     UpscaleRow {}
+                    CropRow {}
                     SuperResolutionCard { Layout.topMargin: 6; Layout.bottomMargin: 6 }
                 }
                 Block { blockId: "fg"; title: qsTr("补帧"); tab: root.tab; shown: root.blockShown("fg"); onFoldToggled: open => root.setFolded("fg", !open); ConsoleProfiles {} QuickSettings {} }

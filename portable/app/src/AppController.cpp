@@ -13,6 +13,7 @@
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QGuiApplication>
+#include <QHash>
 #include <QJsonDocument>
 #include <QJsonParseError>
 #include <QQmlEngine>
@@ -52,7 +53,7 @@ AppController::AppController(QQmlEngine* qml, CatalogTranslator* translator, QSt
     : QObject(parent), qml_(qml), translator_(translator), startPage_(std::move(startPage)) {
     settings_ = Storage::open();
     auto& s = *settings_;
-    targetMode_ = std::clamp(s.value(QStringLiteral("targetMode"), 3).toInt(), 0, 3);
+    targetMode_ = std::clamp(s.value(QStringLiteral("targetMode"), 3).toInt(), 0, 4);
     pacing_ = s.value(QStringLiteral("pacingRepair"), false).toBool();
     hud_ = s.value(QStringLiteral("hudLock"), false).toBool();
     crosshairHold_ = s.value(QStringLiteral("crosshairHold"), false).toBool();
@@ -174,7 +175,8 @@ void AppController::clearError() { setError({}); }
 void AppController::applyEngineSettings() {
     veyra::portable::EngineSettings s;
     s.frameGeneration = targetMode_ != 0 && compareMode_ == 0;  // paused while comparing, as on Windows
-    s.targetFps = targetMode_ == 1 ? 60.0 : (targetMode_ == 2 ? 120.0 : 0.0);
+    // 0 off, 1 60 FPS, 2 120 FPS, 3 the screen, 4 90 FPS (added after the others, so a saved value keeps its meaning).
+    s.targetFps = targetMode_ == 1 ? 60.0 : targetMode_ == 2 ? 120.0 : targetMode_ == 4 ? 90.0 : 0.0;
     s.pacingRepair = pacing_;
     s.hudLock = hud_;
     s.crosshairHold = crosshairHold_;
@@ -458,10 +460,17 @@ const QStringList kThemes{QStringLiteral("default"), QStringLiteral("black"), QS
 const QStringList kAccents{QStringLiteral("orange"), QStringLiteral("white"), QStringLiteral("ice"), QStringLiteral("blue"),
                            QStringLiteral("violet"), QStringLiteral("rose"), QStringLiteral("amber")};
 const QStringList kFlags{QStringLiteral("pushNavCollapsed"), QStringLiteral("pushSideCollapsed"), QStringLiteral("reducedMotion"),
-                          QStringLiteral("pushCompareSwap"), QStringLiteral("pushLatencyOverlay")};
+                          QStringLiteral("pushCompareSwap"), QStringLiteral("pushLatencyOverlay"), QStringLiteral("pushCropOn")};
 const QStringList kFoldLists{QStringLiteral("pushQuickFolded"), QStringLiteral("pushProFolded")};
 // Whole percentages, as the Windows build keeps them (nisSharpness: 0..100, NVIDIA's default 50).
 const QStringList kPercents{QStringLiteral("nisSharpness")};
+// Crop and resize of the picture (PushCrop.js), with the Windows build's ranges (Preferences.cpp): the four
+// sides in thousandths (at most 450 each), the size on screen in percent, the place in thousandths of the window.
+struct IntRange { int low, high; };
+const QHash<QString, IntRange> kRanges{
+    {QStringLiteral("pushCropL"), {0, 450}}, {QStringLiteral("pushCropT"), {0, 450}}, {QStringLiteral("pushCropR"), {0, 450}},
+    {QStringLiteral("pushCropB"), {0, 450}}, {QStringLiteral("pushCropZoom"), {25, 400}},
+    {QStringLiteral("pushCropX"), {-1000, 1000}}, {QStringLiteral("pushCropY"), {-1000, 1000}}};
 // Console and game profiles (ConsoleProfiles.qml), as the Windows build keeps them (Preferences.cpp):
 // which console the quick setup is for, and the profiles as a JSON object, size-capped and parsed here
 // so a broken value never reaches the file.
@@ -495,6 +504,12 @@ QVariant cleanPreference(const QString& key, const QVariant& value) {
         const long top = key == QLatin1String("pushLatencySize") ? 2L : 1000L;
         return QVariant(int(std::clamp(std::lround(v), 0L, top)));
     }
+    if (const auto range = kRanges.constFind(key); range != kRanges.constEnd()) {
+        bool ok = false;
+        const double v = value.toDouble(&ok);
+        if (!ok || !std::isfinite(v)) return {};
+        return QVariant(int(std::clamp(std::lround(v), long(range->low), long(range->high))));
+    }
     if (kFoldLists.contains(key)) {
         // Section or block ids with commas: lower-case letters only, each at most once.
         QStringList ids;
@@ -512,7 +527,7 @@ QVariant cleanPreference(const QString& key, const QVariant& value) {
 
 void AppController::loadPreferences() {
     QStringList keys{QStringLiteral("pushTheme"), QStringLiteral("accent"), QStringLiteral("pushConsole"), QStringLiteral("pushProfiles")};
-    keys << kFlags << kFoldLists << kPercents << QStringLiteral("pushLatencySize") << QStringLiteral("pushLatencyX") << QStringLiteral("pushLatencyY");
+    keys << kFlags << kFoldLists << kPercents << QStringLiteral("pushLatencySize") << QStringLiteral("pushLatencyX") << QStringLiteral("pushLatencyY") << kRanges.keys();
     for (const QString& key : keys) {
         const QVariant stored = settings_->value(QStringLiteral("ui/") + key);
         if (!stored.isValid()) continue;
@@ -536,7 +551,7 @@ void AppController::setPreference(const QString& key, const QVariant& value) {
 }
 
 void AppController::setTargetMode(int m) {
-    m = std::clamp(m, 0, 3);
+    m = std::clamp(m, 0, 4);
     if (m == targetMode_) return;
     targetMode_ = m;
     save(QStringLiteral("targetMode"), m);

@@ -131,6 +131,8 @@ public:
     // The same, for a readout at `nowNs` (the clock the frames are stamped with): the three rates fall off
     // when what they count stops, and read 0 a second after the last one, instead of keeping the last rate.
     EngineStats stats(int64_t nowNs) const;
+    // The newest real frame kept (null before the first): what a dialog shows of the picture. Read only.
+    std::shared_ptr<const Bgra> newestImage() const;
     // Drops all frames (source change, resolution change).
     void reset();
     // Tests: waits until the worker has finished every queued pair.

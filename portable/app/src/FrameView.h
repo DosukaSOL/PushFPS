@@ -28,6 +28,13 @@ class FrameView : public QQuickItem {
     // How a picture of another shape than the window is shown: 0 whole with bars, 1 the window filled
     // and the picture's sides cut, 2 stretched.
     Q_PROPERTY(int fill READ fill WRITE setFill NOTIFY pictureChanged)
+    // Crop and resize (the Windows build's PreviewView crop, preferences in PushCrop.js): `keep` is the part
+    // of the picture shown, as shares of it; that part is fitted, filled or stretched as `fill` says, made
+    // `zoom` times as large and moved by `shift` (shares of this item's width and height). With the whole
+    // picture, 1 and (0, 0) the picture is drawn exactly as without them.
+    Q_PROPERTY(QRectF keep READ keep WRITE setKeep NOTIFY pictureChanged)
+    Q_PROPERTY(qreal zoom READ zoom WRITE setZoom NOTIFY pictureChanged)
+    Q_PROPERTY(QPointF shift READ shift WRITE setShift NOTIFY pictureChanged)
     // The live comparison with the original (the picture before the picture controls and NIS), as the
     // Windows build's compareMode: 0 off, 2 split, 1 the original alone. The split stands at compareSplit
     // (a share of this item's width; the line itself is engine/PushCompareLine.h's); compareSwap puts
@@ -64,6 +71,16 @@ public:
     bool running() const { return running_; }
     int fill() const { return fill_; }
     void setFill(int v);
+    QRectF keep() const { return keep_; }
+    qreal zoom() const { return zoom_; }
+    QPointF shift() const { return shift_; }
+    void setKeep(const QRectF& v);
+    void setZoom(qreal v);
+    void setShift(const QPointF& v);
+    // Where the kept part of a picture fw x fh large stands in an item w x h large (`rect`, which can reach
+    // past the item) and the part of the picture drawn there (`source`, shares) once it is cut to the item.
+    struct Placement { QRectF rect, source; };
+    static Placement place(double w, double h, double fw, double fh, int fill, const QRectF& keep, double zoom, const QPointF& shift);
     int compare() const { return compare_; }
     qreal compareSplit() const { return compareSplit_; }
     bool compareSwap() const { return compareSwap_; }
@@ -117,6 +134,9 @@ private:
     qreal brightness_ = 0, contrast_ = 1, saturation_ = 1, gamma_ = 1;
     bool running_ = true;
     int fill_ = 0;
+    QRectF keep_{0, 0, 1, 1};
+    qreal zoom_ = 1;
+    QPointF shift_;
     int compare_ = 0;
     qreal compareSplit_ = 0.5;
     bool compareSwap_ = false;

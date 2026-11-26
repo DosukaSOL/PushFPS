@@ -5,6 +5,7 @@
 // Windows build's sections (`part`: "fg" Frame Gen, "hud" HUD, "latency" Latency and sound), and by
 // Professional mode's Frame Gen block, which shows them all; so each setting is written once.
 import QtQuick
+import QtQuick.Window
 import QtQuick.Layouts
 
 ColumnLayout {
@@ -15,6 +16,22 @@ ColumnLayout {
     property string part: ""
     function shows(section) { return quick.part === "" || quick.part === section }
     readonly property bool generating: app.targetMode !== 0
+    // As the Windows quick setup: a 90 Hz screen (85..95) gets 90 FPS in place of 120, a screen whose rate
+    // is a whole number of 90s (180, 270, 360 Hz) gets it beside 120, and a target already set stays offered.
+    property real refreshHzOverride: 0    // tests
+    readonly property real refreshHz: refreshHzOverride > 0 ? refreshHzOverride : Number(Screen.refreshRate || 0)
+    readonly property bool screen90: refreshHz > 85 && refreshHz < 95
+    readonly property bool screenFits90: {
+        const n = Math.round(refreshHz / 90)
+        return n >= 2 && Math.abs(refreshHz - n * 90) <= n * 1.5
+    }
+    readonly property var targetOptions: {
+        const list = [{ id: "0", label: qsTr("关") }, { id: "1", label: "60 FPS" }]
+        if (app.targetMode === 4 || quick.screen90 || quick.screenFits90) list.push({ id: "4", label: "90 FPS" })
+        if (!quick.screen90 || app.targetMode === 2) list.push({ id: "2", label: "120 FPS" })
+        list.push({ id: "3", label: qsTr("匹配显示器") })
+        return list
+    }
 
     VRow {
         visible: quick.shows("fg")
@@ -25,7 +42,7 @@ ColumnLayout {
         hintBelow: true
         VSeg {
             objectName: "home-target"
-            options: [{ id: "0", label: qsTr("关") }, { id: "1", label: "60 FPS" }, { id: "2", label: "120 FPS" }, { id: "3", label: qsTr("匹配显示器") }]
+            options: quick.targetOptions
             current: String(app.targetMode)
             onPicked: id => app.targetMode = Number(id)
         }

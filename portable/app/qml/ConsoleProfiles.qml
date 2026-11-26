@@ -8,11 +8,13 @@
 // the old one and brings back the new one's. A game profile is a named snapshot. Both follow what is
 // changed while they are chosen (as on Windows since 4.5.1).
 // What a snapshot holds is what the preview has of the Windows snapshot: the target, Frame Pacing
-// Repair, Live HUD Lock and the one-tap lowest latency. The preview has no game frame rate to choose
+// Repair, Live HUD Lock, the one-tap lowest latency and the crop. The preview has no game frame rate to choose
 // (its engine shows a new picture at every refresh and finds the real frames itself), so none is kept;
 // a profile's other keys (from a newer version) are kept as they are.
 import QtQuick
 import QtQuick.Layouts
+import "PushCaptureCards.js" as Cards
+import "PushCrop.js" as Crop
 
 ColumnLayout {
     id: prof
@@ -39,12 +41,15 @@ ColumnLayout {
     readonly property var games: Array.isArray(profiles.games) ? profiles.games.filter(g => g && typeof g.name === "string") : []
     readonly property string activeGame: typeof profiles.game === "string" && games.some(g => g.name === profiles.game) ? profiles.game : ""
     readonly property int maxGames: 50
-    // app.targetMode 0..3 under the Windows build's target names.
-    readonly property var targetIds: ["off", "60", "120", "monitor"]
+    // app.targetMode 0..4 under the Windows build's target names (4 = 90 FPS came last).
+    readonly property var targetIds: ["off", "60", "120", "monitor", "90"]
 
     function snapshot() {
+        // crop as on Windows: false = off, else its values (PushCrop.js).
+        const c = Crop.read(app.preferences)
         return { target: prof.targetIds[app.targetMode] || "monitor", pacing: app.pacingRepair === true,
-                 hudLock: app.hudLock === true, lowLatency: app.lowLatency === true }
+                 hudLock: app.hudLock === true, lowLatency: app.lowLatency === true,
+                 crop: c.on && !Crop.neutral(c) ? { l: c.l, t: c.t, r: c.r, b: c.b, zoom: c.zoom, x: c.x, y: c.y } : false }
     }
     function copyProfiles() { return JSON.parse(JSON.stringify(prof.profiles)) }
     function writeProfiles(p) {
@@ -69,7 +74,16 @@ ColumnLayout {
         if (i >= 0) app.targetMode = i
         if (typeof s.pacing === "boolean") app.pacingRepair = s.pacing
         if (typeof s.hudLock === "boolean") app.hudLock = s.hudLock
+        // A profile from before crop has none and leaves it alone.
+        if (s.crop === false) { if (app.preferences.pushCropOn === true) app.setPreference("pushCropOn", false) }
+        else if (s.crop && typeof s.crop === "object") prof.setCrop(Crop.copy(Crop.read({}), s.crop))
         if (s.lowLatency === true) app.lowLatency = true
+    }
+    function setCrop(c) {
+        const wanted = Crop.values(c), saved = Crop.values(Crop.read(app.preferences))
+        for (const k of Crop.keys) if (wanted[k] !== saved[k]) app.setPreference(k, wanted[k])
+        const on = !Crop.neutral(c)
+        if ((app.preferences.pushCropOn === true) !== on) app.setPreference("pushCropOn", on)
     }
 
     // The chosen game profile and the current console's profile follow what is changed while they are
@@ -154,6 +168,44 @@ ColumnLayout {
         writeProfiles(p)
     }
 
+    // The capture card chosen, and what is known of it: the Windows row (`pushfps-card-row`) with its list
+    // (PushCaptureCards.js, shared) and its words. The tag is only for a card that was tested or reported
+    // working; a card with nothing known only offers the report.
+    VRow {
+        id: cardRow
+        objectName: "pushfps-card-row"
+        readonly property string deviceName: app.videoDeviceIndex >= 0 && app.videoDeviceIndex < app.videoDevices.length
+                                             ? String(app.videoDevices[app.videoDeviceIndex]) : ""
+        readonly property var card: Cards.find(deviceName)
+        visible: deviceName.length > 0
+        label: qsTr("采集卡")
+        hint: card && card.status === "tested" ? qsTr("PushFPS 已实测")
+            : card && card.status === "veyra" ? qsTr("Veyra 作者已实测")
+            : card && card.status === "reported" ? qsTr("有 PushFPS 用户报告可用")
+            : qsTr("欢迎在 GitHub 上分享这张卡的使用结果")
+        hintBelow: true
+        RowLayout {
+            spacing: 6
+            Text {
+                text: cardRow.deviceName
+                color: Theme.t1; font.family: Theme.fontUi; font.pixelSize: 12
+                elide: Text.ElideRight; Layout.maximumWidth: 180
+            }
+            VTag {
+                objectName: "pushfps-card-status"
+                visible: cardRow.card !== null && cardRow.card.status !== "untested"
+                kind: "ok"
+                text: qsTr("已测试")
+            }
+            VButton {
+                objectName: "pushfps-card-report"
+                visible: !(cardRow.card && cardRow.card.status === "tested")
+                ghost: true
+                text: qsTr("报告")
+                onClicked: Qt.openUrlExternally(Cards.reportUrl)
+            }
+        }
+    }
     VRow {
         objectName: "pushfps-console-row"
         label: qsTr("游戏主机")

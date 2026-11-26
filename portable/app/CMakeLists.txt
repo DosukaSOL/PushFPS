@@ -51,7 +51,8 @@ set(pushfps_shared_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../qml/Veyra)
 set(pushfps_shared_names
     Theme.qml IconData.js PushShell.js VIcon.qml VAccentFill.qml VButton.qml VSwitch.qml VSeg.qml VSelect.qml VMenu.qml
     VRow.qml VHelp.qml VSliderValue.qml VSlider.qml VCard.qml VDot.qml VTag.qml VScrollBar.qml VAccordion.qml VSubGroup.qml VEyebrow.qml PushFoldHead.qml
-    PushSection.qml PushSidebar.qml PushTitleBar.qml PushStatusStrip.qml PushWordmark.qml DialogTextField.qml PushLatencyBadge.qml PushDiagnose.js)
+    PushSection.qml PushSidebar.qml PushTitleBar.qml PushStatusStrip.qml PushWordmark.qml DialogTextField.qml PushLatencyBadge.qml PushDiagnose.js
+    PushCaptureCards.js PushCrop.js)
 set(pushfps_shared_files)
 foreach(name IN LISTS pushfps_shared_names)
   list(APPEND pushfps_shared_files ${pushfps_shared_dir}/${name})
@@ -61,7 +62,8 @@ set_source_files_properties(${pushfps_shared_dir}/Theme.qml PROPERTIES QT_QML_SI
 set(pushfps_own_files
     qml/Main.qml qml/HomePage.qml qml/ProPage.qml qml/MinimalPage.qml qml/SettingsPage.qml qml/GpuCheck.qml
     qml/SourcesPanel.qml qml/QuickSettings.qml qml/PictureSettings.qml qml/SoundSettings.qml qml/LiveFigures.qml
-    qml/PicturePlaceholder.qml qml/PanelTitle.qml qml/UpscaleRow.qml qml/SuperResolutionCard.qml qml/ConsoleProfiles.qml qml/CheckSetupDialog.qml)
+    qml/PicturePlaceholder.qml qml/PanelTitle.qml qml/UpscaleRow.qml qml/SuperResolutionCard.qml qml/ConsoleProfiles.qml qml/CheckSetupDialog.qml
+    qml/CropDialog.qml qml/CropRow.qml)
 set(pushfps_qml_resources qml/logo.png qml/icon.png)
 # Every file sits next to the module's qmldir in the resources: in a folder of its own, that folder is
 # also an implicit import that offers Theme.qml as a plain type, and Qt picks one or the other at random
