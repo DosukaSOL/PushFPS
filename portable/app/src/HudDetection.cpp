@@ -3,6 +3,7 @@
 #include "HudDetection.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <thread>
 
 namespace pushfps {
@@ -25,6 +26,8 @@ bool HudDetection::start(int samples) {
     target_ = std::clamp(samples, int(hud::kMinFrames), 32);
     frames_.clear();
     run_.reset();
+    distinct_ = 0;
+    lastImage_ = nullptr;
     take();  // the first frame now, the others 350 ms apart
     if (running_) timer_.start();
     return true;
@@ -51,14 +54,23 @@ void HudDetection::take() {
         frames_.clear();
         return;
     }
+    if (image.get() != lastImage_) ++distinct_;
+    lastImage_ = image.get();
+    size_ = QSize(image->width, image->height);
     frames_.push_back(std::move(frame));
     if (int(frames_.size()) < target_) return;
     // The last frame: detect() over all of them on a thread of its own (it reads 12 grids of 1920 x 1080).
     timer_.stop();
     auto run = std::make_shared<Run>();
     run_ = run;
-    std::thread([run, frames = std::move(frames_)] {
+    const int distinct = distinct_;
+    const QSize size = size_;
+    std::thread([run, frames = std::move(frames_), distinct, size] {
         auto found = hud::detect(frames);
+        // The line the Windows sampler logs (push-hud), with what the preview took.
+        std::fprintf(stderr, "[push-hud] detection done regions=%zu motion=%.2f candidates=%u tooStill=%d frames=%zu distinct=%d size=%dx%d\n",
+                     found.regions.size(), double(found.motion), found.candidateCells, int(found.tooStill), frames.size(), distinct,
+                     size.width(), size.height());
         std::lock_guard lock(run->m);
         run->detection = std::move(found);
         run->done = true;

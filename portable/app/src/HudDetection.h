@@ -10,6 +10,7 @@
 #include "veyra/portable/Engine.h"
 
 #include <QObject>
+#include <QSize>
 #include <QTimer>
 #include <QVariantMap>
 
@@ -49,6 +50,9 @@ private:
     quint64 revision_ = 0;
     QString error_;
     std::vector<veyra::engine::hud::LumaFrame> frames_;
+    const void* lastImage_ = nullptr;  // how many different frames a run took (the log line)
+    int distinct_ = 0;
+    QSize size_;
     std::shared_ptr<Run> run_;
 };
 

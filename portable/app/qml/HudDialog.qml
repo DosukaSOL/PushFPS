@@ -143,7 +143,9 @@ Popup {
     }
     function finishDetection(s) {
         if (s.tooStill) { hud.say(qsTr("画面几乎没有动，分不出哪些是 HUD。请在游戏里转动镜头或移动，然后再试一次"), true); return }
-        const found = Array.isArray(s.regions) ? s.regions : []
+        // A list from C++ (app.hudDetection) is not a JavaScript array for Array.isArray, though it has a length
+        // and items: Array.from makes it one (the check that stood here dropped every box found).
+        const found = Array.from(s.regions || [])
         if (found.length === 0) { hud.say(qsTr("没有找到 HUD。可以在画面上拖动，手动画出方框"), false); return }
         hud.setBoxes(found)
         hud.say(qsTr("找到 %1 个 HUD 区域。请检查绿色方框，必要时拖动修正，然后点「应用」").arg(boxModel.count), false)
