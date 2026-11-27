@@ -15,7 +15,9 @@ VRow {
     property bool switchedOn: false
     property var kbmState: ({})
     property string buttonName: "pushfps-kbm-fix"
-    readonly property bool paired: veyra.ps5Profiles !== undefined && veyra.ps5Profiles !== null && veyra.ps5Profiles.length > 0
+    // SCRATCH (video/kbm-guide only): --scratch-kbm-paired shows what a PC with a paired PS5 sees.
+    readonly property bool paired: Qt.application.arguments.indexOf("--scratch-kbm-paired") >= 0
+        || (veyra.ps5Profiles !== undefined && veyra.ps5Profiles !== null && veyra.ps5Profiles.length > 0)
     readonly property string fix: fixRow.switchedOn && fixRow.kbmState && fixRow.kbmState.available !== true && fixRow.kbmState.captured !== true
                                   ? Kbm.fixFor(fixRow.kbmState.waiting, fixRow.paired) : ""
     visible: fixRow.fix !== ""

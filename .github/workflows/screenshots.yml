@@ -328,13 +328,25 @@ jobs:
             @{ name = 'R-appearance'; size = '1440x900'; args = @('--page', 'home', '--dialog', 'appearance', '--lang', 'en', '--pref', 'pushQuickFolded=fg,picture,hud') },
             @{ name = 'R-legacy'; size = '1440x900'; args = @('--page', 'home', '--lang', 'en', '--pref', 'pushDesign=legacy', '--pref', 'pushSunset=false') },
             @{ name = 'R-sides-folded'; size = '1440x900'; args = @('--page', 'home', '--lang', 'en', '--pref', 'pushSideCollapsed=true', '--pref', 'pushNavCollapsed=true') },
-            @{ name = 'R-pro-folded'; size = '1440x900'; args = @('--page', 'pro', '--lang', 'en', '--pref', 'pushProFolded=quality,fg,audio') }
+            @{ name = 'R-pro-folded'; size = '1440x900'; args = @('--page', 'pro', '--lang', 'en', '--pref', 'pushProFolded=quality,fg,audio') },
+            # The mouse and keyboard setup video (scratch branch video/kbm-guide, never merged).
+            @{ name = 'G-00-warmup'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en') },
+            @{ name = 'G-01-home-off'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en', '--scroll-to', 'pushfps-kbm-row', '--pref', ('pushKbm=' + '{"on":false,"preset":"gta6"}'.Replace('"', '\"'))) },
+            @{ name = 'G-02-home-ready'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en', '--scroll-to', 'pushfps-kbm-row', '--scratch-kbm-ready', '--pref', ('pushKbm=' + '{"on":true,"preset":"gta6"}'.Replace('"', '\"'))) },
+            @{ name = 'G-03-capture-turnon'; sender = $true; size = '1600x900'; env = @{ VEYRA_TEST_PS5_CONTROL_ANY_SOURCE = '1' }; args = @('frameinput:default', '--page', 'home', '--lang', 'en', '--scroll-to', 'pushfps-kbm-row', '--scratch-kbm-paired', '--pref', ('pushKbm=' + '{"on":true,"preset":"gta6"}'.Replace('"', '\"'))) },
+            @{ name = 'G-04-capture-pair'; sender = $true; size = '1600x900'; env = @{ VEYRA_TEST_PS5_CONTROL_ANY_SOURCE = '1' }; args = @('frameinput:default', '--page', 'home', '--lang', 'en', '--scroll-to', 'pushfps-kbm-row', '--pref', ('pushKbm=' + '{"on":true,"preset":"gta6"}'.Replace('"', '\"'))) },
+            @{ name = 'G-05-kbm'; size = '1600x900'; args = @('--page', 'home', '--dialog', 'kbm', '--lang', 'en', '--scratch-kbm-ready', '--pref', ('pushKbm=' + '{"on":true,"preset":"gta6"}'.Replace('"', '\"'))) },
+            @{ name = 'G-06-kbm-keys'; size = '1600x900'; args = @('--page', 'home', '--dialog', 'kbm', '--lang', 'en', '--scroll-to', 'pushfps-kbm-row-cross', '--scratch-kbm-ready', '--pref', ('pushKbm=' + '{"on":true,"preset":"gta6"}'.Replace('"', '\"'))) },
+            @{ name = 'G-07-kbm-waiting'; size = '1600x900'; args = @('--page', 'home', '--dialog', 'kbm', '--lang', 'en', '--pref', ('pushKbm=' + '{"on":true,"preset":"gta6"}'.Replace('"', '\"'))) }
           )
           if ($env:ONLY) { $list = @($list | Where-Object { $_.name -match $env:ONLY }); Write-Host "Only: $($list.name -join ', ')" }
           foreach ($s in $list) {
             $data = "D:\pfdata\$($s.name)"
             $size = if ($s.size) { $s.size } else { "${w}x${h}" }
             $a = $s.args + @('--size', $size, '--data-dir', $data, '--reduced-motion', '--no-update-check')
+            # SCRATCH (video/kbm-guide): an entry's own environment, for the program's test switches.
+            $envSet = @()
+            if ($s.env) { foreach ($k in $s.env.Keys) { [Environment]::SetEnvironmentVariable($k, $s.env[$k], 'Process'); $envSet += $k } }
             $sender = $null
             if ($s.sender) {
               $sender = Start-Process python -ArgumentList @('repo\tools\frame-input\send_test_pattern.py', '--width', '1280', '--height', '720', '--fps', '30') -PassThru -WindowStyle Hidden
@@ -375,9 +387,14 @@ jobs:
             Write-Host "$($s.name): ${bw}x${bh}"
             Stop-Process -Id $p.Id -Force
             if ($sender -and -not $sender.HasExited) { Stop-Process -Id $sender.Id -Force }
+            foreach ($k in $envSet) { [Environment]::SetEnvironmentVariable($k, $null, 'Process') }
             Start-Sleep -Seconds 2
           }
           Get-ChildItem shots | Format-Table Name, Length
+          # SCRATCH (video/kbm-guide): what the mouse and keyboard bridge logged in those runs.
+          Get-ChildItem D:\pf\logs -Filter *.log -ErrorAction SilentlyContinue | Get-Content | Where-Object { $_ -match 'kbm|remoteplay-control' } |
+            Select-Object -First 200 | Set-Content shots\kbm-log.txt
+          Get-Content shots\kbm-log.txt | Out-Host
 
       - name: Interface errors and warnings during the screenshot runs
         run: |

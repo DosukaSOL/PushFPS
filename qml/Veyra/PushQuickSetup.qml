@@ -1226,7 +1226,9 @@ VGroup {
             id: kbmRow
             objectName: "pushfps-kbm-row"
             readonly property var cfg: Kbm.config(String(veyra.preferences.pushKbm || ""), veyra.pushKbmDefaults())
-            readonly property var kbmState: veyra.pushKbm || ({})
+            // SCRATCH (video/kbm-guide only): --scratch-kbm-ready shows the state a connected console gives.
+            readonly property var kbmState: Qt.application.arguments.indexOf("--scratch-kbm-ready") >= 0
+                ? Object.assign({}, veyra.pushKbm || {}, {available: true, waiting: "", waitingText: ""}) : (veyra.pushKbm || ({}))
             readonly property string releaseName: veyra.pushKbmInputName(kbmRow.cfg.release)
             label: qsTr("鼠标和键盘")
             help: qsTr("用这台电脑的鼠标和键盘玩主机游戏：主机看到的是一个手柄，手柄也可以同时用（例如用手柄开车，下车后用鼠标瞄准）。用于 PS5 远程游玩、开着“用远程游玩控制 PS5”的采集卡，以及 Xbox 串流。")

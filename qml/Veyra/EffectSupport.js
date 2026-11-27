@@ -1,18 +1,11 @@
 .pragma library
 
-function status(api, id) {
-    // Reading the notifying property also invalidates bindings after settings,
-    // adapter/runtime status or a rejected backend request changes.
-    var caps = api.effectCapabilities
-    return typeof api.effectAvailability === "function"
-            ? api.effectAvailability(id) : {available: true, reason: ""}
-}
-function available(api, id) { return status(api, id).available }
-function reason(api, id) { return status(api, id).reason }
-function option(api, id, label, key) {
-    var cap = (api.effectCapabilities || {})[key] || {available: true, reason: ""}
-    return {id: id, label: label, disabled: !cap.available, note: cap.reason}
-}
+// SCRATCH, for the 4.5.6 video's screenshots only (never merged): the build machine has no graphics card, so
+// every row would read "Requires an NVIDIA RTX GPU". The rows are photographed as a PC with a card shows them.
+function status(api, id) { var caps = api.effectCapabilities; return {available: true, reason: ""} }
+function available(api, id) { return true }
+function reason(api, id) { return "" }
+function option(api, id, label, key) { return {id: id, label: label, disabled: false, note: ""} }
 
 function fgBackendShortLabel(option) {
     if (!option) return ""

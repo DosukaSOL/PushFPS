@@ -22,7 +22,9 @@ DialogLayer {
 
     readonly property var defaults: veyra.pushKbmDefaults()
     readonly property var cfg: Kbm.config(String(veyra.preferences.pushKbm || ""), kbm.defaults)
-    readonly property var kbmState: veyra.pushKbm || ({})
+    // SCRATCH (video/kbm-guide only): --scratch-kbm-ready shows the state a connected console gives.
+    readonly property var kbmState: Qt.application.arguments.indexOf("--scratch-kbm-ready") >= 0
+        ? Object.assign({}, veyra.pushKbm || {}, {available: true, waiting: "", waitingText: ""}) : (veyra.pushKbm || ({}))
     readonly property string pad: Kbm.padOf(kbm.cfg, String(veyra.preferences.pushConsole || ""), String(kbm.kbmState.target || ""))
     readonly property var allControls: veyra.pushKbmControls()
     readonly property var controls: Kbm.controlsFor(kbm.allControls, kbm.pad)
