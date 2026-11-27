@@ -1602,3 +1602,9 @@ zh:已开启：运动估计用「快速」，帧节奏修复关闭。关闭后�
 zh:帧节奏修复 · 已重排 %1%|Kare ritmi düzeltme · %1% yeniden zamanlandı
 zh:帧节奏修复 · 等待去重测出帧率|Kare ritmi düzeltme · yinelenen kare kaldırmanın kare hızını ölçmesi bekleniyor
 zh:引擎未接受帧节奏修复，原设置保留|Motor Kare ritmi düzeltmeyi kabul etmedi; önceki ayar korunuyor
+zh:黑边|Şeritler
+zh:裁切|Kırp
+zh:拉伸|Ger
+zh:裁剪和缩放|Kırp ve yeniden boyutlandır
+zh:宽屏填充|Geniş ekran dolgusu
+zh:氛围填充|Ambient
