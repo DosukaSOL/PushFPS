@@ -173,8 +173,8 @@ inline Settings clean(Settings s) {
     s.deadzonePercent = std::clamp(s.deadzonePercent, kDeadzoneMin, kDeadzoneMax);
     s.curvePercent = std::clamp(s.curvePercent, kCurveMin, kCurveMax);
     if (!isKey(s.release)) s.release = vk::F12;
-    for (auto& slots : s.map)
-        for (auto& code : slots)
+    for (auto& inputs : s.map)
+        for (auto& code : inputs)
             if (!validCode(code) || code == s.release) code = kNone;
     return s;
 }
@@ -260,8 +260,8 @@ public:
     // Whether this code presses something.
     bool bound(std::uint16_t code) const {
         if (code == kNone) return false;
-        for (const auto& slots : settings_.map)
-            for (auto c : slots) if (c == code) return true;
+        for (const auto& inputs : settings_.map)
+            for (auto c : inputs) if (c == code) return true;
         return false;
     }
     void press(std::uint16_t code, bool down) {
