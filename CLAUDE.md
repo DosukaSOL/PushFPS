@@ -224,7 +224,11 @@ and edits would conflict on every merge.
   that name in C++ a Windows file can include, pure headers included (4.0's still rule had `near` in its
   header; g++ compiled it, MSVC would not have). The check without a build: a file that defines the three as
   macros, includes the new headers and is compiled with `g++ -std=c++20 -fsyntax-only -Iinclude`. Headers
-  that need `d3d12.h` build locally against a stub folder with empty Windows headers.
+  that need `d3d12.h` build locally against a stub folder with empty Windows headers. **Qt's keyword macros
+  too**: `slots`, `signals`, `emit`, `foreach` and `forever` are macros in every file that includes Qt, so a pure
+  header a Qt file includes may not use them as names either (4.5.6's first release build failed on a loop
+  variable called `slots` in `PushKbm.h`, which g++ had compiled without Qt). Define them in the same check file
+  (`#define slots`, `#define signals public`, `#define emit`, `#define foreach for`, `#define forever for(;;)`).
 
 - After any QML change, `tests/qml/quick` runs in CI (`tst_push_*.qml` in their own step, then the whole suite: a failure in either
   fails the build; the fixture all of them share is one QML object in `tests/qml/QuickSmokeTests.cpp`, and a

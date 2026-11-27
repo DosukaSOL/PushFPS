@@ -20,7 +20,7 @@ int main() {
     for (std::size_t p = 0; p < std::size_t(Preset::Count); ++p) {
         const Map m = presetMap(Preset(p));
         std::set<std::uint16_t> seen; bool unique = true, valid = true;
-        for (const auto& slots : m) for (auto code : slots) {
+        for (const auto& inputs : m) for (auto code : inputs) {
             if (code == kNone) continue;
             if (!validCode(code)) valid = false;
             if (!seen.insert(code).second) unique = false;
