@@ -266,4 +266,13 @@ ColumnLayout {
             }
         }
     }
+    // Game presets (GamePresetsDialog.qml): the Windows tool tile as a row, with its words.
+    VRow {
+        objectName: "pushfps-game-presets-row"
+        label: qsTr("游戏预设")
+        help: qsTr("GTA VI 等游戏的推荐设置，小地图和 HUD 保持清晰")
+        hint: qsTr("GTA VI 等，HUD 保持清晰")
+        hintBelow: true
+        VButton { objectName: "pushfps-game-presets"; iconName: "gamepad"; text: qsTr("打开"); onClicked: app.openDialog("games") }
+    }
 }

@@ -10,7 +10,9 @@
 #include "veyra/sink/PushAudioTrim.h"  // pure C++, shared with the Windows build: the limit of the trim
 
 #include <QCoreApplication>
+#include <QClipboard>
 #include <QCryptographicHash>
+#include <QFile>
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QGuiApplication>
@@ -515,6 +517,14 @@ QVariant cleanPreference(const QString& key, const QVariant& value) {
     }
     if (kFlags.contains(key)) return value.typeId() == QMetaType::Bool || value.canConvert<bool>() ? QVariant(value.toBool()) : QVariant();
     if (key == QLatin1String("pushConsole")) return kConsoles.contains(value.toString()) ? QVariant(value.toString()) : QVariant();
+    if (key == QLatin1String("pushGamePresets")) {
+        // The user's own game presets (GamePresetsDialog.qml), as the Windows Preferences.cpp keeps them.
+        const QString v = value.toString();
+        if (v.size() > 131072) return {};
+        QJsonParseError error{};
+        const QJsonDocument doc = QJsonDocument::fromJson(v.toUtf8(), &error);
+        return error.error == QJsonParseError::NoError && (doc.isObject() || doc.isArray()) ? QVariant(v) : QVariant();
+    }
     if (key == QLatin1String("pushProfiles")) {
         const QString v = value.toString();
         if (v.size() > 65536) return {};
@@ -553,7 +563,8 @@ QVariant cleanPreference(const QString& key, const QVariant& value) {
 }  // namespace
 
 void AppController::loadPreferences() {
-    QStringList keys{QStringLiteral("pushTheme"), QStringLiteral("accent"), QStringLiteral("pushConsole"), QStringLiteral("pushProfiles")};
+    QStringList keys{QStringLiteral("pushTheme"), QStringLiteral("accent"), QStringLiteral("pushConsole"), QStringLiteral("pushProfiles"),
+                    QStringLiteral("pushGamePresets")};
     keys << kFlags << kFoldLists << kPercents << QStringLiteral("pushLatencySize") << QStringLiteral("pushLatencyX") << QStringLiteral("pushLatencyY") << kRanges.keys();
     for (const QString& key : keys) {
         const QVariant stored = settings_->value(QStringLiteral("ui/") + key);
@@ -604,6 +615,26 @@ void AppController::setHudLock(bool v) {
     save(QStringLiteral("hudLock"), v);
     applyEngineSettings();
     emit settingsChanged();
+}
+
+bool AppController::copyText(const QString& text) const {
+    auto* clipboard = QGuiApplication::clipboard();
+    if (!clipboard || text.size() > 1 << 20) return false;
+    clipboard->setText(text);
+    return true;
+}
+bool AppController::writeTextFile(const QUrl& url, const QString& text) const {
+    if (!url.isLocalFile() || text.size() > 1 << 20) return false;
+    QFile file(url.toLocalFile());
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) return false;
+    return file.write(text.toUtf8()) >= 0;
+}
+QString AppController::readTextFile(const QUrl& url) const {
+    if (!url.isLocalFile()) return {};
+    QFile file(url.toLocalFile());
+    // A preset is a short code or a small JSON object (PushGamePresets.js decode refuses anything longer).
+    if (!file.open(QIODevice::ReadOnly) || file.size() > 20000) return {};
+    return QString::fromUtf8(file.readAll());
 }
 
 bool AppController::startHudDetection(int samples) {

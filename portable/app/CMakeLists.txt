@@ -53,7 +53,7 @@ set(pushfps_shared_names
     Theme.qml IconData.js PushShell.js VIcon.qml VAccentFill.qml VButton.qml VSwitch.qml VSeg.qml VSelect.qml VMenu.qml
     VRow.qml VHelp.qml VSliderValue.qml VSlider.qml VCard.qml VDot.qml VTag.qml VScrollBar.qml VAccordion.qml VSubGroup.qml VEyebrow.qml PushFoldHead.qml
     PushSection.qml PushSidebar.qml PushTitleBar.qml PushStatusStrip.qml PushWordmark.qml DialogTextField.qml PushLatencyBadge.qml PushDiagnose.js
-    PushCaptureCards.js PushCrop.js)
+    PushCaptureCards.js PushCrop.js PushGamePresets.js)
 set(pushfps_shared_files)
 foreach(name IN LISTS pushfps_shared_names)
   list(APPEND pushfps_shared_files ${pushfps_shared_dir}/${name})
@@ -65,7 +65,7 @@ set(pushfps_own_files
     qml/SourcesPanel.qml qml/QuickSettings.qml qml/PictureSettings.qml qml/SoundSettings.qml qml/LiveFigures.qml
     qml/PicturePlaceholder.qml qml/PanelTitle.qml qml/UpscaleRow.qml qml/SuperResolutionCard.qml qml/ConsoleProfiles.qml qml/CheckSetupDialog.qml
     qml/CropDialog.qml qml/CropRow.qml
-    qml/HudDialog.qml)
+    qml/HudDialog.qml qml/GamePresetsDialog.qml)
 set(pushfps_qml_resources qml/logo.png qml/icon.png)
 # Every file sits next to the module's qmldir in the resources: in a folder of its own, that folder is
 # also an implicit import that offers Theme.qml as a plain type, and Qt picks one or the other at random

@@ -200,6 +200,10 @@ public:
     Q_INVOKABLE bool setHudRegions(const QVariantList& regions, double feather);
     // Automatic HUD detection (HudDetection.h, the Windows bridge's pushStartHudDetection / pushHudDetection /
     // pushCancelHudDetection): false with nothing playing.
+    // Game presets' share code (GamePresetsDialog.qml): the clipboard and a .pushfps file (a code or JSON).
+    Q_INVOKABLE bool copyText(const QString& text) const;
+    Q_INVOKABLE bool writeTextFile(const QUrl& url, const QString& text) const;
+    Q_INVOKABLE QString readTextFile(const QUrl& url) const;
     Q_INVOKABLE bool startHudDetection(int samples);
     Q_INVOKABLE void cancelHudDetection();
     Q_INVOKABLE QVariantMap hudDetection() const;

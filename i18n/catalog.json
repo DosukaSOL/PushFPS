@@ -30134,6 +30134,24 @@
    "ru": "Неподвижные элементы — мини-карта, здоровье, патроны — сохраняют пиксели консоли и не интерполируются, поэтому остаются чёткими. После автоматического распознавания рамки можно поправить перетаскиванием"
   },
   {
+   "zh": "小地图在左下，生命和专注条在左上，武器、通缉等级和金钱在右上（来自 Rockstar 发售前公开的画面）。边缘位置是估计的，开始玩后请用「调整 HUD 区域」检查一下",
+   "src": "portable/app/qml/GamePresetsDialog.qml",
+   "zh-TW": "小地圖在左下，生命和專注條在左上，武器、通緝等級和金錢在右上（來自 Rockstar 發售前公開的畫面）。邊緣位置是估計的，開始玩後請用「調整 HUD 區域」檢查一下",
+   "en": "Minimap bottom left, health and focus bars top left, weapon, wanted level and cash top right (from the footage Rockstar showed before release). The edges are estimates: check them with Adjust HUD areas once you play",
+   "ja": "ミニマップは左下、体力とフォーカスのバーは左上、武器・手配度・所持金は右上です（発売前に Rockstar が公開した映像に基づきます）。範囲の端は推定なので、プレイを始めたら「HUD の範囲を調整」で確認してください",
+   "ko": "미니맵은 왼쪽 아래, 체력과 집중 막대는 왼쪽 위, 무기, 수배 레벨, 현금은 오른쪽 위에 있습니다(Rockstar가 출시 전에 공개한 영상 기준). 가장자리는 추정값이니 플레이할 때 HUD 영역 조정으로 확인하세요",
+   "nl": "Minimap linksonder, gezondheids- en focusbalken linksboven, wapen, opsporingsniveau en geld rechtsboven (uit de beelden die Rockstar vóór de release liet zien). De randen zijn schattingen: controleer ze met HUD-gebieden aanpassen zodra je speelt",
+   "de": "Minimap unten links, Gesundheits- und Fokusleiste oben links, Waffe, Fahndungsstufe und Geld oben rechts (aus dem Material, das Rockstar vor dem Erscheinen gezeigt hat). Die Ränder sind geschätzt: Prüfe sie mit „HUD-Bereiche anpassen“, sobald du spielst",
+   "es": "Minimapa abajo a la izquierda, barras de salud y concentración arriba a la izquierda, arma, nivel de búsqueda y dinero arriba a la derecha (según las imágenes que Rockstar mostró antes del lanzamiento). Los bordes son estimaciones: compruébalos con Ajustar zonas del HUD cuando juegues",
+   "fr": "Minicarte en bas à gauche, barres de santé et de concentration en haut à gauche, arme, niveau de recherche et argent en haut à droite (d’après les images montrées par Rockstar avant la sortie). Les bords sont estimés : vérifiez-les avec Ajuster les zones du HUD une fois en jeu",
+   "it": "Minimappa in basso a sinistra, barre di salute e concentrazione in alto a sinistra, arma, livello di ricercato e denaro in alto a destra (dalle immagini mostrate da Rockstar prima dell’uscita). I bordi sono stime: controllali con Regola aree HUD quando giochi",
+   "pt-BR": "Minimapa no canto inferior esquerdo, barras de vida e foco no canto superior esquerdo, arma, nível de procurado e dinheiro no canto superior direito (das imagens que a Rockstar mostrou antes do lançamento). As bordas são estimativas: confira-as com Ajustar áreas do HUD quando jogar",
+   "tr": "Mini harita sol altta, sağlık ve odak çubukları sol üstte, silah, aranma seviyesi ve para sağ üstte (Rockstar’ın çıkıştan önce gösterdiği görüntülere göre). Kenarlar tahminidir: oynamaya başlayınca HUD alanlarını ayarla ile kontrol edin",
+   "ar": "الخريطة المصغّرة في أسفل اليسار، وأشرطة الصحة والتركيز في أعلى اليسار، والسلاح ومستوى المطاردة والمال في أعلى اليمين (من اللقطات التي عرضتها Rockstar قبل الإصدار). الحواف تقديرية: تحقّق منها باستخدام ضبط مناطق HUD عندما تلعب",
+   "pl": "Minimapa w lewym dolnym rogu, paski zdrowia i skupienia w lewym górnym, broń, poziom poszukiwania i gotówka w prawym górnym (z materiałów, które Rockstar pokazał przed premierą). Krawędzie są szacunkowe: sprawdź je przyciskiem Dostosuj obszary HUD, gdy zaczniesz grać",
+   "ru": "Мини-карта внизу слева, полосы здоровья и концентрации вверху слева, оружие, уровень розыска и деньги вверху справа (по кадрам, которые Rockstar показала до выхода). Края приблизительные: проверьте их кнопкой «Настроить области HUD», когда начнёте играть"
+  },
+  {
    "zh": "小地图在左下，生命和专注条在左上，武器、通缉等级和金钱在右上（来自 Rockstar 发售前公开的画面）。边缘位置是估计的，开始玩后请用「调整 HUD 区域」检查一下。基础版 PS5 的帧率会波动，已开启自适应倍率",
    "src": "qml/PushGamePresetsDialog.qml",
    "zh-TW": "小地圖在左下，生命和專注條在左上，武器、通緝等級和金錢在右上（來自 Rockstar 發售前公開的畫面）。邊緣位置是估計的，開始玩後請用「調整 HUD 區域」檢查一下。基礎版 PS5 的幀率會波動，已開啟自適應倍率",
@@ -32454,6 +32472,24 @@
    "ar": "تم تطبيق «%1»: %2 مناطق محمية في الواجهة. اضبطها بدقة في الوضع الاحترافي ← الجودة ← استبعاد من كل التأثيرات",
    "pl": "Zastosowano „%1”: chronione obszary HUD: %2. Dopracuj je w trybie Profesjonalnym → Jakość → Wyklucz ze wszystkich efektów",
    "ru": "Применено «%1»: защищено областей HUD: %2. Настройте их в профессиональном режиме → Качество → Исключить из всех эффектов"
+  },
+  {
+   "zh": "已应用「%1」，%2 个 HUD 区域受保护。可用「HUD 保护」微调",
+   "src": "portable/app/qml/GamePresetsDialog.qml",
+   "zh-TW": "已套用「%1」，%2 個 HUD 區域受保護。可用「HUD 保護」微調",
+   "en": "Applied “%1”: %2 HUD areas protected. Fine-tune them with HUD protection",
+   "ja": "「%1」を適用し、HUD エリア %2 個を保護しました。「HUD 保護」で調整できます",
+   "ko": "“%1”을(를) 적용했습니다: HUD 영역 %2개를 보호합니다. HUD 보호에서 세밀하게 조정하세요",
+   "nl": "“%1” toegepast: %2 HUD-gebieden beschermd. Verfijn ze met HUD-bescherming",
+   "de": "„%1“ angewendet: %2 HUD-Bereiche geschützt. Feinschliff unter HUD-Schutz",
+   "es": "«%1» aplicado: %2 áreas del HUD protegidas. Ajústalas en Protección del HUD",
+   "fr": "« %1 » appliqué : %2 zones du HUD protégées. Ajustez-les dans Protection du HUD",
+   "it": "«%1» applicato: %2 aree HUD protette. Perfezionale in Protezione HUD",
+   "pt-BR": "“%1” aplicado: %2 áreas do HUD protegidas. Ajuste-as em Proteção do HUD",
+   "tr": "“%1” uygulandı: %2 HUD alanı korunuyor. HUD koruması bölümünden ince ayar yapın",
+   "ar": "تم تطبيق «%1»: %2 مناطق محمية في الواجهة. اضبطها بدقة في حماية HUD",
+   "pl": "Zastosowano „%1”: chronione obszary HUD: %2. Dopracuj je w Ochronie HUD",
+   "ru": "Применено «%1»: защищено областей HUD: %2. Настройте их в разделе «Защита HUD»"
   },
   {
    "zh": "已应用：%1 个区域保持主机原画",

@@ -147,6 +147,7 @@ Window {
     CheckSetupDialog { id: checkSetup; parent: Overlay.overlay }
     CropDialog { id: cropDialog; parent: Overlay.overlay }
     HudDialog { id: hudDialog; parent: Overlay.overlay }
+    GamePresetsDialog { id: gamesDialog; parent: Overlay.overlay }
     // A dialog asked for by a part that cannot reach this window (app.openDialog).
     Connections {
         target: app
@@ -154,6 +155,7 @@ Window {
             if (key === "crop") cropDialog.open()
             else if (key === "diagnose") checkSetup.open()
             else if (key === "hud") hudDialog.open()
+            else if (key === "games") gamesDialog.open()
         }
     }
     // Crop and resize (PushCrop.js): for a capture card's picture, and the test pattern that stands in for
