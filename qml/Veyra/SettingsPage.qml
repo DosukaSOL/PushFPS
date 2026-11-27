@@ -1924,6 +1924,15 @@ VPage {
                             VButton { text: qsTr("全部还原"); ghost: true; onClicked: veyra.resetShortcuts() }
                         }
                     }
+                    // PushFPS: the keyboard and mouse as a controller for the console (PushKbmDialog.qml).
+                    VGroup {
+                        VRow {
+                            objectName: "set-kbm"
+                            label: qsTr("鼠标和键盘")
+                            hint: qsTr("用鼠标和键盘玩主机游戏：GTA 6、GTA V 和 Red Dead Redemption 2 的键位，每个键都可以改")
+                            VButton { objectName: "set-kbm-open"; text: qsTr("按键设置"); onClicked: veyra.navigate("kbm") }
+                        }
+                    }
                     VGroup {
                         Repeater {
                             model: [

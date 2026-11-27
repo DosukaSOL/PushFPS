@@ -8,6 +8,7 @@ import "PushGamePresets.js" as Presets
 import "PushCompareClip.js" as CompareClip
 import "PushCrop.js" as Crop
 import "PushUpscale.js" as Upscale
+import "PushKbm.js" as Kbm
 
 // PushFPS quick setup: the choices most console players make, above the detailed
 // controls. Every control here only sets existing settings (frame generation on/off,
@@ -1217,6 +1218,39 @@ VGroup {
                 objectName: "pushfps-cadence-fix"
                 text: qsTr("改为 60→30")
                 onClicked: { veyra.contentRate = 5; veyra.logUi("push-quick", "content rate 60->30 from the cadence hint") }
+            }
+        }
+        // PushFPS: the keyboard and mouse as a controller (PushKbmDialog.qml, bridge/PushKbm.cpp). The switch
+        // and the way to the layout; the console only ever sees a controller.
+        VRow {
+            id: kbmRow
+            objectName: "pushfps-kbm-row"
+            readonly property var cfg: Kbm.config(String(veyra.preferences.pushKbm || ""), veyra.pushKbmDefaults())
+            readonly property var kbmState: veyra.pushKbm || ({})
+            readonly property string releaseName: veyra.pushKbmInputName(kbmRow.cfg.release)
+            label: qsTr("鼠标和键盘")
+            help: qsTr("用这台电脑的鼠标和键盘玩主机游戏：主机看到的是一个手柄，手柄也可以同时用（例如用手柄开车，下车后用鼠标瞄准）。用于 PS5 远程游玩、开着“用远程游玩控制 PS5”的采集卡，以及 Xbox 串流。")
+            hint: {
+                switch (Kbm.status(kbmRow.kbmState, kbmRow.cfg.on)) {
+                case "off": return qsTr("已关闭")
+                case "using": return qsTr("正在使用：主机收到的是鼠标和键盘 · 按 %1 交还").arg(kbmRow.releaseName)
+                case "ready": return qsTr("可以开始：点击画面或按 %1").arg(kbmRow.releaseName)
+                }
+                return qsTr("用于 PS5 远程游玩、开着“用远程游玩控制 PS5”的采集卡，以及 Xbox 串流")
+            }
+            hintBelow: true
+            RowLayout {
+                spacing: 8
+                VButton {
+                    objectName: "pushfps-kbm-setup"
+                    text: qsTr("按键设置")
+                    onClicked: veyra.navigate("kbm")
+                }
+                VSwitch {
+                    objectName: "pushfps-kbm"
+                    checked: kbmRow.cfg.on
+                    onToggled: v => veyra.setPreference("pushKbm", Kbm.text(Kbm.changed(kbmRow.cfg, "on", v)))
+                }
             }
         }
     }

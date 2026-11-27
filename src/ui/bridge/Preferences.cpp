@@ -509,6 +509,15 @@ bool QmlPlayerBridge::setPreference(const QString& key, const QVariant& value) {
         const QJsonDocument doc = QJsonDocument::fromJson(v.toUtf8(), &error);
         if (error.error != QJsonParseError::NoError || !doc.isObject()) return false;
         stored = v;
+    } else if (key == QLatin1String("pushKbm")) {
+        // PushFPS: the keyboard and mouse as a controller (PushKbm.cpp reads it; remoteplay/PushKbm.h puts
+        // every value back in its range). A JSON object, size-capped and parsed here.
+        const QString v = value.toString();
+        if (v.size() > 8192) return false;
+        QJsonParseError error{};
+        const QJsonDocument doc = QJsonDocument::fromJson(v.toUtf8(), &error);
+        if (error.error != QJsonParseError::NoError || !doc.isObject()) return false;
+        stored = v;
     } else if (key == QLatin1String("pushFlow2")) {
         // PushFPS: PushFlow 2's experiment switches (pushflow/PushFlow2.h): a small JSON object of yes/no
         // values. Only text that reads as that is stored; what does not would read as "everything off".
@@ -643,6 +652,8 @@ void QmlPlayerBridge::applyPreference(const QString& key) {
     if(key==QLatin1String("virtualCameraFps")&&virtualCameraEnabled())setVirtualCameraEnabled(true);
     // PushFPS local control: listen, close, or move to another port (PushControl.cpp).
     if(key==QLatin1String("pushControl")||key==QLatin1String("pushControlPort"))pushApplyControl();
+    // PushFPS: the keyboard and mouse as a controller (PushKbm.cpp).
+    if(key==QLatin1String("pushKbm"))pushApplyKbm();
     if(key==QLatin1String("captureAudioMonitor"))
         impl_->engine.setCaptureAudioMonitoring(impl_->prefBool("captureAudioMonitor",true));
     // The replay buffer re-arms with what a recording would use.

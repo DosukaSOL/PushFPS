@@ -225,6 +225,27 @@ Item {
         }
         // 4.3.1: a capture card connected from the new home page plays there; whoever would rather land in
         // Professional mode says so in the Connecting section. Legacy always goes there and has no such row.
+        function test_mouse_and_keyboard_row_switches_and_opens_the_layout() {
+            const row = control("pushfps-kbm-row"), sw = control("pushfps-kbm")
+            veyra.pushKbm = ({built: true, on: false, available: false, captured: false, target: "", releaseName: "F12", listenControl: -1, listenSlot: -1})
+            verify(quick.sectionItems.find(s => s.sectionId === "setup").holds("pushfps-kbm-row"), "it stands in the console and game section")
+            verify(!sw.checked, "off until switched on")
+            compare(row.hint, qsTr("已关闭"))
+            sw.toggled(true)
+            const saved = JSON.parse(veyra.preferences.pushKbm)
+            verify(saved.on === true && saved.map.cross[0] === 32, "switched on with the GTA 6 keys")
+            tryVerify(function() { return sw.checked }, 3000)
+            veyra.pushKbm = Object.assign({}, veyra.pushKbm, {available: true})
+            compare(row.hint, qsTr("可以开始：点击画面或按 %1").arg("F12"))
+            let page = ""
+            const opened = function(p) { page = p }
+            veyra.navigate.connect(opened)
+            control("pushfps-kbm-setup").clicked()
+            veyra.navigate.disconnect(opened)
+            compare(page, "kbm", "the layout opens in its own window")
+            sw.toggled(false)
+            verify(JSON.parse(veyra.preferences.pushKbm).on === false)
+        }
         function test_professional_mode_on_connecting_is_a_choice_of_the_new_design() {
             const row = control("pushfps-connect-pro-row"), sw = control("pushfps-connect-pro")
             verify(!Theme.modern && !row.visible, "Legacy: no row, it has no picture on its home page")

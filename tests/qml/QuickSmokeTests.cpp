@@ -504,6 +504,36 @@ QtObject {
     property var moonlight: null
     property var xbox: null
     property var ps5Control: ({enabled: false})
+    // PushFPS mouse and keyboard (tst_push_kbm.qml). The maps are remoteplay/PushKbm.h's presets.
+    property var pushKbm: ({built: true, on: false, available: false, captured: false, target: "", releaseName: "F12", listenControl: -1, listenSlot: -1})
+    property int kbmCaptures: 0
+    property var kbmListened: []
+    signal pushKbmBinding(int control, int slot, int code)
+    function pushKbmCapture(on) { kbmCaptures++ }
+    function pushKbmListen(control, slot) { kbmListened = [control, slot]; pushKbm = Object.assign({}, pushKbm, {listenControl: control, listenSlot: slot}) }
+    function pushKbmStopListening() { pushKbm = Object.assign({}, pushKbm, {listenControl: -1, listenSlot: -1}) }
+    function pushKbmInputName(code) {
+        const names = {32: "Space", 27: "Esc", 160: "Left Shift", 162: "Left Ctrl", 164: "Left Alt", 123: "F12", 9: "Tab",
+                       257: "Left mouse button", 258: "Right mouse button", 259: "Middle mouse button", 260: "Mouse back", 261: "Mouse forward",
+                       272: "Wheel up", 273: "Wheel down"}
+        return names[code] || (code >= 65 && code <= 90 ? String.fromCharCode(code) : "Key " + code)
+    }
+    function pushKbmControls() {
+        return ["cross", "circle", "square", "triangle", "up", "down", "left", "right", "l1", "r1", "l2", "r2", "l3", "r3",
+                "options", "view", "create", "home", "moveUp", "moveDown", "moveLeft", "moveRight", "walk"]
+    }
+    function pushKbmPresetMap(id) {
+        const c = ch => ch.charCodeAt(0)
+        const base = {up: [38, 0], down: [40, 0], left: [37, 0], right: [39, 0], l1: [9, 0], r1: [c("Q"), 0], l2: [258, 0], r2: [257, 0],
+                      r3: [c("C"), 259], create: [0, 0], home: [0, 0], moveUp: [c("W"), 0], moveDown: [c("S"), 0], moveLeft: [c("A"), 0],
+                      moveRight: [c("D"), 0], walk: [164, 0], options: [27, c("P")], view: [c("M"), 0]}
+        if (id === "gta6") return Object.assign(base, {cross: [32, 0], circle: [162, 0], square: [c("R"), 0], triangle: [c("F"), c("E")], l3: [160, 0]})
+        if (id === "gta6classic") return Object.assign(base, {cross: [160, 0], circle: [c("R"), 0], square: [32, 0], triangle: [c("F"), c("E")], l3: [162, 0]})
+        if (id === "rdr2") return Object.assign(base, {cross: [160, 0], circle: [c("R"), c("F")], square: [32, 0], triangle: [c("E"), 0], l3: [162, 0],
+                                                       up: [c("H"), 38], left: [c("J"), 37], right: [c("B"), 39], options: [27, c("M")], view: [c("V"), 0]})
+        return ({})
+    }
+    function pushKbmDefaults() { return {on: false, preset: "gta6", sens: 50, vert: 100, dz: 15, curve: 100, invert: false, release: 123, map: pushKbmPresetMap("gta6")} }
     property var recentFiles: []
     property string remotePlayHost: ""
     property int captureDialogs: 0

@@ -115,7 +115,7 @@ void QmlPlayerBridge::setupXbox() {
                         auto& m = *impl_;
                         if (!m.snapshot.xboxActive) { m.releasePad(Impl::PadXbox); m.xboxTimer->stop(); return; }
                         const bool focused = QGuiApplication::focusWindow() != nullptr;
-                        m.engine.xboxController(m.controller.poll(focused));
+                        m.engine.xboxController(m.kbmMix(m.controller.poll(focused), Impl::KbmTarget::Xbox));
                         m.controller.feedback(m.engine.xboxFeedback(), focused);
                     });
                 }
@@ -490,7 +490,7 @@ bool QmlPlayerBridge::ps5Connect() {
                         const bool focused = QGuiApplication::focusWindow() != nullptr;
                         // PushFPS latency test: its own presses go out instead of the pad.
                         if (j.latency.active) { j.engine.remotePlayController(pushLatencyPress()); return; }
-                        j.engine.remotePlayController(j.controller.poll(focused));
+                        j.engine.remotePlayController(j.kbmMix(j.controller.poll(focused), Impl::KbmTarget::Ps5));
                         j.controller.feedback(j.engine.remotePlayFeedback(), focused);
                     } else {
                         j.engine.remotePlayController({}); j.releasePad(Impl::PadPs5); j.controllerTimer->stop();
@@ -731,7 +731,8 @@ void QmlPlayerBridge::tickPs5() {
 #ifdef VEYRA_ENABLE_XBOX
         playing = playing || s.xboxActive;
 #endif
-        const bool wanted = (i.padUsers & (Impl::PadPs5 | Impl::PadXbox)) != 0;
+        // Not while the keyboard and mouse stand in for a controller (PushKbm.cpp).
+        const bool wanted = (i.padUsers & (Impl::PadPs5 | Impl::PadXbox)) != 0 && !(i.kbm && i.kbm->settings().on);
         if (i.padMissing.due(playing, wanted, i.controller.connected(), remoteplay::monotonic100ns()))
             emit notice(tr("这台电脑上没有找到手柄。请用 USB 线或蓝牙把手柄连接到这台电脑：连接在主机上的手柄在这里读不到。"), false);
     }
@@ -836,7 +837,7 @@ void QmlPlayerBridge::startPs5Control(bool restart) {
                 j.ps5ControlTimer->stop(); j.releasePad(Impl::PadPs5Control); return;
             }
             const bool focused = QGuiApplication::focusWindow() != nullptr || j.prefBool("ps5ControlBackground", false);
-            j.engine.remotePlayController(j.controller.poll(focused));
+            j.engine.remotePlayController(j.kbmMix(j.controller.poll(focused), Impl::KbmTarget::Ps5Control));
             j.controller.feedback(j.engine.remotePlayFeedback(), focused);
         });
     }

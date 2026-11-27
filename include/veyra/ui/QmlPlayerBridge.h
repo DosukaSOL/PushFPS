@@ -223,6 +223,9 @@ class QmlPlayerBridge : public QObject {
     // enabled, background, state: off|starting|connected|pin|recovering|failed|
     // nopair, message, keepaliveFps (-1 = not yet), pad, gyro, touch}
     Q_PROPERTY(QVariantMap ps5Control READ ps5Control NOTIFY ps5ControlChanged)
+    // PushFPS: the keyboard and mouse as a controller (ui/PushKbmCapture.h, bridge/PushKbm.cpp).
+    // {built, on, available, captured, target: ""|ps5|ps5control|xbox, releaseName, listenControl, listenSlot}
+    Q_PROPERTY(QVariantMap pushKbm READ pushKbm NOTIFY pushKbmChanged)
     // PC streaming (Moonlight / Sunshine): hosts, pairing, apps and stream settings live in
     // `moonlight` (null when the build has no Moonlight); capture state and the stats overlay here.
     Q_PROPERTY(QObject* moonlight READ moonlightModel CONSTANT)
@@ -884,6 +887,17 @@ public:
     // key: enabled | background (saved preferences ps5CaptureControl / ps5ControlBackground).
     Q_INVOKABLE void ps5ControlSet(const QString& key, const QVariant& value);
     Q_INVOKABLE void ps5ControlRestart();
+    // PushFPS mouse and keyboard: take or give back (a click on the picture), ask for the next key for a
+    // control's input slot (answered by pushKbmBinding), an input's name, a preset's inputs by control id,
+    // the default settings, and the controls in their order.
+    Q_INVOKABLE void pushKbmCapture(bool on);
+    Q_INVOKABLE void pushKbmListen(int control, int slot);
+    Q_INVOKABLE void pushKbmStopListening();
+    Q_INVOKABLE QString pushKbmInputName(int code) const;
+    Q_INVOKABLE QVariantMap pushKbmPresetMap(const QString& id) const;
+    Q_INVOKABLE QVariantMap pushKbmDefaults() const;
+    Q_INVOKABLE QStringList pushKbmControls() const;
+    QVariantMap pushKbm() const;
     QString remotePlayHost() const;
     void setRemotePlayHost(const QString& value);
     QString remotePlayPin() const;
@@ -1690,6 +1704,8 @@ signals:
     void nodeAnchorsChanged();
     void ps5Changed();
     void ps5ControlChanged();
+    void pushKbmChanged();
+    void pushKbmBinding(int control, int slot, int code);
     void moonlightUiChanged();
     void imageBatchChanged();
     void audioDevicesChanged();
@@ -1840,6 +1856,11 @@ private:
     bool captureCardLive() const;
     void tickMoonlight();
     void tickXbox();
+    void setupKbm();
+    void pushApplyKbm();
+    void tickKbm();
+    void kbmSend(bool movement);
+    void refreshKbmState();
     void tickPlaylist();
 #ifdef VEYRA_ENABLE_XBOX
     void setupXbox();
