@@ -23,6 +23,7 @@ class QQmlEngine;
 class QSettings;
 
 namespace pushfps {
+class HudDetection;
 
 class AppController : public QObject {
     Q_OBJECT
@@ -41,6 +42,11 @@ class AppController : public QObject {
     Q_PROPERTY(bool hudLock READ hudLock WRITE setHudLock NOTIFY settingsChanged)
     // Crosshair Hold (portable/core CrosshairHold.h): off unless switched on.
     Q_PROPERTY(bool crosshairHold READ crosshairHold WRITE setCrosshairHold NOTIFY settingsChanged)
+    // HUD protection boxes (the Windows build's "Exclude all effects" regions, its pushSetExclusionRegions):
+    // at most four {left, top, right, bottom, ellipse} as shares of the picture, kept as they were cleaned;
+    // FrameView shows the older real frame inside them in every generated frame. Set by setHudRegions.
+    Q_PROPERTY(QVariantList hudRegions READ hudRegions NOTIFY settingsChanged)
+    Q_PROPERTY(double hudFeather READ hudFeather NOTIFY settingsChanged)
     Q_PROPERTY(bool subtitleHold READ subtitleHold WRITE setSubtitleHold NOTIFY settingsChanged)
     Q_PROPERTY(bool removeDuplicates READ removeDuplicates WRITE setRemoveDuplicates NOTIFY settingsChanged)
     Q_PROPERTY(int quality READ quality WRITE setQuality NOTIFY settingsChanged)
@@ -116,6 +122,8 @@ public:
     void setHudLock(bool v);
     bool crosshairHold() const { return crosshairHold_; }
     void setCrosshairHold(bool v);
+    QVariantList hudRegions() const { return hudRegions_; }
+    double hudFeather() const { return hudFeather_; }
     bool subtitleHold() const { return subtitleHold_; }
     void setSubtitleHold(bool v);
     bool removeDuplicates() const { return dedup_; }
@@ -188,6 +196,17 @@ public:
     Q_INVOKABLE void resetPicture();
     // A dialog of the main window asked for by a part that cannot reach it ("crop"): Main.qml opens it.
     Q_INVOKABLE void openDialog(const QString& key) { emit dialogRequested(key); }
+    // The boxes and their feather (0..64 picture pixels); an empty list turns HUD protection off. Always accepted.
+    Q_INVOKABLE bool setHudRegions(const QVariantList& regions, double feather);
+    // Automatic HUD detection (HudDetection.h, the Windows bridge's pushStartHudDetection / pushHudDetection /
+    // pushCancelHudDetection): false with nothing playing.
+    // Game presets' share code (GamePresetsDialog.qml): the clipboard and a .pushfps file (a code or JSON).
+    Q_INVOKABLE bool copyText(const QString& text) const;
+    Q_INVOKABLE bool writeTextFile(const QUrl& url, const QString& text) const;
+    Q_INVOKABLE QString readTextFile(const QUrl& url) const;
+    Q_INVOKABLE bool startHudDetection(int samples);
+    Q_INVOKABLE void cancelHudDetection();
+    Q_INVOKABLE QVariantMap hudDetection() const;
     Q_INVOKABLE void clearError();
 
     // Self-test (command line) access.
@@ -235,6 +254,9 @@ private:
     QString upscaleSizes_;
     bool lowLatency_ = false, autoConnect_ = false, applyingLowLatency_ = false, savedCameraFound_ = false;
     bool crosshairHold_ = false;
+    QVariantList hudRegions_;
+    HudDetection* hudDetection_ = nullptr;
+    double hudFeather_ = 8.0;
     bool subtitleHold_ = false;   // Subtitle Hold: off unless switched on (not everyone uses subtitles)
     bool autoConnectPending_ = false;
     QByteArray audioInId_, audioOutId_;

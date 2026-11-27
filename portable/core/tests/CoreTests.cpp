@@ -274,6 +274,52 @@ void testInterpolate() {
     CHECK(!interpolate(a, Bgra(10, 10), f, k, nullptr, 0.5f, out1), "size mismatch");
 }
 
+// HUD protection boxes (Protection.h): inside a box a generated frame is the older real frame, outside it is
+// what it was; the feather softens the edge inwards, an ellipse leaves its box's corners alone; the weight is the
+// Windows NrProtection's.
+void testProtection() {
+    const Scene bg(320, 192, 80, 3), fg(64, 64, 8, 4);
+    const MotionEstimator est;
+    const Bgra a = render(bg, fg, 0, 0, 100, 60, 64), b = render(bg, fg, 8, 2, 76, 60, 64);
+    const Pyramid pa = Pyramid::of(lumaOf(a), 4), pb = Pyramid::of(lumaOf(b), 4);
+    const MotionField f = est.estimate(pa, pb), k = est.estimate(pb, pa);
+    Bgra plain, boxed;
+    interpolate(a, b, f, k, nullptr, 0.5f, plain, 2);
+    // A box over the top left quarter (0..160 x 0..96 px), hard edge.
+    const ProtectBox list[] = {{0.5f, 0.5f, 0.f, 0.f, false}, {0.2f, 0.2f, 0.201f, 0.9f, false}};  // swapped, and one too thin
+    Protection p = Protection::clean(list, 2, 0.f);
+    CHECK(p.count == 1 && p.boxes[0].left == 0.f && p.boxes[0].right == 0.5f, "boxes are put in order, a too thin one dropped");
+    interpolate(a, b, f, k, nullptr, 0.5f, boxed, 2, {}, nullptr, nullptr, &p);
+    int inside = 0, outside = 0;
+    for (int y = 0; y < 192; ++y)
+        for (int x = 0; x < 320; ++x) {
+            const bool in = x < 160 && y < 96;
+            if (in && std::memcmp(boxed.pixel(x, y), a.pixel(x, y), 3) != 0) ++inside;
+            if (!in && std::memcmp(boxed.pixel(x, y), plain.pixel(x, y), 4) != 0) ++outside;
+        }
+    CHECK(inside == 0, "inside the box the older real frame (%d px differ)", inside);
+    CHECK(outside == 0, "outside it the generated frame as it was (%d px differ)", outside);
+    // Real frames are never touched.
+    Bgra real;
+    interpolate(a, b, f, k, nullptr, 1.f, real, 2, {}, nullptr, nullptr, &p);
+    CHECK(real.px == b.px, "a real frame is shown as it is");
+    // Feather: full weight 8 px inside the edge, half at about 4, none at the edge.
+    p.feather = 8.f;
+    CHECK(p.weight(80.5f, 48.5f, 320, 192) == 1.f && p.weight(159.5f, 48.5f, 320, 192) < 0.02f &&
+          std::abs(p.weight(156.f, 48.5f, 320, 192) - 0.5f) < 0.01f && p.weight(170.f, 48.5f, 320, 192) == 0.f, "the feather");
+    // Ellipse: the centre is held, the box's corner is not.
+    const ProtectBox round[] = {{0.25f, 0.25f, 0.75f, 0.75f, true}};
+    const Protection e = Protection::clean(round, 1, 0.f);
+    CHECK(e.weight(160.f, 96.f, 320, 192) == 1.f && e.weight(81.f, 49.f, 320, 192) == 0.f, "the ellipse leaves its box's corners");
+    // No boxes: nothing is different.
+    Protection none;
+    interpolate(a, b, f, k, nullptr, 0.5f, boxed, 2, {}, nullptr, nullptr, &none);
+    CHECK(boxed.px == plain.px, "no boxes, no change");
+    const ProtectBox bad[] = {{std::nanf(""), -3.f, 7.f, 0.5f, false}};
+    const Protection q = Protection::clean(bad, 1, std::nanf(""));
+    CHECK(q.count == 1 && q.boxes[0].left == 0.f && q.boxes[0].right == 1.f && q.boxes[0].top == 0.f && q.feather == 8.f, "values out of range are put in range");
+}
+
 void testDedup() {
     Gray a(64, 36, 50);
     for (int i = 0; i < 64 * 36; ++i) a.px[i] = uint8_t((i * 37) % 200);
@@ -937,6 +983,7 @@ int main(int argc, char** argv) {
     testPyramid();
     testMotion();
     testInterpolate();
+    testProtection();
     testDedup();
     testHudLock();
     testCrosshairHold();

@@ -23,6 +23,8 @@ Popup {
     width: Math.min(640, (parent ? parent.width : 640) - 40)
     height: Math.min(implicitHeight, (parent ? parent.height : 600) - 60)
     padding: 20
+    leftPadding: 13
+    rightPadding: 13
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
     property int sampleCount: 3
@@ -214,15 +216,11 @@ Popup {
         border.width: 1
         border.color: Theme.stroke
     }
-    contentItem: Flickable {
-        implicitHeight: body.implicitHeight
-        contentHeight: body.implicitHeight
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
-        ScrollBar.vertical: VScrollBar {}
+    // RowList keeps a row's hover light inside the list (its `room` comes out of this dialog's side padding).
+    contentItem: RowList {
         ColumnLayout {
             id: body
-            width: parent.width
+            Layout.fillWidth: true
             spacing: 0
             Text {
                 text: qsTr("检查我的设置")

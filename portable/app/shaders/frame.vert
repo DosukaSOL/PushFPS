@@ -5,7 +5,7 @@ layout(location = 0) in vec4 qt_VertexPosition;
 layout(location = 1) in vec2 qt_VertexTexCoord;
 layout(location = 0) out vec2 vTex;
 
-// Must match frame.frag and FrameView.cpp (std140, 208 bytes).
+// Must match frame.frag and FrameView.cpp (std140, 288 bytes).
 layout(std140, binding = 0) uniform buf {
     mat4 qt_Matrix;
     float qt_Opacity;
@@ -27,6 +27,8 @@ layout(std140, binding = 0) uniform buf {
     vec4 subFlags;
     vec4 compare;
     vec4 compareLine;
+    vec4 boxes[4];
+    vec4 boxFlags;
 };
 
 void main() {

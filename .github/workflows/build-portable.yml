@@ -141,6 +141,14 @@ jobs:
           QSG_RHI_BACKEND: opengl
         run: xvfb-run -a -s "-screen 0 1920x1080x24" ./build/app/PushFPS --nischeck --save build/nischeck.png
 
+      # Every page and dialog of the real window: no row's hover light (VRow.qml, 7 px past the row) may be cut
+      # by a list that clips it or run under its scroll bar (PushFPS --layoutcheck; dialogs use RowList.qml).
+      - name: Layout check (Xvfb)
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          QSG_RHI_BACKEND: opengl
+        run: xvfb-run -a -s "-screen 0 1920x1080x24" ./build/app/PushFPS --layoutcheck --lang en
+
       - name: Screenshots
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'

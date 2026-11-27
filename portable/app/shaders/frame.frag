@@ -29,6 +29,10 @@ layout(std140, binding = 0) uniform buf {
     // no picture controls); w > 0.5 = the line is drawn here (not when NIS draws it after upscaling).
     vec4 compare;
     vec4 compareLine;  // the line in picture u: dark edges x .. y, the white core z .. w
+    // HUD protection boxes (portable/core Protection.h): left, top, right, bottom as shares of the picture,
+    // left and right swapped for the ellipse inscribed in the box (as the Windows build's constants).
+    vec4 boxes[4];
+    vec4 boxFlags;     // x = how many boxes, y = the feather in picture pixels
 };
 
 layout(binding = 1) uniform sampler2D texA;
@@ -93,6 +97,28 @@ vec3 takeFrom(sampler2D frame, sampler2D filled, sampler2D filledSub, vec2 q) {
     return own;
 }
 
+// The Windows build's NrProtection (shaders/NrProtection.hlsli), as Protection::weight: the strongest box wins.
+float protectWeight(vec2 pixel) {
+    float protection = 0.0;
+    for (int i = 0; i < 4; ++i) {
+        if (float(i) >= boxFlags.x) break;
+        vec4 r = boxes[i] * vec4(frameSize, frameSize);
+        bool ellipse = r.z < r.x;
+        if (ellipse) r = vec4(r.z, r.y, r.x, r.w);
+        if (r.z <= r.x || r.w <= r.y) continue;
+        float edge;
+        if (ellipse) {
+            vec2 centre = (r.xy + r.zw) * 0.5;
+            vec2 axis = max((r.zw - r.xy) * 0.5, vec2(1e-3));
+            edge = (1.0 - length((pixel - centre) / axis)) * min(axis.x, axis.y);
+        } else {
+            edge = min(min(pixel.x - r.x, r.z - pixel.x), min(pixel.y - r.y, r.w - pixel.y));
+        }
+        protection = max(protection, boxFlags.y > 0.0 ? smoothstep(0.0, boxFlags.y, edge) : (edge >= 0.0 ? 1.0 : 0.0));
+    }
+    return protection;
+}
+
 void main() {
     vec2 p = vTex * frameSize;
     vec3 color;
@@ -139,6 +165,8 @@ void main() {
             vec3 held = t < 0.5 ? sampleAt(texA, p) : sampleAt(texB, p);
             c = mix(c, held, lockWeight);
         }
+        // HUD protection: the older real frame, over everything else.
+        if (boxFlags.x > 0.5) c = mix(c, sampleAt(texA, p), protectWeight(p));
         color = c;
     }
     color /= 255.0;

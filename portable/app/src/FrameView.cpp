@@ -54,8 +54,11 @@ struct Uniforms {
     float subFlags[4];   // [0] > 0.5 = held
     float compare[4];    // the live comparison: [0] on, [1] .. [2] the original's part (picture u), [3] > 0.5 = draw the line
     float compareLine[4];  // the line in picture u: dark edges [0] .. [1], white core [2] .. [3]
+    float boxes[4][4];     // HUD protection: left, top, right, bottom (shares; left and right swapped = ellipse)
+    float boxFlags[4];     // [0] how many boxes, [1] the feather in picture pixels
 };
-static_assert(sizeof(Uniforms) == 208, "std140 layout of frame.vert/frame.frag");
+static_assert(sizeof(Uniforms) == 288, "std140 layout of frame.vert/frame.frag");
+static_assert(offsetof(Uniforms, boxes) == 208, "vec4 alignment");
 static_assert(offsetof(Uniforms, compare) == 176, "vec4 alignment");
 static_assert(offsetof(Uniforms, subZone) == 144, "vec4 alignment");
 static_assert(offsetof(Uniforms, holdZone) == 128, "vec4 alignment");
@@ -210,6 +213,29 @@ FrameView::Placement FrameView::place(double w, double h, double fw, double fh, 
 void FrameView::setKeep(const QRectF& v) {
     const QRectF k = v.isValid() && v.width() > 0 && v.height() > 0 ? v : QRectF(0, 0, 1, 1);
     if (k != keep_) { keep_ = k; emit pictureChanged(); update(); }
+}
+void FrameView::setProtect(const QVariantList& v) {
+    ProtectBox list[Protection::kMaxBoxes];
+    int n = 0;
+    for (const QVariant& item : v) {
+        if (n >= Protection::kMaxBoxes) break;
+        const QVariantMap r = item.toMap();
+        list[n++] = {float(r.value(QStringLiteral("left")).toDouble()), float(r.value(QStringLiteral("top")).toDouble()),
+                     float(r.value(QStringLiteral("right")).toDouble()), float(r.value(QStringLiteral("bottom")).toDouble()),
+                     r.value(QStringLiteral("ellipse")).toBool()};
+    }
+    const Protection next = Protection::clean(list, n, protection_.feather);
+    protect_ = v;
+    protection_ = next;
+    emit pictureChanged();
+    update();
+}
+void FrameView::setProtectFeather(qreal v) {
+    const float f = std::isfinite(v) ? std::clamp(float(v), 0.f, 64.f) : 8.f;
+    if (f == protection_.feather) return;
+    protection_.feather = f;
+    emit pictureChanged();
+    update();
 }
 void FrameView::setZoom(qreal v) {
     v = std::isfinite(v) ? std::clamp(v, 0.05, 16.0) : 1.0;
@@ -446,6 +472,18 @@ QSGNode* FrameView::updatePaintNode(QSGNode* old, UpdatePaintNodeData*) {
     u.subZone[2] = subHeld ? float(pick.subHold->w) : 1.f;
     u.subZone[3] = subHeld ? float(pick.subHold->h) : 1.f;
     u.subFlags[0] = subHeld ? 1.f : 0.f;
+    // HUD protection boxes, only while frames are generated (a real frame is shown as it is).
+    if (interpolating && protection_.any()) {
+        for (int i = 0; i < protection_.count; ++i) {
+            const ProtectBox& b = protection_.boxes[size_t(i)];
+            u.boxes[i][0] = b.ellipse ? b.right : b.left;
+            u.boxes[i][1] = b.top;
+            u.boxes[i][2] = b.ellipse ? b.left : b.right;
+            u.boxes[i][3] = b.bottom;
+        }
+        u.boxFlags[0] = float(protection_.count);
+        u.boxFlags[1] = protection_.feather;
+    }
 
     const qreal dpr = win->effectiveDevicePixelRatio();
     // The live comparison. In window pixels (the line's width is the Windows build's, for the window's

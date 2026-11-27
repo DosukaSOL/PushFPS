@@ -146,12 +146,16 @@ Window {
     // Check my setup (CheckSetupDialog.qml), opened from the home page, Professional mode and Settings.
     CheckSetupDialog { id: checkSetup; parent: Overlay.overlay }
     CropDialog { id: cropDialog; parent: Overlay.overlay }
+    HudDialog { id: hudDialog; parent: Overlay.overlay }
+    GamePresetsDialog { id: gamesDialog; parent: Overlay.overlay }
     // A dialog asked for by a part that cannot reach this window (app.openDialog).
     Connections {
         target: app
         function onDialogRequested(key) {
             if (key === "crop") cropDialog.open()
             else if (key === "diagnose") checkSetup.open()
+            else if (key === "hud") hudDialog.open()
+            else if (key === "games") gamesDialog.open()
         }
     }
     // Crop and resize (PushCrop.js): for a capture card's picture, and the test pattern that stands in for
@@ -181,6 +185,9 @@ Window {
                                        (1000 - root.crop.t - root.crop.b) / 1000) : Qt.rect(0, 0, 1, 1)
         zoom: root.cropShown ? root.crop.zoom / 100 : 1
         shift: root.cropShown ? Qt.point(root.crop.x / 1000, root.crop.y / 1000) : Qt.point(0, 0)
+        // HUD protection boxes (HudDialog.qml, game presets): the older real frame inside them in generated frames.
+        protect: app.hudRegions
+        protectFeather: app.hudFeather
         // Upscaling with NVIDIA Image Scaling (NisNode.h); the Windows build's names.
         upscale: app.srEnabled && app.videoSrQuality === 6
         upscaleTarget: app.srTargetIndex

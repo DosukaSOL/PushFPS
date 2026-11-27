@@ -3,13 +3,16 @@
 #include "AppController.h"
 
 #include "FrameView.h"
+#include "HudDetection.h"
 #include "Settings.h"
 #include "VideoFrames.h"
 
 #include "veyra/sink/PushAudioTrim.h"  // pure C++, shared with the Windows build: the limit of the trim
 
 #include <QCoreApplication>
+#include <QClipboard>
 #include <QCryptographicHash>
+#include <QFile>
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QGuiApplication>
@@ -47,6 +50,26 @@ QString formatLabel(const QCameraFormat& f) {
     return QStringLiteral("%1×%2 · %3 Hz · %4").arg(f.resolution().width()).arg(f.resolution().height())
         .arg(QString::number(double(f.maxFrameRate()), 'f', f.maxFrameRate() == float(int(f.maxFrameRate())) ? 0 : 2)).arg(pixel);
 }
+// HUD protection boxes as the Windows bridge's pushSetExclusionRegions takes them: in range, in order, at most
+// four, none thinner than half a per cent.
+QVariantList cleanHudRegions(const QVariantList& list) {
+    QVariantList out;
+    for (const QVariant& item : list) {
+        if (out.size() >= 4) break;
+        const QVariantMap r = item.toMap();
+        const auto num = [&](const char* key) {
+            const double v = r.value(QString::fromLatin1(key)).toDouble();
+            return std::isfinite(v) ? std::clamp(v, 0.0, 1.0) : 0.0;
+        };
+        const double l = std::min(num("left"), num("right")), t = std::min(num("top"), num("bottom"));
+        const double rr = std::max(num("left"), num("right")), b = std::max(num("top"), num("bottom"));
+        if (rr - l < 0.005 || b - t < 0.005) continue;
+        out << QVariantMap{{QStringLiteral("left"), l}, {QStringLiteral("top"), t}, {QStringLiteral("right"), rr},
+                           {QStringLiteral("bottom"), b}, {QStringLiteral("ellipse"), r.value(QStringLiteral("ellipse")).toBool()}};
+    }
+    return out;
+}
+double cleanFeather(double v) { return std::isfinite(v) ? std::clamp(v, 0.0, 64.0) : 8.0; }
 }  // namespace
 
 AppController::AppController(QQmlEngine* qml, CatalogTranslator* translator, QString startPage, QObject* parent)
@@ -58,6 +81,12 @@ AppController::AppController(QQmlEngine* qml, CatalogTranslator* translator, QSt
     hud_ = s.value(QStringLiteral("hudLock"), false).toBool();
     crosshairHold_ = s.value(QStringLiteral("crosshairHold"), false).toBool();
     subtitleHold_ = s.value(QStringLiteral("subtitleHold"), false).toBool();
+    {
+        const QJsonDocument boxes = QJsonDocument::fromJson(s.value(QStringLiteral("hudRegions")).toString().toUtf8());
+        const QVariantList stored = boxes.isArray() ? boxes.toVariant().toList() : QVariantList();
+        hudRegions_ = cleanHudRegions(stored);
+        hudFeather_ = cleanFeather(s.value(QStringLiteral("hudFeather"), 8.0).toDouble());
+    }
     dedup_ = s.value(QStringLiteral("removeDuplicates"), true).toBool();
     quality_ = std::clamp(s.value(QStringLiteral("quality"), 1).toInt(), 0, 1);
     audioOn_ = s.value(QStringLiteral("audioPassthrough"), true).toBool();
@@ -488,6 +517,14 @@ QVariant cleanPreference(const QString& key, const QVariant& value) {
     }
     if (kFlags.contains(key)) return value.typeId() == QMetaType::Bool || value.canConvert<bool>() ? QVariant(value.toBool()) : QVariant();
     if (key == QLatin1String("pushConsole")) return kConsoles.contains(value.toString()) ? QVariant(value.toString()) : QVariant();
+    if (key == QLatin1String("pushGamePresets")) {
+        // The user's own game presets (GamePresetsDialog.qml), as the Windows Preferences.cpp keeps them.
+        const QString v = value.toString();
+        if (v.size() > 131072) return {};
+        QJsonParseError error{};
+        const QJsonDocument doc = QJsonDocument::fromJson(v.toUtf8(), &error);
+        return error.error == QJsonParseError::NoError && (doc.isObject() || doc.isArray()) ? QVariant(v) : QVariant();
+    }
     if (key == QLatin1String("pushProfiles")) {
         const QString v = value.toString();
         if (v.size() > 65536) return {};
@@ -526,7 +563,8 @@ QVariant cleanPreference(const QString& key, const QVariant& value) {
 }  // namespace
 
 void AppController::loadPreferences() {
-    QStringList keys{QStringLiteral("pushTheme"), QStringLiteral("accent"), QStringLiteral("pushConsole"), QStringLiteral("pushProfiles")};
+    QStringList keys{QStringLiteral("pushTheme"), QStringLiteral("accent"), QStringLiteral("pushConsole"), QStringLiteral("pushProfiles"),
+                    QStringLiteral("pushGamePresets")};
     keys << kFlags << kFoldLists << kPercents << QStringLiteral("pushLatencySize") << QStringLiteral("pushLatencyX") << QStringLiteral("pushLatencyY") << kRanges.keys();
     for (const QString& key : keys) {
         const QVariant stored = settings_->value(QStringLiteral("ui/") + key);
@@ -577,6 +615,49 @@ void AppController::setHudLock(bool v) {
     save(QStringLiteral("hudLock"), v);
     applyEngineSettings();
     emit settingsChanged();
+}
+
+bool AppController::copyText(const QString& text) const {
+    auto* clipboard = QGuiApplication::clipboard();
+    if (!clipboard || text.size() > 1 << 20) return false;
+    clipboard->setText(text);
+    return true;
+}
+bool AppController::writeTextFile(const QUrl& url, const QString& text) const {
+    if (!url.isLocalFile() || text.size() > 1 << 20) return false;
+    QFile file(url.toLocalFile());
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) return false;
+    return file.write(text.toUtf8()) >= 0;
+}
+QString AppController::readTextFile(const QUrl& url) const {
+    if (!url.isLocalFile()) return {};
+    QFile file(url.toLocalFile());
+    // A preset is a short code or a small JSON object (PushGamePresets.js decode refuses anything longer).
+    if (!file.open(QIODevice::ReadOnly) || file.size() > 20000) return {};
+    return QString::fromUtf8(file.readAll());
+}
+
+bool AppController::startHudDetection(int samples) {
+    if (!hudDetection_) hudDetection_ = new HudDetection([this] { return engine_; }, this);
+    return hudDetection_->start(samples);
+}
+void AppController::cancelHudDetection() {
+    if (hudDetection_) hudDetection_->cancel();
+}
+QVariantMap AppController::hudDetection() const {
+    return hudDetection_ ? hudDetection_->status() : QVariantMap();
+}
+
+bool AppController::setHudRegions(const QVariantList& regions, double feather) {
+    const QVariantList clean = cleanHudRegions(regions);
+    const double f = cleanFeather(feather);
+    if (clean == hudRegions_ && f == hudFeather_) return true;
+    hudRegions_ = clean;
+    hudFeather_ = f;
+    save(QStringLiteral("hudRegions"), QString::fromUtf8(QJsonDocument::fromVariant(clean).toJson(QJsonDocument::Compact)));
+    save(QStringLiteral("hudFeather"), f);
+    emit settingsChanged();
+    return true;
 }
 
 void AppController::setCrosshairHold(bool v) {

@@ -64,6 +64,16 @@ ColumnLayout {
         opacity: enabled ? 1 : 0.5
         VSwitch { objectName: "home-pacing"; checked: app.pacingRepair; onToggled: on => app.pacingRepair = on }
     }
+    // HUD protection (HudDialog.qml): the Windows tool tile as a row, with its words.
+    VRow {
+        visible: quick.shows("hud")
+        objectName: "pushfps-hud-row"
+        label: qsTr("HUD 保护")
+        help: qsTr("自动找出小地图和 HUD，让它们不补帧；方框可以手动修正")
+        hint: app.hudRegions.length > 0 ? qsTr("已应用：%1 个区域保持主机原画").arg(app.hudRegions.length) : qsTr("自动识别，可手动修正")
+        hintBelow: true
+        VButton { objectName: "pushfps-hud"; iconName: "scan"; text: qsTr("打开"); onClicked: app.openDialog("hud") }
+    }
     VRow {
         visible: quick.shows("hud")
         label: qsTr("实时 HUD 锁定")

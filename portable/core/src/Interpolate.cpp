@@ -48,7 +48,7 @@ void sampleBilinear(const Bgra& image, float x, float y, float out[4]) {
 
 bool interpolate(const Bgra& a, const Bgra& b, const MotionField& forward, const MotionField& backward,
                  const Gray* mask, float t, Bgra& out, int threads, InterpolateSettings s, const HoldPair* hold,
-                 const HoldPair* subtitles) {
+                 const HoldPair* subtitles, const Protection* protect) {
     if (a.empty() || a.width != b.width || a.height != b.height) return false;
     if (!std::isfinite(t)) t = 0;
     t = std::clamp(t, 0.f, 1.f);
@@ -75,6 +75,7 @@ bool interpolate(const Bgra& a, const Bgra& b, const MotionField& forward, const
         zones[zoneCount++] = z;
     }
     const bool useHold = zoneCount > 0;
+    const bool useBoxes = protect && protect->any();
     // A sample whose four pixels all lie in a zone comes from that zone's filled copy; any other from the frame.
     auto take = [&](const Bgra& frame, bool second, float sx, float sy, float o[4]) {
         for (int i = 0; i < zoneCount; ++i) {
@@ -127,6 +128,9 @@ bool interpolate(const Bgra& a, const Bgra& b, const MotionField& forward, const
                     shows = float(level) / float(kShowsFull);
                     break;
                 }
+                // HUD protection: the older real frame, over everything else (Windows: exclusion after HUD lock).
+                const float box = useBoxes ? protect->weight(px, py, a.width, a.height) : 0.f;
+                const uint8_t* older = a.pixel(x, y);
                 for (int c = 0; c < 3; ++c) {
                     const float c1 = a1[c] + (b1[c] - a1[c]) * t;
                     const float c2 = a2[c] + (b2[c] - a2[c]) * t;
@@ -138,6 +142,7 @@ bool interpolate(const Bgra& a, const Bgra& b, const MotionField& forward, const
                         v = real + shows * (v - given);
                     }
                     v += (float(held[c]) - v) * lock;
+                    v += (float(older[c]) - v) * box;
                     o[c] = uint8_t(std::clamp(v + 0.5f, 0.f, 255.f));
                 }
                 o[3] = 255;
