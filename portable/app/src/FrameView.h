@@ -30,6 +30,9 @@ class FrameView : public QQuickItem {
     // How a picture of another shape than the window is shown: 0 whole with bars, 1 the window filled
     // and the picture's sides cut, 2 stretched.
     Q_PROPERTY(int fill READ fill WRITE setFill NOTIFY pictureChanged)
+    // Ambient fill (the Windows build's pushAmbientFill, portable/core Ambient.h): where the picture leaves
+    // bars, a soft, dimmed copy of it covers the item behind it. Never beside a comparison, as on Windows.
+    Q_PROPERTY(bool ambient READ ambient WRITE setAmbient NOTIFY pictureChanged)
     // Crop and resize (the Windows build's PreviewView crop, preferences in PushCrop.js): `keep` is the part
     // of the picture shown, as shares of it; that part is fitted, filled or stretched as `fill` says, made
     // `zoom` times as large and moved by `shift` (shares of this item's width and height). With the whole
@@ -98,6 +101,12 @@ public:
     void setCompare(int v);
     void setCompareSplit(qreal v);
     void setCompareSwap(bool v);
+    bool ambient() const { return ambient_; }
+    void setAmbient(bool v);
+    // Where ambient fill's copy stands (`rect`, cut to the item) and the part of it drawn there (`source`,
+    // shares): the copy at the size that covers a w x h item with a fw x fh picture's shape, centred. Empty
+    // when the picture, drawn at `shown`, leaves no bars (engine/PushAmbient.h's rules).
+    static Placement ambientPlace(double w, double h, double fw, double fh, const QRectF& shown);
     void setBrightness(qreal v);
     void setContrast(qreal v);
     void setSaturation(qreal v);
@@ -128,6 +137,9 @@ signals:
 
 protected:
     QSGNode* updatePaintNode(QSGNode* old, UpdatePaintNodeData*) override;
+    // The picture's own node (old: the one drawn before, which the caller deletes when another comes back),
+    // and the pick and the rectangle it was drawn from.
+    QSGNode* pictureNode(QSGNode* old, veyra::portable::Pick& pick, QRectF& shown);
     void itemChange(ItemChange change, const ItemChangeData& value) override;
     void releaseResources() override;
 
@@ -153,6 +165,7 @@ private:
     int compare_ = 0;
     qreal compareSplit_ = 0.5;
     bool compareSwap_ = false;
+    bool ambient_ = false;
     bool upscale_ = false;
     int upscaleTarget_ = 2;
     qreal sharpness_ = 0.5;

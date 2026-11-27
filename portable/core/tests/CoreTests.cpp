@@ -2,12 +2,14 @@
 // Copyright (C) 2026 DosukaSOL and the PushFPS contributors. Part of PushFPS, a modified version of Veyra.
 // Tests for the Linux / macOS core: conversion, motion, interpolation, duplicate removal, HUD lock and
 // the engine's timing, plus abuse (odd sizes, clocks going back, settings changed mid-stream).
+#include "veyra/portable/Ambient.h"
 #include "veyra/portable/Convert.h"
 #include "veyra/portable/Dedup.h"
 #include "veyra/portable/Engine.h"
 #include "veyra/portable/HudLock.h"
 #include "veyra/portable/Interpolate.h"
 #include "veyra/portable/Motion.h"
+#include "veyra/engine/PushAmbient.h"  // the Windows build's bars and cover rules and gain
 
 #include <algorithm>
 #include <atomic>
@@ -903,6 +905,7 @@ void testEngineAbuse() {
             s.targetFps = double(rng() % 3) * 60.0;
             s.pacingRepair = rng() % 2;
             s.hudLock = rng() % 2;
+            s.ambient = rng() % 2;
             s.quality = int(rng() % 2);
             s.removeDuplicates = rng() % 3 != 0;
             e.setSettings(s);
@@ -959,6 +962,16 @@ void testEngineHardContent() {
 void benchmark() {
     const Scene bg(1920, 1080, 64, 41), fg(200, 200, 8, 42);
     const Bgra a = render(bg, fg, 0, 0, 800, 400, 200), b = render(bg, fg, 12, 4, 760, 400, 200);
+    {   // Ambient fill's copy, once a real frame, at 1080p and 4K.
+        const Bgra big(3840, 2160);
+        const auto s0 = std::chrono::steady_clock::now();
+        for (int i = 0; i < 20; ++i) (void)veyra::portable::ambient::make(a, 0.6f);
+        const auto s1 = std::chrono::steady_clock::now();
+        for (int i = 0; i < 20; ++i) (void)veyra::portable::ambient::make(big, 0.6f);
+        const auto s2 = std::chrono::steady_clock::now();
+        std::printf("ambient: 1080p %.2f ms, 4K %.2f ms\n", std::chrono::duration<double, std::milli>(s1 - s0).count() / 20,
+                    std::chrono::duration<double, std::milli>(s2 - s1).count() / 20);
+    }
     auto t0 = std::chrono::steady_clock::now();
     const Pyramid pa = Pyramid::of(lumaOf(a), 4), pb = Pyramid::of(lumaOf(b), 4);
     auto t1 = std::chrono::steady_clock::now();
@@ -977,6 +990,111 @@ void benchmark() {
                 ms(t0, t1), ms(t1, t2), ms(t2, t3), ms(t3, t4), std::thread::hardware_concurrency());
 }
 
+// Ambient fill (Ambient.h): the small, blurred, dimmed copy of a frame behind the picture.
+void testAmbient() {
+    using namespace veyra::portable::ambient;
+    const float gain = veyra::engine::kPushAmbientEncodedGain;
+    {   // One colour stays that colour, dimmed.
+        Bgra f(1920, 1080);
+        for (size_t i = 0; i < f.px.size(); i += 4) { f.px[i] = 200; f.px[i + 1] = 100; f.px[i + 2] = 50; }
+        const Bgra a = make(f, gain);
+        CHECK(a.width == kWidth && a.height == kHeight, "size %dx%d", a.width, a.height);
+        bool same = true;
+        for (int y = 0; y < a.height; ++y)
+            for (int x = 0; x < a.width; ++x) {
+                const uint8_t* p = a.pixel(x, y);
+                same = same && p[0] == 120 && p[1] == 60 && p[2] == 30 && p[3] == 255;
+            }
+        CHECK(same, "uniform frame %d %d %d", a.pixel(0, 0)[0], a.pixel(0, 0)[1], a.pixel(0, 0)[2]);
+    }
+    {   // Every small pixel is the mean of its own share: a frame coloured by share comes out exactly so,
+        // at 1080p (20 x 20 pixels a share) and at 4K (40 x 40, 16 x 16 samples of it).
+        for (int scale : {1, 2}) {
+            Bgra f(1920 * scale, 1080 * scale);
+            for (int y = 0; y < f.height; ++y)
+                for (int x = 0; x < f.width; ++x) {
+                    uint8_t* p = f.pixel(x, y);
+                    const int cx = x / (20 * scale), cy = y / (20 * scale);
+                    p[0] = uint8_t(cx * 2); p[1] = uint8_t(cy * 4); p[2] = uint8_t((cx + cy) & 255);
+                }
+            const Small s = average(f);
+            bool exact = s.width == kWidth && s.height == kHeight;
+            for (int cy = 0; exact && cy < kHeight; ++cy)
+                for (int cx = 0; cx < kWidth; ++cx) {
+                    const float* v = s.bgr.data() + (size_t(cy) * kWidth + size_t(cx)) * 3;
+                    exact = exact && v[0] == float(cx * 2) && v[1] == float(cy * 4) && v[2] == float((cx + cy) & 255);
+                }
+            CHECK(exact, "shares at scale %d", scale);
+        }
+    }
+    {   // The blur in two passes is the shader's square kernel (PushAmbientBlur.hlsl), edges included.
+        std::mt19937 rng(7);
+        Small s{kWidth, kHeight, std::vector<float>(size_t(kWidth) * kHeight * 3)};
+        for (float& v : s.bgr) v = float(rng() % 256);
+        const Small b = blur(s);
+        double worst = 0;
+        for (int y = 0; y < kHeight; ++y)
+            for (int x = 0; x < kWidth; ++x) {
+                double sum[3] = {0, 0, 0}, weight = 0;
+                for (int dy = -kRadius; dy <= kRadius; ++dy)
+                    for (int dx = -kRadius; dx <= kRadius; ++dx) {
+                        const double w = std::exp(-double(dx * dx + dy * dy) / (2.0 * kSigma * kSigma));
+                        const int sx = std::clamp(x + dx, 0, kWidth - 1), sy = std::clamp(y + dy, 0, kHeight - 1);
+                        for (int c = 0; c < 3; ++c) sum[c] += s.bgr[(size_t(sy) * kWidth + size_t(sx)) * 3 + size_t(c)] * w;
+                        weight += w;
+                    }
+                for (int c = 0; c < 3; ++c)
+                    worst = std::max(worst, std::abs(sum[c] / weight - b.bgr[(size_t(y) * kWidth + size_t(x)) * 3 + size_t(c)]));
+            }
+        CHECK(worst < 1e-3, "blur against the square kernel: %.6f", worst);
+    }
+    {   // A hard edge becomes a soft one: bright left, dark right, no step larger than a sixth of it.
+        Bgra f(1280, 720);
+        for (int y = 0; y < f.height; ++y)
+            for (int x = 0; x < f.width; ++x) { uint8_t* p = f.pixel(x, y); p[0] = p[1] = p[2] = x < 640 ? 250 : 0; }
+        const Bgra a = make(f, 1.f);
+        int biggest = 0;
+        for (int x = 1; x < a.width; ++x) biggest = std::max(biggest, std::abs(int(a.pixel(x, 27)[1]) - int(a.pixel(x - 1, 27)[1])));
+        CHECK(a.pixel(0, 27)[1] > 240 && a.pixel(kWidth - 1, 27)[1] < 10, "ends %d %d", a.pixel(0, 27)[1], a.pixel(kWidth - 1, 27)[1]);
+        CHECK(biggest < 250 / 6, "softened edge: step %d", biggest);
+    }
+    {   // A frame smaller than the small picture, odd sizes, no gain, a broken gain, an empty frame.
+        Bgra f(51, 29);
+        for (size_t i = 0; i < f.px.size(); i += 4) f.px[i] = f.px[i + 1] = f.px[i + 2] = 90;
+        const Bgra a = make(f, 1.f);
+        CHECK(a.width == kWidth && a.pixel(kWidth - 1, kHeight - 1)[0] == 90 && a.pixel(0, 0)[2] == 90, "small frame");
+        CHECK(make(f, 0.f).pixel(5, 5)[1] == 0, "no gain");
+        CHECK(make(f, std::nanf("")).pixel(5, 5)[1] == 0, "a gain that is not a number");
+        CHECK(make(Bgra{}, gain).empty() && average(Bgra{}).width == 0 && blur(Small{}).width == 0, "empty");
+        Bgra cut(64, 64);
+        cut.px.resize(10);
+        CHECK(make(cut, gain).empty(), "a frame shorter than its size");
+    }
+    {   // The Windows rules the app uses: a 16:9 picture fitted in a 21:9 window leaves bars; covering takes
+        // the window's width; a picture that fills the window leaves none.
+        CHECK(veyra::engine::pushAmbientBars(2560, 1080, 1920, 1080), "21:9 has bars");
+        CHECK(!veyra::engine::pushAmbientBars(1920, 1080, 1920, 1080), "16:9 has none");
+        const auto [w, h] = veyra::engine::pushAmbientCover(2560, 1080, 1920, 1080);
+        CHECK(std::abs(w - 2560) < 0.01f && std::abs(h - 1440) < 0.01f, "cover %.1f x %.1f", double(w), double(h));
+    }
+    {   // Through the engine: off, no copy; on, every pick carries the copies of the frames it shows.
+        const Scene bg(160, 90, 40, 31), fg(16, 16, 2, 32);
+        EngineSettings s;
+        s.frameGeneration = false;
+        Engine e(s);
+        int64_t now = 1'000'000;
+        e.push(render(bg, fg, 0, 0, 10, 10, 8), now);
+        CHECK(e.pick(now).valid() && !e.pick(now).ambientA, "no copy with ambient fill off");
+        s.ambient = true;
+        e.setSettings(s);
+        now += 33'000'000;
+        e.push(render(bg, fg, 4, 0, 10, 10, 8), now);
+        const Pick p = e.pick(now);
+        CHECK(p.valid() && p.ambientA && p.ambientA == p.ambientB, "a copy with it on");
+        CHECK(p.ambientA && p.ambientA->px == make(*p.a, gain).px, "the copy is make() of the frame shown");
+    }
+}
+
 int main(int argc, char** argv) {
     const bool bench = argc > 1 && std::string(argv[1]) == "--bench";
     testConvert();
@@ -984,6 +1102,7 @@ int main(int argc, char** argv) {
     testMotion();
     testInterpolate();
     testProtection();
+    testAmbient();
     testDedup();
     testHudLock();
     testCrosshairHold();

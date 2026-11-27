@@ -8,6 +8,7 @@
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
+import "Fill.js" as Fill
 
 Rectangle {
     id: root
@@ -231,6 +232,7 @@ Rectangle {
                 Block {
                     blockId: "quality"; title: qsTr("画质"); tab: root.tab; shown: root.blockShown("quality"); onFoldToggled: open => root.setFolded("quality", !open)
                     UpscaleRow {}
+                    FillRow {}
                     CropRow {}
                     SuperResolutionCard { Layout.topMargin: 6; Layout.bottomMargin: 6 }
                 }
@@ -241,14 +243,19 @@ Rectangle {
                 Block {
                     blockId: "display"; title: qsTr("显示"); tab: root.tab; shown: root.blockShown("display"); onFoldToggled: open => root.setFolded("display", !open)
                     VRow {
+                        id: aspectRow
                         label: qsTr("画面比例")
-                        hint: app.fillMode === 1 ? qsTr("填满窗口，超出部分裁掉") : ""
+                        readonly property string fillId: Fill.current(app.fillMode, app.preferences.pushAmbientFill === true)
+                        hint: fillId === "crop" ? qsTr("填满窗口，超出部分裁掉")
+                            : fillId === "ambient" ? qsTr("完整显示，不裁切也不变形；黑边换成画面本身柔和、变暗的延伸") : ""
                         VSelect {
                             objectName: "display-aspect"
-                            // The preview's three ways (FrameView::fill) under the Windows build's names.
-                            options: [{ id: "0", label: qsTr("适应") }, { id: "1", label: qsTr("填充裁切") }, { id: "2", label: qsTr("拉伸铺满") }]
-                            value: (options.find(o => o.id === String(app.fillMode)) || options[0]).label
-                            onPicked: id => app.fillMode = Number(id)
+                            // The preview's three ways (FrameView::fill) under the Windows build's names, and
+                            // ambient fill (Fill.js), which the Windows row offers only on a wide screen.
+                            options: [{ id: "fit", label: qsTr("适应") }, { id: "ambient", label: qsTr("氛围填充") },
+                                      { id: "crop", label: qsTr("填充裁切") }, { id: "stretch", label: qsTr("拉伸铺满") }]
+                            value: (options.find(o => o.id === aspectRow.fillId) || options[0]).label
+                            onPicked: id => Fill.choose(app, id)
                         }
                     }
                     // The live comparison, as the Windows build's Display tab (ProDisplayPanel.qml): the

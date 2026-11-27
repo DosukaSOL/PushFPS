@@ -22,6 +22,8 @@
 #include "VeyraShim.h"
 #include "VideoFrames.h"
 
+#include "veyra/engine/PushAmbient.h"  // pure C++, shared with the Windows build
+#include "veyra/portable/Ambient.h"
 #include "veyra/portable/Interpolate.h"
 
 #include <QCommandLineParser>
@@ -287,6 +289,10 @@ int gpucheck(QGuiApplication& app, const QString& savePath) {
     pick->fields = fields;
     pick->hold = held;
     pick->subHold = heldText;
+    // Ambient fill's copies (Ambient.h): drawn only where the picture leaves bars, so not in the first,
+    // 16:9 grab; the second grab makes the window 4:3 and compares the bars with the CPU reference below.
+    pick->ambientA = std::make_shared<const Bgra>(veyra::portable::ambient::make(a, veyra::engine::kPushAmbientEncodedGain));
+    pick->ambientB = std::make_shared<const Bgra>(veyra::portable::ambient::make(b, veyra::engine::kPushAmbientEncodedGain));
     FrameView::setFixedPick(pick);
     // Two HUD protection boxes (Protection.h), a rectangle and an ellipse, away from the crosshair and the text:
     // inside them the shader's picture has to be the older real frame, as the reference's is.
@@ -317,6 +323,7 @@ int gpucheck(QGuiApplication& app, const QString& savePath) {
     if (auto* frame = view.rootObject() ? view.rootObject()->findChild<FrameView*>() : nullptr) {
         frame->setProtectFeather(6.0);
         frame->setProtect(boxVariants);
+        frame->setAmbient(true);
     }
     // The rectangle's inside (6 px of feather left out), for the comparison that says the shader held it.
     const QRect boxRect(int(0.62f * w) + 7, int(0.06f * h) + 7, int(0.32f * w) - 14, int(0.34f * h) - 14);
@@ -353,13 +360,54 @@ int gpucheck(QGuiApplication& app, const QString& savePath) {
                              "crosshair hold: round the crosshair %8 dB against the reference that holds it, %9 dB against the one that does not (%10 px held)\n"
                              "subtitle hold: round the text %11 dB against the reference that holds it, %12 dB against the one that does not (%13 px held)\n"
                              "hud boxes: inside the box %14 dB against real frame A, %15 dB against the picture without boxes\n"
-                             "diagnostics: upside down vs reference %6 dB, GPU vs real frame B %7 dB\nresult: %5")
+                             "diagnostics: upside down vs reference %6 dB, GPU vs real frame B %7 dB\n%5")
                   .arg(int(api)).arg(match, 0, 'f', 1).arg(againstA, 0, 'f', 1).arg(refVsA, 0, 'f', 1)
-                  .arg(code == 0 ? QStringLiteral("PASS") : (software ? QStringLiteral("FAIL (software renderer, no shaders)") : QStringLiteral("FAIL (mismatch)")))
+                  .arg(software ? QStringLiteral("result: FAIL (software renderer, no shaders)") : code == 0 ? QStringLiteral("picture: PASS") : QStringLiteral("picture: FAIL (mismatch)"))
                   .arg(flipped, 0, 'f', 1).arg(againstB, 0, 'f', 1).arg(aimHeld, 0, 'f', 1).arg(aimPlain, 0, 'f', 1).arg(held ? held->held : 0)
                   .arg(textHeld, 0, 'f', 1).arg(textPlain, 0, 'f', 1).arg(heldText ? heldText->held : 0)
                   .arg(boxHeld, 0, 'f', 1).arg(boxPlainDb, 0, 'f', 1));
-        app.exit(code);
+        if (software) { app.exit(code); return; }
+        // Ambient fill: a 4:3 window leaves bars above and below the 16:9 picture. What the bars show has to
+        // be the two copies blended by the phase, at the size that covers the window (engine/PushAmbient.h),
+        // sampled as a linear texture is; and not black, as they are without it.
+        const int bh = 480;
+        view.resize(w, bh);
+        QTimer::singleShot(1000, &app, [&, bh] {
+            const QImage bars = view.grabWindow().convertToFormat(QImage::Format_RGB32).scaled(w, bh);
+            const auto [cw, ch] = veyra::engine::pushAmbientCover(float(w), float(bh), float(w), float(h));
+            const Bgra& sa = *pick->ambientA;
+            const Bgra& sb = *pick->ambientB;
+            const auto texel = [&](int x, int y, int c) {
+                x = std::clamp(x, 0, sa.width - 1);
+                y = std::clamp(y, 0, sa.height - 1);
+                return 0.5 * sa.pixel(x, y)[c] + 0.5 * sb.pixel(x, y)[c];
+            };
+            QImage ref(w, bh, QImage::Format_RGB32);
+            for (int y = 0; y < bh; ++y)
+                for (int x = 0; x < w; ++x) {
+                    // The window's pixel centre in the cover, then in the copy's texels.
+                    const double u = ((x + 0.5) - (w / 2.0 - cw / 2.0)) / cw * sa.width - 0.5;
+                    const double v = ((y + 0.5) - (bh / 2.0 - ch / 2.0)) / ch * sa.height - 0.5;
+                    const int x0 = int(std::floor(u)), y0 = int(std::floor(v));
+                    const double fx = u - x0, fy = v - y0;
+                    int rgb[3];
+                    for (int c = 0; c < 3; ++c)
+                        rgb[c] = int(std::lround((texel(x0, y0, c) * (1 - fx) + texel(x0 + 1, y0, c) * fx) * (1 - fy) +
+                                                 (texel(x0, y0 + 1, c) * (1 - fx) + texel(x0 + 1, y0 + 1, c) * fx) * fy));
+                    ref.setPixel(x, y, qRgb(rgb[2], rgb[1], rgb[0]));
+                }
+            // The bars, two pixels away from the picture's edge.
+            const int bar = (bh - h) / 2 - 2;
+            const QImage top = bars.copy(0, 0, w, bar), bottom = bars.copy(0, bh - bar, w, bar);
+            const double barsDb = std::min(psnr(top, ref.copy(0, 0, w, bar), 0), psnr(bottom, ref.copy(0, bh - bar, w, bar), 0));
+            QImage black(w, bar, QImage::Format_RGB32);
+            black.fill(Qt::black);
+            const double againstBlack = std::max(psnr(top, black, 0), psnr(bottom, black, 0));
+            const bool ambientOk = barsDb > 32.0 && barsDb > againstBlack + 3.0;
+            print(QStringLiteral("ambient fill: the bars %1 dB against the reference, %2 dB against black bars\nresult: %3")
+                      .arg(barsDb, 0, 'f', 1).arg(againstBlack, 0, 'f', 1).arg(code == 0 && ambientOk ? QStringLiteral("PASS") : QStringLiteral("FAIL (mismatch)")));
+            app.exit(code == 0 && ambientOk ? 0 : 4);
+        });
     });
     return app.exec();
 }

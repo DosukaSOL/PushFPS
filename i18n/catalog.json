@@ -13177,6 +13177,24 @@
    "ru": "Консоль"
   },
   {
+   "zh": "主机只输出 16:9 画面，带鱼屏两侧会空出来。这里选择怎么处理：留黑边、用画面本身的柔和延伸填满（氛围填充）、裁掉上下铺满，或者拉伸铺满。游戏本身不会显示更宽的视野",
+   "src": "portable/app/qml/FillRow.qml",
+   "zh-TW": "主機只輸出 16:9 畫面，超寬螢幕兩側會空出來。這裡選擇怎麼處理：留黑邊、用畫面本身的柔和延伸填滿（氛圍填充）、裁掉上下鋪滿，或者拉伸鋪滿。遊戲本身不會顯示更寬的視野",
+   "en": "A console only sends a 16:9 picture, so an ultrawide screen has room left at the sides. Choose what to do with it: leave black bars, fill them with a soft extension of the picture itself (Ambient), fill the screen by cutting the top and bottom, or fill it by stretching. The game does not show a wider view either way",
+   "ja": "ゲーム機が出力するのは 16:9 の映像だけなので、ウルトラワイド画面では左右が余ります。その部分の扱いを選びます：黒帯のまま、映像自体をやわらかく広げて埋める（アンビエント）、上下を切って画面いっぱいにする、引き伸ばして画面いっぱいにする。どれを選んでもゲームの視野は広がりません",
+   "ko": "콘솔은 16:9 영상만 보내므로 울트라와이드 화면에서는 양옆에 공간이 남습니다. 그 공간을 어떻게 할지 고르세요. 검은 띠로 두거나, 영상 자체를 부드럽게 늘린 것으로 채우거나(앰비언트), 위아래를 잘라 화면을 채우거나, 늘여서 채울 수 있습니다. 어느 쪽이든 게임이 더 넓은 시야를 보여 주지는 않습니다",
+   "nl": "Een console stuurt alleen een 16:9-beeld, dus op een ultrabreed scherm blijft er ruimte over aan de zijkanten. Kies wat je daarmee doet: zwarte balken laten staan, ze vullen met een zachte voortzetting van het beeld zelf (Ambient), het scherm vullen door boven en onder af te snijden, of het vullen door uit te rekken. Het spel toont in geen geval een breder beeld",
+   "de": "Eine Konsole sendet nur ein 16:9-Bild, daher bleibt auf einem Ultrawide-Bildschirm an den Seiten Platz frei. Wählen Sie, was damit geschieht: schwarze Balken lassen, sie mit einer weichen Fortsetzung des Bildes selbst füllen (Ambient), den Bildschirm füllen, indem oben und unten abgeschnitten wird, oder ihn durch Strecken füllen. Das Spiel zeigt in keinem Fall ein breiteres Sichtfeld",
+   "es": "Una consola solo envía una imagen 16:9, así que en una pantalla ultrapanorámica queda espacio a los lados. Elige qué hacer con él: dejar barras negras, llenarlas con una extensión suave de la propia imagen (Ambient), llenar la pantalla recortando arriba y abajo, o llenarla estirando la imagen. En ningún caso el juego muestra una vista más amplia",
+   "fr": "Une console n'envoie qu'une image 16:9 : sur un écran ultra-large, il reste de la place sur les côtés. Choisissez quoi en faire : laisser des bandes noires, les remplir d'un prolongement doux de l'image elle-même (Ambient), remplir l'écran en coupant le haut et le bas, ou le remplir en étirant l'image. Dans tous les cas, le jeu n'affiche pas un champ de vision plus large",
+   "it": "Una console invia solo un'immagine 16:9, quindi su uno schermo ultrawide resta spazio ai lati. Scegli cosa farne: lasciare le bande nere, riempirle con un'estensione morbida dell'immagine stessa (Ambiente), riempire lo schermo tagliando sopra e sotto, oppure riempirlo allungando l'immagine. In nessun caso il gioco mostra una visuale più ampia",
+   "pt-BR": "Um console só envia uma imagem 16:9, então uma tela ultrawide fica com espaço sobrando nas laterais. Escolha o que fazer com ele: deixar barras pretas, preenchê-las com uma extensão suave da própria imagem (Ambiente), preencher a tela cortando em cima e embaixo, ou preenchê-la esticando a imagem. Em nenhum caso o jogo mostra uma visão mais ampla",
+   "tr": "Konsol yalnızca 16:9 görüntü gönderir, bu yüzden ultra geniş bir ekranda yanlarda boşluk kalır. Bu boşlukla ne yapılacağını seçin: siyah şeritleri bırakmak, onları görüntünün yumuşak bir uzantısıyla doldurmak (Ambient), üstü ve altı keserek ekranı doldurmak ya da görüntüyü gererek doldurmak. Oyun her durumda daha geniş bir görüş göstermez",
+   "ar": "ترسل منصة الألعاب صورة بنسبة 16:9 فقط، لذا تبقى مساحة فارغة على جانبي الشاشة فائقة العرض. اختر ما تفعله بها: إبقاء الأشرطة السوداء، أو ملؤها بامتداد ناعم للصورة نفسها (Ambient)، أو ملء الشاشة بقص الجزأين العلوي والسفلي، أو ملئها بالتمديد. لا تعرض اللعبة مجال رؤية أوسع في أي حال",
+   "pl": "Konsola wysyła tylko obraz 16:9, więc na ekranie ultrapanoramicznym po bokach zostaje wolne miejsce. Wybierz, co z nim zrobić: zostawić czarne pasy, wypełnić je miękkim przedłużeniem samego obrazu (Otoczenie), wypełnić ekran, obcinając górę i dół, albo wypełnić go przez rozciągnięcie. W żadnym przypadku gra nie pokazuje szerszego widoku",
+   "ru": "Консоль выдаёт только картинку 16:9, поэтому на сверхшироком экране по бокам остаётся место. Выберите, что с ним делать: оставить чёрные полосы, заполнить их мягким продолжением самой картинки (Подсветка), заполнить экран, обрезав верх и низ, или заполнить его растяжением. Игра в любом случае не показывает более широкий обзор"
+  },
+  {
    "zh": "主机只输出 16:9 画面，带鱼屏两侧会空出来。这里选择怎么处理：留黑边、用画面本身的柔和延伸填满（氛围填充）、裁掉上下铺满，或者拉伸铺满。游戏本身不会显示更宽的视野。录像和直播不受影响",
    "src": "qml/PushQuickSetup.qml",
    "zh-TW": "主機只輸出 16:9 畫面，超寬螢幕兩側會空出來。這裡選擇怎麼處理：留黑邊、用畫面本身的柔和延伸填滿（氛圍填充）、裁掉上下鋪滿，或者拉伸鋪滿。遊戲本身不會顯示更寬的視野。錄影和直播不受影響",

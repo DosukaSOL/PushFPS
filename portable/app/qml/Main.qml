@@ -181,6 +181,8 @@ Window {
         saturation: app.saturation
         gamma: app.gamma
         fill: app.fillMode
+        // Ambient fill (FillRow.qml, Windows pref pushAmbientFill): only with bars; FrameView leaves it out beside a comparison.
+        ambient: root.prefs.pushAmbientFill === true && app.fillMode === 0
         keep: root.cropShown ? Qt.rect(root.crop.l / 1000, root.crop.t / 1000, (1000 - root.crop.l - root.crop.r) / 1000,
                                        (1000 - root.crop.t - root.crop.b) / 1000) : Qt.rect(0, 0, 1, 1)
         zoom: root.cropShown ? root.crop.zoom / 100 : 1

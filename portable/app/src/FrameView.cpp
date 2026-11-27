@@ -4,6 +4,7 @@
 
 #include "NisNode.h"
 
+#include "veyra/engine/PushAmbient.h"      // pure C++, shared with the Windows build: bars and cover
 #include "veyra/engine/PushCompareLine.h"  // pure C++, shared with the Windows build: the line
 #include "VideoFrames.h"
 
@@ -13,6 +14,7 @@
 #include <QSGImageNode>
 #include <QSGMaterial>
 #include <QSGMaterialShader>
+#include <QSGOpacityNode>
 #include <QSGRendererInterface>
 #include <QSGTexture>
 #include <QScreen>
@@ -155,6 +157,26 @@ QImage maskImage(const Gray& g) {
     return img;
 }
 
+// The one node FrameView returns: ambient fill's backdrop first (the older real frame's copy, and the newer
+// one faded in by the pair's phase), then the picture's own node, which is drawn over it.
+class PictureRoot : public QSGNode {
+public:
+    QSGImageNode* backA = nullptr;
+    QSGOpacityNode* fade = nullptr;
+    QSGImageNode* backB = nullptr;
+    QSGNode* picture = nullptr;
+    void dropBackdrop() {
+        if (!backA) return;
+        removeChildNode(backA);
+        removeChildNode(fade);
+        delete backA;
+        delete fade;  // and backB, its child
+        backA = nullptr;
+        fade = nullptr;
+        backB = nullptr;
+    }
+};
+
 }  // namespace
 
 void FrameView::setEngine(std::shared_ptr<Engine> engine) {
@@ -245,6 +267,20 @@ void FrameView::setShift(const QPointF& v) {
     if (v != shift_) { shift_ = v; emit pictureChanged(); update(); }
 }
 
+void FrameView::setAmbient(bool v) { if (v != ambient_) { ambient_ = v; emit pictureChanged(); update(); } }
+FrameView::Placement FrameView::ambientPlace(double w, double h, double fw, double fh, const QRectF& shown) {
+    Placement out;
+    if (!veyra::engine::pushAmbientBars(float(w), float(h), float(shown.width()), float(shown.height()))) return out;
+    const auto [cw, ch] = veyra::engine::pushAmbientCover(float(w), float(h), float(fw), float(fh));
+    if (!(cw > 0 && ch > 0)) return out;
+    const QRectF cover(w / 2 - cw / 2, h / 2 - ch / 2, cw, ch);
+    const QRectF cut = cover.intersected(QRectF(0, 0, w, h));
+    if (cut.isEmpty()) return out;
+    out.rect = cut;
+    out.source = QRectF((cut.x() - cover.x()) / cover.width(), (cut.y() - cover.y()) / cover.height(),
+                        cut.width() / cover.width(), cut.height() / cover.height());
+    return out;
+}
 void FrameView::setCompareSwap(bool v) { if (v != compareSwap_) { compareSwap_ = v; emit pictureChanged(); update(); } }
 void FrameView::setBrightness(qreal v) { if (v != brightness_) { brightness_ = v; emit pictureChanged(); update(); } }
 void FrameView::setContrast(qreal v) { if (v != contrast_) { contrast_ = v; emit pictureChanged(); update(); } }
@@ -334,8 +370,9 @@ QSGTexture* FrameView::cached(quint64 key, const std::function<QImage()>& make, 
     t->setMipmapFiltering(QSGTexture::None);
     t->setHorizontalWrapMode(QSGTexture::ClampToEdge);
     t->setVerticalWrapMode(QSGTexture::ClampToEdge);
-    // Keep the newest few: two frames, their fields, mask and Crosshair Hold's three, and the next pair coming in.
-    if (cache_.size() >= 18) {
+    // Keep the newest few: two frames, their fields, mask, the two holds' three each, ambient fill's two copies,
+    // and the next pair coming in.
+    if (cache_.size() >= 20) {
         auto oldest = std::min_element(cache_.begin(), cache_.end(), [](const CachedTexture& a, const CachedTexture& b) { return a.lastUse < b.lastUse; });
         delete oldest->texture;
         cache_.erase(oldest);
@@ -346,8 +383,53 @@ QSGTexture* FrameView::cached(quint64 key, const std::function<QImage()>& make, 
 
 QSGNode* FrameView::updatePaintNode(QSGNode* old, UpdatePaintNodeData*) {
     ++frameCounter_;
+    if (!window()) return old;
+    auto* root = static_cast<PictureRoot*>(old);  // the only kind of node this item returns
+    if (!root) root = new PictureRoot;
+    Pick pick;
+    QRectF shown;
+    QSGNode* before = root->picture;
+    QSGNode* now = pictureNode(before, pick, shown);
+    if (now != before) {
+        if (before) { root->removeChildNode(before); delete before; }
+        if (now) root->appendChildNode(now);
+        root->picture = now;
+    }
+    // Ambient fill: behind the picture, where it leaves bars; never beside a comparison (Windows: comparison 0).
+    const Placement back = ambient_ && compare_ == 0 && now && pick.valid() && pick.ambientA && !pick.ambientA->empty()
+        ? ambientPlace(width(), height(), pick.a->width, pick.a->height, shown) : Placement{};
+    QSGTexture* ta = back.rect.isEmpty() ? nullptr : cached((pick.aId << 4) | 10, [&] { return frameImage(pick.ambientA); }, false);
+    if (!ta) {
+        root->dropBackdrop();
+        return root;
+    }
+    const bool blend = pick.generated() && pick.ambientB && pick.ambientB != pick.ambientA && !pick.ambientB->empty();
+    QSGTexture* tb = blend ? cached((pick.bId << 4) | 10, [&] { return frameImage(pick.ambientB); }, false) : nullptr;
+    if (!root->backA) {
+        root->backA = window()->createImageNode();
+        root->fade = new QSGOpacityNode;
+        root->backB = window()->createImageNode();
+        root->fade->appendChildNode(root->backB);
+        root->prependChildNode(root->fade);
+        root->prependChildNode(root->backA);  // backA, fade, then the picture
+    }
+    const QSize small = ta->textureSize();
+    const QRectF src(back.source.x() * small.width(), back.source.y() * small.height(), back.source.width() * small.width(),
+                     back.source.height() * small.height());
+    for (QSGImageNode* n : {root->backA, root->backB}) {
+        n->setTexture(n == root->backB && tb ? tb : ta);
+        n->setOwnsTexture(false);
+        n->setRect(back.rect);
+        n->setSourceRect(src);
+        n->setFiltering(QSGTexture::Linear);
+        n->markDirty(QSGNode::DirtyMaterial | QSGNode::DirtyGeometry);
+    }
+    root->fade->setOpacity(tb ? std::clamp(double(pick.t), 0.0, 1.0) : 0.0);
+    return root;
+}
+
+QSGNode* FrameView::pictureNode(QSGNode* old, Pick& pick, QRectF& drawn) {
     QQuickWindow* win = window();
-    if (!win) return old;
     std::shared_ptr<Engine> engine;
     std::shared_ptr<Pick> fixed;
     {
@@ -355,7 +437,6 @@ QSGNode* FrameView::updatePaintNode(QSGNode* old, UpdatePaintNodeData*) {
         engine = sharedEngine;
         fixed = fixedPick;
     }
-    Pick pick;
     if (fixed) {
         pick = *fixed;
     } else if (engine) {
@@ -364,7 +445,6 @@ QSGNode* FrameView::updatePaintNode(QSGNode* old, UpdatePaintNodeData*) {
         pick = engine->pick(nowNs() + qint64(1e9 / hz));
     }
     if (!pick.valid() || width() <= 0 || height() <= 0) {
-        delete old;
         if (!pick.valid()) dropTextures();
         reportUpscale(upscale_ ? UpscaleWaiting : UpscaleOff, {});
         return nullptr;
@@ -374,8 +454,8 @@ QSGNode* FrameView::updatePaintNode(QSGNode* old, UpdatePaintNodeData*) {
     const double fw = pick.a->width, fh = pick.a->height;
     const Placement placed = place(width(), height(), fw, fh, fill_, keep_, zoom_, shift_);
     const QRectF rect = placed.rect, source = placed.source;
+    drawn = rect;
     if (rect.width() <= 0 || rect.height() <= 0) {  // moved wholly out of the window
-        delete old;
         reportUpscale(upscale_ ? UpscaleNotNeeded : UpscaleOff, {});
         return nullptr;
     }
@@ -386,7 +466,7 @@ QSGNode* FrameView::updatePaintNode(QSGNode* old, UpdatePaintNodeData*) {
         reportUpscale(upscale_ ? UpscaleUnsupported : UpscaleOff, {});
         // No shaders on the software renderer: the nearer real frame.
         auto* node = dynamic_cast<QSGImageNode*>(old);
-        if (!node) { delete old; node = win->createImageNode(); }
+        if (!node) node = win->createImageNode();
         const bool useB = pick.generated() && pick.t >= 0.5f;
         QSGTexture* t = cached(useB ? keyB : keyA, [&] { return frameImage(useB ? pick.b : pick.a); }, false);
         if (!t) return node;
@@ -527,7 +607,7 @@ QSGNode* FrameView::updatePaintNode(QSGNode* old, UpdatePaintNodeData*) {
 
     if (state == UpscaleRunning) {
         auto* nis = dynamic_cast<NisNode*>(old);
-        if (!nis) { delete old; nis = new NisNode(win); }
+        if (!nis) nis = new NisNode(win);
         NisFrame frame;
         frame.textures = textures;
         frame.nearest = {false, false, true, true, false, false, false, false, false, false, false};  // the two motion fields
@@ -547,7 +627,7 @@ QSGNode* FrameView::updatePaintNode(QSGNode* old, UpdatePaintNodeData*) {
     }
 
     auto* node = dynamic_cast<FrameNode*>(old);
-    if (!node) { delete old; node = new FrameNode; }
+    if (!node) node = new FrameNode;
     FrameMaterial& m = node->material_;
     for (size_t i = 0; i < textures.size(); ++i) m.textures[i] = textures[i];
     m.u = u;
