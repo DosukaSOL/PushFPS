@@ -13,6 +13,16 @@
 // can take it (`setAvailable`), and so does `capture(true)` (a click on the picture).
 // Listening (the settings ask for a key): the next key pressed in the PushFPS window is reported and
 // reaches nothing else; mouse inputs are chosen from a list, so a click can still cancel.
+// While captured the hidden cursor is held at the middle of the picture (`setPicture`), never anywhere
+// else: the window has controls of its own floating over the picture (the full screen bar is a window
+// of its own), and a cursor left free to wander under raw mouse movement would click one of them with
+// the left button and end the capture. Raw input reports the mouse's own movement, so holding the cursor
+// changes nothing of what the console gets.
+// While captured Windows' accessibility shortcuts are switched off (Shift pressed five times opens Sticky
+// Keys, the right Shift held eight seconds Filter Keys, Num Lock held five seconds Toggle Keys): their
+// dialog takes the focus, which ends the capture, and a tapped Shift is how GTA's classic layout sprints.
+// Only where the feature itself is off, only for this Windows session (nothing written to the profile),
+// and put back exactly as it was on release: Microsoft's own guidance for games.
 #include <QAbstractNativeEventFilter>
 #include <QObject>
 #include <windows.h>
@@ -30,6 +40,9 @@ public:
     ~PushKbmCapture() override;
 
     void setWindow(HWND topLevel) { window_ = topLevel; }
+    // The window the picture is drawn in (a child of the top-level window): its middle is where the
+    // hidden cursor is held while captured. None: the middle of the top-level window.
+    void setPicture(HWND picture) { picture_ = picture; }
     void setSettings(const remoteplay::kbm::Settings& settings);
     const remoteplay::kbm::Settings& settings() const { return mixer_.settings(); }
     // A session can take the keyboard and mouse now; false also ends a capture.
@@ -59,16 +72,24 @@ signals:
     void input();                                           // a key, button or the wheel changed: send it now
     void moved();                                           // the mouse moved (up to thousands a second)
     void releaseRequested();                                // the release key ended the capture
+    void notReady();                                        // the release key while switched on and no session can take them
     void bindingHeard(int control, int slot, int code);     // the key pressed while listening
     void listeningChanged();
 
 private:
     void clipToWindow();
+    void holdShortcutKeys(bool hold);
     bool keyMessage(UINT msg, WPARAM wParam, LPARAM lParam);
     static std::int64_t nowUs();
 
     remoteplay::kbm::Mixer mixer_;
     HWND window_ = nullptr;
+    HWND picture_ = nullptr;
+    // The accessibility settings as they were before the capture switched their shortcuts off.
+    STICKYKEYS stickyKeys_{sizeof(STICKYKEYS), 0};
+    TOGGLEKEYS toggleKeys_{sizeof(TOGGLEKEYS), 0};
+    FILTERKEYS filterKeys_{sizeof(FILTERKEYS), 0, 0, 0, 0, 0};
+    bool shortcutKeysHeld_ = false;
     bool available_ = false;
     bool captured_ = false;
     std::uint16_t swallowUp_ = 0;   // the key-up of the key that started or ended the capture

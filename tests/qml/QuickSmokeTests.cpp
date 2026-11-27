@@ -505,7 +505,12 @@ QtObject {
     property var xbox: null
     property var ps5Control: ({enabled: false})
     // PushFPS mouse and keyboard (tst_push_kbm.qml). The maps are remoteplay/PushKbm.h's presets.
-    property var pushKbm: ({built: true, on: false, available: false, captured: false, target: "", releaseName: "F12", listenControl: -1, listenSlot: -1})
+    property var pushKbm: ({built: true, on: false, available: false, captured: false, target: "", releaseName: "F12", waiting: "", waitingText: "", listenControl: -1, listenSlot: -1})
+    property var ps5Profiles: []
+    property var ps5ControlCalls: []
+    property int ps5ControlRestarts: 0
+    function ps5ControlSet(key, value) { ps5ControlCalls = ps5ControlCalls.concat([[key, value]]) }
+    function ps5ControlRestart() { ps5ControlRestarts++ }
     property int kbmCaptures: 0
     property var kbmListened: []
     signal pushKbmBinding(int control, int slot, int code)

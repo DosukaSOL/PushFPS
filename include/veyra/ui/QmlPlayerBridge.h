@@ -896,7 +896,8 @@ public:
     Q_INVOKABLE void ps5ControlRestart();
     // PushFPS mouse and keyboard: take or give back (a click on the picture), ask for the next key for a
     // control's input slot (answered by pushKbmBinding), an input's name, a preset's inputs by control id,
-    // the default settings, and the controls in their order.
+    // the default settings, and the controls in their order. pushKbmCapture(true) while switched on and no
+    // session can take them says why (a notice) instead.
     Q_INVOKABLE void pushKbmCapture(bool on);
     Q_INVOKABLE void pushKbmListen(int control, int slot);
     Q_INVOKABLE void pushKbmStopListening();
@@ -1868,6 +1869,8 @@ private:
     void tickKbm();
     void kbmSend(bool movement);
     void refreshKbmState();
+    QString kbmWaitingText() const;
+    void kbmSayWaiting(bool fromClick);
     void tickPlaylist();
 #ifdef VEYRA_ENABLE_XBOX
     void setupXbox();

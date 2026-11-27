@@ -2384,6 +2384,33 @@
     }
    ],
    "needs_hardware": "a PS5 and a microphone"
+  },
+  {
+   "id": "F89",
+   "what": "Mouse and keyboard say what is missing when nothing can take them (a capture card without PS5 controller control) and offer the fix; while captured the hidden cursor is held in the middle of the picture so a click never lands on the floating bar",
+   "guards": [
+    {
+     "file": "tests/unit/PushKbmTests.cpp",
+     "ci": "veyra_push_kbm_tests",
+     "contains": "a capture card alone: PS5 controller control is what is missing"
+    },
+    {
+     "file": "tests/unit/PushKbmTests.cpp",
+     "ci": "veyra_push_kbm_tests",
+     "contains": "the cursor is held on one pixel in the middle of the picture"
+    },
+    {
+     "file": "tests/qml/quick/tst_push_kbm.qml",
+     "ci": "tst_push_kbm",
+     "contains": "test_a_capture_card_alone_says_what_is_missing_and_offers_the_fix"
+    },
+    {
+     "file": "tests/qml/quick/tst_push_quick_setup.qml",
+     "ci": "tst_push_quick_setup",
+     "contains": "test_mouse_and_keyboard_say_what_is_missing_under_the_row"
+    }
+   ],
+   "needs_hardware": "a capture card and a PS5, a mouse and keyboard"
   }
  ]
 }

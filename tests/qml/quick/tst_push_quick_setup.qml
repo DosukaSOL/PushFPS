@@ -246,6 +246,26 @@ Item {
             sw.toggled(false)
             verify(JSON.parse(veyra.preferences.pushKbm).on === false)
         }
+        // 4.5.7: a capture card alone cannot press anything on the console; the row says so and the row under it
+        // switches on PS5 controller control (or opens PS5 streaming to pair the PS5 first).
+        function test_mouse_and_keyboard_say_what_is_missing_under_the_row() {
+            const row = control("pushfps-kbm-row"), sw = control("pushfps-kbm"), fixRow = control("pushfps-kbm-fix-row")
+            veyra.ps5ControlCalls = []
+            veyra.ps5Profiles = [{id: "p", label: "PS5"}]
+            veyra.pushKbm = ({built: true, on: false, available: false, captured: false, target: "", releaseName: "F12", waiting: "", waitingText: "", listenControl: -1, listenSlot: -1})
+            sw.toggled(true)
+            veyra.pushKbm = Object.assign({}, veyra.pushKbm, {on: true, waiting: "capture-off", waitingText: "turn on PS5 controller control"})
+            compare(row.hint, "turn on PS5 controller control")
+            tryVerify(function() { return fixRow.visible }, 3000, "the fix stands under the row")
+            verify(quick.sectionItems.find(s => s.sectionId === "setup").holds("pushfps-kbm-fix-row"), "in the same section")
+            control("pushfps-kbm-fix").clicked()
+            compare(veyra.ps5ControlCalls.length, 1, "PS5 controller control switched on")
+            veyra.pushKbm = Object.assign({}, veyra.pushKbm, {available: true, waiting: "", waitingText: ""})
+            tryVerify(function() { return !fixRow.visible }, 3000)
+            compare(row.hint, qsTr("可以开始：点击画面或按 %1").arg("F12"))
+            sw.toggled(false)
+            veyra.ps5Profiles = []
+        }
         function test_professional_mode_on_connecting_is_a_choice_of_the_new_design() {
             const row = control("pushfps-connect-pro-row"), sw = control("pushfps-connect-pro")
             verify(!Theme.modern && !row.visible, "Legacy: no row, it has no picture on its home page")

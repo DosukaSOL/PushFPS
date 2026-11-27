@@ -985,9 +985,11 @@ Window {
         }
     }
     // PushFPS: a click on the picture gives the keyboard and mouse to the console (PushKbm.cpp), once they are
-    // switched on and a PS5 or Xbox session can take them. While they are given, clicks go to the console.
+    // switched on and a PS5 or Xbox session can take them; while switched on and nothing can take them yet
+    // (a capture card without PS5 controller control) the bridge says what is missing instead. While they
+    // are given, clicks go to the console.
     TapHandler {
-        enabled: veyra.pushKbm && veyra.pushKbm.available === true && veyra.pushKbm.captured !== true && dialogs.dialog === ""
+        enabled: veyra.pushKbm && veyra.pushKbm.on === true && veyra.pushKbm.captured !== true && dialogs.dialog === ""
         property bool pressOnCover: false
         property bool pressOnPicture: false
         onPressedChanged: if (pressed) {
@@ -1030,7 +1032,8 @@ Window {
         // an open dialog, which lives in the main window below it.
         cinema: root.cinema && !root.fullscreen
         pillTop: (root.maximized ? root.height : root.pictureHeight) - 46
-        shown: !root.onboardingActive && veyra.hasSource && !screenCrop.editing && !root.pillHidden && !veyra.gameInputActive && (root.fullscreen ? root.fullControls && !root.fullLocked
+        shown: !root.onboardingActive && veyra.hasSource && !screenCrop.editing && !root.pillHidden && !veyra.gameInputActive
+               && !(veyra.pushKbm && veyra.pushKbm.captured === true) && (root.fullscreen ? root.fullControls && !root.fullLocked
                                                    : root.cinema && root.shownPage === "min"
                                                      && root.leavingPage === "" && dialogs.dialog === ""
                                                      && root.visibility !== Window.Minimized)

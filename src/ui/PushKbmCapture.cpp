@@ -63,6 +63,7 @@ bool PushKbmCapture::capture(bool on) {
         captured_ = true;
         clipToWindow();
         SetCursor(nullptr);
+        holdShortcutKeys(true);
         veyra::log::info("kbm", "captured");
     } else {
         captured_ = false;
@@ -70,6 +71,7 @@ bool PushKbmCapture::capture(bool on) {
         RegisterRawInputDevices(&device, 1, sizeof(device));
         ClipCursor(nullptr);
         SetCursor(LoadCursorW(nullptr, IDC_ARROW));
+        holdShortcutKeys(false);
         mixer_.clear();
         veyra::log::info("kbm", "released");
     }
@@ -100,13 +102,59 @@ void PushKbmCapture::stopListening() {
 }
 
 void PushKbmCapture::clipToWindow() {
-    RECT client{};
-    if (!window_ || !GetClientRect(window_, &client)) return;
-    POINT topLeft{client.left, client.top}, bottomRight{client.right, client.bottom};
-    ClientToScreen(window_, &topLeft);
-    ClientToScreen(window_, &bottomRight);
-    const RECT screen{topLeft.x, topLeft.y, bottomRight.x, bottomRight.y};
-    ClipCursor(&screen);
+    // The hidden cursor is held at the middle of the picture (of the window when the picture has no
+    // place now): raw input still reports every movement of the mouse, and a cursor held there can
+    // never reach the controls floating over the picture.
+    kbm::Box picture{}, window{};
+    RECT r{};
+    if (picture_ && IsWindowVisible(picture_) && GetWindowRect(picture_, &r)) picture = {r.left, r.top, r.right, r.bottom};
+    if (window_ && GetClientRect(window_, &r)) {
+        POINT topLeft{r.left, r.top}, bottomRight{r.right, r.bottom};
+        ClientToScreen(window_, &topLeft);
+        ClientToScreen(window_, &bottomRight);
+        window = {topLeft.x, topLeft.y, bottomRight.x, bottomRight.y};
+    }
+    const auto hold = kbm::cursorHold(picture, window);
+    if (!hold) return;
+    const RECT clip{hold->left, hold->top, hold->right, hold->bottom};
+    SetCursorPos(int(hold->left), int(hold->top));
+    ClipCursor(&clip);
+}
+
+void PushKbmCapture::holdShortcutKeys(bool hold) {
+    if (hold == shortcutKeysHeld_) return;
+    if (hold) {
+        stickyKeys_ = {sizeof(STICKYKEYS), 0};
+        toggleKeys_ = {sizeof(TOGGLEKEYS), 0};
+        filterKeys_ = {sizeof(FILTERKEYS), 0, 0, 0, 0, 0};
+        const bool sticky = SystemParametersInfoW(SPI_GETSTICKYKEYS, sizeof(STICKYKEYS), &stickyKeys_, 0) != FALSE;
+        const bool toggle = SystemParametersInfoW(SPI_GETTOGGLEKEYS, sizeof(TOGGLEKEYS), &toggleKeys_, 0) != FALSE;
+        const bool filter = SystemParametersInfoW(SPI_GETFILTERKEYS, sizeof(FILTERKEYS), &filterKeys_, 0) != FALSE;
+        if (!sticky || !toggle || !filter) return;   // not read: nothing is changed, nothing to put back
+        shortcutKeysHeld_ = true;
+        // Only a shortcut whose feature is off: someone who uses Sticky Keys keeps them as they are. The last
+        // argument 0: for this session, never written to the user's profile.
+        if ((stickyKeys_.dwFlags & SKF_STICKYKEYSON) == 0) {
+            STICKYKEYS off = stickyKeys_;
+            off.dwFlags &= ~DWORD(SKF_HOTKEYACTIVE | SKF_CONFIRMHOTKEY);
+            SystemParametersInfoW(SPI_SETSTICKYKEYS, sizeof(STICKYKEYS), &off, 0);
+        }
+        if ((toggleKeys_.dwFlags & TKF_TOGGLEKEYSON) == 0) {
+            TOGGLEKEYS off = toggleKeys_;
+            off.dwFlags &= ~DWORD(TKF_HOTKEYACTIVE | TKF_CONFIRMHOTKEY);
+            SystemParametersInfoW(SPI_SETTOGGLEKEYS, sizeof(TOGGLEKEYS), &off, 0);
+        }
+        if ((filterKeys_.dwFlags & FKF_FILTERKEYSON) == 0) {
+            FILTERKEYS off = filterKeys_;
+            off.dwFlags &= ~DWORD(FKF_HOTKEYACTIVE | FKF_CONFIRMHOTKEY);
+            SystemParametersInfoW(SPI_SETFILTERKEYS, sizeof(FILTERKEYS), &off, 0);
+        }
+        return;
+    }
+    shortcutKeysHeld_ = false;
+    SystemParametersInfoW(SPI_SETSTICKYKEYS, sizeof(STICKYKEYS), &stickyKeys_, 0);
+    SystemParametersInfoW(SPI_SETTOGGLEKEYS, sizeof(TOGGLEKEYS), &toggleKeys_, 0);
+    SystemParametersInfoW(SPI_SETFILTERKEYS, sizeof(FILTERKEYS), &filterKeys_, 0);
 }
 
 std::uint16_t PushKbmCapture::keyCode(WPARAM wParam, LPARAM lParam) {
@@ -212,6 +260,11 @@ bool PushKbmCapture::nativeEventFilter(const QByteArray& eventType, void* messag
     }
 
     if (!captured_) {
+        // Switched on but no session can take them: the release key says why (the bridge words it). The
+        // key itself goes on to the interface as it would with the feature off.
+        if (isKey && !available_ && mixer_.settings().on && (m == WM_KEYDOWN || m == WM_SYSKEYDOWN) &&
+            ((msg->lParam >> 30) & 1) == 0 && keyCode(msg->wParam, msg->lParam) == mixer_.settings().release)
+            emit notReady();
         // Not captured: only the release key (to start) and the key-up of what ended a capture.
         if (!isKey || !available_ || !mixer_.settings().on) {
             if (isKey && swallowUp_ && (m == WM_KEYUP || m == WM_SYSKEYUP) && keyCode(msg->wParam, msg->lParam) == swallowUp_) {
@@ -239,6 +292,9 @@ bool PushKbmCapture::nativeEventFilter(const QByteArray& eventType, void* messag
                 emit moved();
             }
         }
+        // Read, and handed to the default procedure for the cleanup Windows asks for (RIM_INPUT); the
+        // interface never sees it.
+        DefWindowProcW(msg->hwnd, msg->message, msg->wParam, msg->lParam);
         if (result) *result = 0;
         return true;
     }
