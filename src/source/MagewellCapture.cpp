@@ -162,6 +162,14 @@ bool isProCaptureDevicePath(std::wstring_view directShowPath) {
     return lower(directShowPath).find(L"ven_1cd7") != std::wstring::npos;
 }
 
+bool builtIn() {
+#ifdef VEYRA_HAS_MAGEWELL
+    return true;
+#else
+    return false;
+#endif
+}
+
 bool runtimeAvailable(std::wstring* detail) {
 #ifdef VEYRA_HAS_MAGEWELL
     auto& a = api();

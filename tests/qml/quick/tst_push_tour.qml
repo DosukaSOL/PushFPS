@@ -8,7 +8,8 @@ import QtTest
 import Veyra
 Item {
     id: root
-    width: 1100; height: 700
+    // Tall enough for quick setup's rows up to the tools: nothing here scrolls, as the home page does for the tour.
+    width: 1100; height: 1000
     PushTour { id: tour }
     PushQuickSetup { id: quick; x: 20; y: 20; width: 560; compact: true }
     property var asked: []

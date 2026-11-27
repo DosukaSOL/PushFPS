@@ -119,6 +119,7 @@ PushLayoutDialog 1.0 PushLayoutDialog.qml
 PushCropDialog 1.0 PushCropDialog.qml
 PushReadTextDialog 1.0 PushReadTextDialog.qml
 PushRecordDialog 1.0 PushRecordDialog.qml
+PushKbmDialog 1.0 PushKbmDialog.qml
 PushMaximizeButton 1.0 PushMaximizeButton.qml
 PushFoldHead 1.0 PushFoldHead.qml
 PushSection 1.0 PushSection.qml

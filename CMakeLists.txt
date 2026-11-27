@@ -1219,6 +1219,10 @@ target_include_directories(veyra_push_pairing_input_tests PRIVATE ${CMAKE_CURREN
 add_executable(veyra_push_psn_sign_in_tests tests/unit/PushPsnSignInTests.cpp src/remoteplay/Validation.cpp)
 target_compile_features(veyra_push_psn_sign_in_tests PRIVATE cxx_std_20)
 target_include_directories(veyra_push_psn_sign_in_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+# PushFPS: mouse and keyboard as a controller (remoteplay/PushKbm.h; pure, also builds with g++).
+add_executable(veyra_push_kbm_tests tests/unit/PushKbmTests.cpp)
+target_compile_features(veyra_push_kbm_tests PRIVATE cxx_std_20)
+target_include_directories(veyra_push_kbm_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 # PushFPS: how long a PS5 reconnect waits (remoteplay/PushRetryWait.h) and FFmpeg's lines in the log
 # (media/PushLogLimiter.h); both pure, also build with g++.
 add_executable(veyra_push_packet_stamps_tests tests/unit/PushPacketStampsTests.cpp)
@@ -1608,6 +1612,8 @@ if(VEYRA_BUILD_QML_UI AND Qt6_FOUND)
     src/ui/WinCaptionReader.cpp src/ui/WinCaptionReader.h
     # PushFPS: reading the text on the picture with Windows' recogniser (no Qt in this file).
     src/ui/PushOcrWinrt.cpp include/veyra/ui/PushOcr.h
+    # PushFPS: the keyboard and mouse as a controller for a console (remoteplay/PushKbm.h has the rules).
+    src/ui/PushKbmCapture.cpp include/veyra/ui/PushKbmCapture.h
     include/veyra/ui/QmlPlayerBridge.h include/veyra/ui/ThumbnailProvider.h
     # PushFPS streaming mode: a scene source's live picture for the interface.
     src/ui/PushSourceImageProvider.cpp include/veyra/ui/PushSourceImageProvider.h
@@ -1624,6 +1630,7 @@ if(VEYRA_BUILD_QML_UI AND Qt6_FOUND)
     src/ui/bridge/PushTools.cpp
     src/ui/bridge/PushStream.cpp
     src/ui/bridge/PushControl.cpp
+    src/ui/bridge/PushKbm.cpp
     src/ui/bridge/PushOcr.cpp
     src/ui/bridge/PushStudio.cpp
     src/ui/bridge/PushFrameInput.cpp

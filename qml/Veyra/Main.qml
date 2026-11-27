@@ -984,6 +984,25 @@ Window {
             veyra.moonlightCapture(true)
         }
     }
+    // PushFPS: a click on the picture gives the keyboard and mouse to the console (PushKbm.cpp), once they are
+    // switched on and a PS5 or Xbox session can take them. While they are given, clicks go to the console.
+    TapHandler {
+        enabled: veyra.pushKbm && veyra.pushKbm.available === true && veyra.pushKbm.captured !== true && dialogs.dialog === ""
+        property bool pressOnCover: false
+        property bool pressOnPicture: false
+        onPressedChanged: if (pressed) {
+            pressOnCover = root.overVideoCover(point.scenePosition)
+            pressOnPicture = root.pictureContains(point.scenePosition)
+        }
+        onTapped: eventPoint => {
+            const p = eventPoint.position
+            if (pressOnCover || !pressOnPicture) return
+            if (root.page !== "min" && root.page !== "pro" && root.page !== "node" && root.page !== "home") return
+            if (p.x < videoHost.x || p.y < videoHost.y || p.x > videoHost.x + videoHost.width
+                || p.y > videoHost.y + videoHost.height) return
+            veyra.pushKbmCapture(true)
+        }
+    }
     // Stream statistics on and off. While a PC stream has the keyboard, the capture filter sees the keys
     // first and toggles the same switch.
     Shortcut {
@@ -1092,6 +1111,14 @@ Window {
         sequence: veyra.shortcuts.latencyOverlay || ""
         autoRepeat: false
         onActivated: root.keyToggleLatency()
+    }
+    // PushFPS voice chat: this PC's microphone in a PS5 stream (Ps5SourceDialog "电脑麦克风").
+    Shortcut {
+        objectName: "pushfps-key-mic"
+        sequence: veyra.shortcuts.micMute || ""
+        autoRepeat: false
+        enabled: !!veyra.ps5 && veyra.ps5.mic === true && veyra.ps5.active === true
+        onActivated: veyra.ps5ToggleMicMute()
     }
     Shortcut {
         objectName: "pushfps-key-compare"
@@ -1278,7 +1305,7 @@ Window {
             }
             // A dialog key opens the dialog; anything else is a page.
             if (p === "network" || p === "capture" || p === "ps5" || p === "moonlight" || p === "xbox" || p === "screen"
-                || p === "subtitle" || p === "translation" || p === "audio" || p === "save" || p === "manage" || p === "optimize" || p === "games" || p === "hud" || p === "latencyguide" || p === "crop" || p === "stream" || p === "compare" || p === "record" || p === "micfilters" || p === "layout" || p === "frameinput" || p === "qualitytest" || p === "latencytest" || p === "crash" || p === "cardtest" || p === "diagnose" || p === "readtext") {
+                || p === "subtitle" || p === "translation" || p === "audio" || p === "save" || p === "manage" || p === "optimize" || p === "games" || p === "hud" || p === "latencyguide" || p === "crop" || p === "stream" || p === "compare" || p === "record" || p === "micfilters" || p === "layout" || p === "frameinput" || p === "qualitytest" || p === "latencytest" || p === "crash" || p === "cardtest" || p === "diagnose" || p === "readtext" || p === "kbm") {
                 dialogs.open(p)
                 return
             }

@@ -251,6 +251,7 @@ struct PlayerSnapshot {
     bool remoteRecovering=false;unsigned remoteReconnectAttempts=0;std::wstring remoteRecoveryMessage;
     remoteplay::SessionInbox::Snapshot remoteStream;
     double remoteReceivedFps=0,remoteDecodedFps=0;bool remoteRatesReady=false;uint64_t remoteReceived=0,remoteDecoded=0,remoteIngressDropped=0;
+    bool remoteMicrophoneLive=false;   // PushFPS voice chat: the console hears this PC's microphone now
 #ifdef VEYRA_ENABLE_MOONLIGHT
     bool moonlightActive=false;source::MoonlightStats moonlight;
 #endif
@@ -277,6 +278,8 @@ public:
     remoteplay::ControllerFeedback remotePlayFeedback();
     void remotePlayController(const remoteplay::ControllerState&);
     void remotePlayLoginPin(std::string);
+    // PushFPS voice chat: mute or unmute this PC's microphone in a PS5 stream (not PS5 controller control).
+    void remotePlayMicrophoneMuted(bool);
     // PS5 手柄控制 beside a capture card: a controller-only Remote Play session
     // (the console's keepalive video and audio are dropped on receipt). Start and
     // stop are queued to a dedicated thread, so callers never wait for the

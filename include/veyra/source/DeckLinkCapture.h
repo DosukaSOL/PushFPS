@@ -34,6 +34,8 @@ bool isPath(std::wstring_view);
 std::wstring modeKey(uint32_t);
 std::vector<Device> devices();
 std::vector<Mode> modes(std::wstring_view);
+// PushFPS: false in a build made without Blackmagic's SDK, where devices() is always empty.
+bool builtIn();
 
 class DriverSink {
 public:

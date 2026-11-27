@@ -113,6 +113,8 @@ class QProcess;
 #include "veyra/ui/MoonlightInputCapture.h"
 #include "veyra/ui/MoonlightModel.h"
 #endif
+// PushFPS: the keyboard and mouse as a controller (bridge/PushKbm.cpp); built in every configuration.
+#include "veyra/ui/PushKbmCapture.h"
 #include <future>
 #include <functional>
 #include <map>
@@ -534,6 +536,7 @@ struct QmlPlayerBridge::Impl {
     std::wstring ps5Profile;                 // file name inside profileDirectory()
     QVariantList ps5ProfileList;
     bool ps5Watching = false;
+    bool ps5MicMuted = false, ps5MicNoticed = false, ps5MicLiveSeen = false;   // PushFPS voice chat
     struct Ps5Outcome { std::wstring message; std::vector<std::pair<std::string, std::string>> hosts; std::wstring savedPath; bool refreshProfiles = false; };
     std::mutex ps5Mutex;
     Ps5Outcome ps5Outcome;
@@ -558,6 +561,8 @@ struct QmlPlayerBridge::Impl {
     // PS5 手柄控制 (capture card dialog).
     QTimer* ps5ControlTimer = nullptr;
     QVariantMap ps5ControlState;
+    QVariantMap kbmState;                    // PushFPS: what pushKbm() answers (bridge/PushKbm.cpp)
+    QString kbmReleaseName;                  // the release key's name, read when the settings change
     std::wstring ps5ControlProfile;          // pairing (or test host) the session was started with
     QString ps5ControlNoticed;               // state the last notice was shown for
     int ps5ControlTicks = 0;
@@ -570,6 +575,18 @@ struct QmlPlayerBridge::Impl {
     enum PadUser : unsigned { PadPs5 = 1, PadPs5Control = 2, PadMoonlight = 4, PadXbox = 8 };
     unsigned padUsers = 0;
     remoteplay::PadMissing padMissing;       // PushFPS: says once that a stream plays without a controller
+    // PushFPS: the keyboard and mouse as a controller (bridge/PushKbm.cpp). kbmPad is the controller's last
+    // state, sent again with the keys when they change between two polls; kbmTarget is the session served.
+    std::unique_ptr<ui::PushKbmCapture> kbm;
+    remoteplay::ControllerState kbmPad;
+    enum class KbmTarget { None, Ps5, Ps5Control, Xbox } kbmTarget = KbmTarget::None;
+    std::chrono::steady_clock::time_point kbmMovedSent{};   // the last send of mouse movement alone
+    // A controller poll with the keyboard and mouse added when they serve this session.
+    remoteplay::ControllerState kbmMix(const remoteplay::ControllerState& pad, KbmTarget from) {
+        kbmPad = pad;
+        if (!kbm || kbmTarget != from) return pad;
+        return kbm->apply(pad, from == KbmTarget::Xbox ? remoteplay::kbm::Console::Xbox : remoteplay::kbm::Console::Ps5);
+    }
     bool acquirePad(unsigned user) {
         const bool ok = controller.start(); // no-op once initialized
         padUsers |= user;

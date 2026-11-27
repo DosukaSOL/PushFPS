@@ -188,6 +188,7 @@ QmlPlayerBridge::QmlPlayerBridge(engine::EngineController& engine, std::filesyst
 #ifdef VEYRA_ENABLE_XBOX
     setupXbox();
 #endif
+    setupKbm();
     // Before anything opens: the renderer reads the output choice at start().
     applyPreference(QStringLiteral("language"));
     applyPreference(QStringLiteral("audioDevice"));
@@ -645,6 +646,7 @@ QmlPlayerBridge::QmlPlayerBridge(engine::EngineController& engine, std::filesyst
         tickPs5();
         tickMoonlight();
         tickXbox();
+        tickKbm();
         // Geometry uses the source DAR and the same transform as mouse/compare.
         if (impl_->snapshot.running && impl_->videoWindow) {
             const bool fresh = impl_->aspectSession != impl_->snapshot.sessionId;

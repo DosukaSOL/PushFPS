@@ -2345,6 +2345,45 @@
     }
    ],
    "needs_hardware": "none"
+  },
+  {
+   "id": "F87",
+   "what": "Mouse and keyboard as a controller: presets, the mouse as the right stick, the merge with a real controller, the release key, off unless switched on",
+   "guards": [
+    {
+     "file": "tests/unit/PushKbmTests.cpp",
+     "ci": "veyra_push_kbm_tests",
+     "contains": "the right stick follows the mouse's speed"
+    },
+    {
+     "file": "tests/unit/PushKbmTests.cpp",
+     "ci": "veyra_push_kbm_tests",
+     "contains": "a controller stick pushed further wins over the keys"
+    },
+    {
+     "file": "tests/qml/quick/tst_push_kbm.qml",
+     "ci": "tst_push_kbm",
+     "contains": "test_off_until_switched_on_with_gta_6_keys"
+    },
+    {
+     "file": "tests/qml/quick/tst_push_quick_setup.qml",
+     "ci": "tst_push_quick_setup",
+     "contains": "test_mouse_and_keyboard_row_switches_and_opens_the_layout"
+    }
+   ],
+   "needs_hardware": "a PS5 or Xbox, and a mouse and keyboard"
+  },
+  {
+   "id": "F88",
+   "what": "PS5 voice chat: the PC microphone switch is the form's own setting, off in a view-only stream, and says whether the PS5 hears it",
+   "guards": [
+    {
+     "file": "tests/qml/quick/tst_push_ps5_pairing.qml",
+     "ci": "tst_push_ps5_pairing",
+     "contains": "test_pc_microphone_switch_follows_the_form_and_view_only"
+    }
+   ],
+   "needs_hardware": "a PS5 and a microphone"
   }
  ]
 }

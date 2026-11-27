@@ -319,6 +319,8 @@ DialogLayer {
         }
         VRow {
             objectName: "capture-blackmagic-native-row"
+            // PushFPS: only in a build with Blackmagic's SDK (or to switch off a saved "on").
+            visible: veyra.captureBlackmagicNativeBuilt !== false || veyra.preferences.blackmagicNativeCapture === true
             label: qsTr("Blackmagic 原生采集")
             hint: qsTr("默认关闭。开启使用 DeckLink 原生接口，关闭使用 DirectShow。需安装 Desktop Video 驱动；切换后重新选择设备和格式并连接，不写入驱动永久配置。")
             VSwitch {
@@ -331,6 +333,9 @@ DialogLayer {
         }
         VRow {
             objectName: "capture-magewell-row"
+            // PushFPS: only in a build with Magewell's SDK (or to switch off a saved "on"); without it a
+            // Magewell card captures like any other.
+            visible: veyra.captureMagewellBuilt !== false || veyra.preferences.magewellLowLatency === true
             label: qsTr("美乐威低延迟模式")
             hint: !veyra.captureMagewellDevice
                   ? qsTr("仅美乐威 Pro Capture（PCIe 内置卡）可用；USB Capture 系列不支持")

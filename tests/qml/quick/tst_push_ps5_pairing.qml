@@ -27,7 +27,8 @@ Item {
         // As the bridge: Sony's page opened, an address is expected.
         function ps5OpenAccountChecker() { signIns += 1; const next=Object.assign({},ps5); next.signInWaiting=true; ps5=next }
         function ps5FinishSignIn(pasted) { finished = pasted; const next=Object.assign({},ps5); next.signInAsking=true; ps5=next }
-        function ps5Set(key,value) { const next=Object.assign({},ps5);next[key]=String(value).trim();ps5=next;return true }
+        property var setCalls: []
+        function ps5Set(key,value) { setCalls = setCalls.concat([[key,value]]); const next=Object.assign({},ps5);next[key]=String(value).trim();ps5=next;return true }
         // As the bridge: reads the form, then a status refresh re-emits the form.
         function ps5Pair(pin) {
             pairedAccount=ps5.account; pairedHost=ps5.host; pairedPin=pin
@@ -54,6 +55,30 @@ Item {
             mouseClick(field)
             for (const ch of value) keyClick(ch)
             verify(input.text === value, input.text)
+        }
+        // PushFPS voice chat: the PC microphone switch is the form's "mic", off in a view-only stream, and
+        // while a stream plays its hint says whether the PS5 hears the microphone.
+        function test_pc_microphone_switch_follows_the_form_and_view_only() {
+            const row = findChild(panel, "ps5-mic-row")
+            const sw = findChild(panel, "ps5-mic")
+            verify(row !== null && sw !== null)
+            backend.ps5 = Object.assign({}, backend.ps5, {mic: false, viewOnly: false, active: false})
+            verify(!sw.checked)
+            verify(sw.enabled)
+            backend.setCalls = []
+            sw.toggled(true)
+            compare(backend.setCalls.length, 1)
+            compare(backend.setCalls[0][0], "mic")
+            compare(backend.setCalls[0][1], true)
+            backend.ps5 = Object.assign({}, backend.ps5, {mic: true, viewOnly: false})
+            verify(sw.checked)
+            backend.ps5 = Object.assign({}, backend.ps5, {viewOnly: true})
+            verify(!sw.enabled, "a view-only stream sends nothing to the PS5")
+            backend.ps5 = Object.assign({}, backend.ps5, {viewOnly: false, mic: true, active: true, micLive: true})
+            verify(row.hint.indexOf(qsTr("PS5 正在收到这台电脑的麦克风。")) === 0, row.hint)
+            backend.ps5 = Object.assign({}, backend.ps5, {micLive: false})
+            verify(row.hint.indexOf(qsTr("已静音，或等待 PS5 接受麦克风。")) === 0, row.hint)
+            backend.ps5 = Object.assign({}, backend.ps5, {mic: false, active: false, micLive: false})
         }
         function test_typed_values_reach_pairing_and_stay() {
             const account = findChild(panel, "ps5-account-id")

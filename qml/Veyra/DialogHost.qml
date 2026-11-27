@@ -185,6 +185,8 @@ Item {
     }
     LazyDialog { dialogKey: "compare"; sourceComponent: Component { PushCompareDialog { dialogHost: host } } }
     LazyDialog { dialogKey: "record"; sourceComponent: Component { PushRecordDialog { dialogHost: host } } }
+    // PushFPS: the keyboard and mouse as a controller (key "kbm").
+    LazyDialog { dialogKey: "kbm"; sourceComponent: Component { PushKbmDialog { dialogHost: host } } }
     LazyDialog { dialogKey: "micfilters"; sourceComponent: Component { PushMicFiltersDialog { dialogHost: host } } }
     LazyDialog { dialogKey: "frameinput"; sourceComponent: Component { PushFrameInputDialog { dialogHost: host } } }
     LazyDialog { dialogKey: "qualitytest"; sourceComponent: Component { PushQualityTestDialog { dialogHost: host } } }

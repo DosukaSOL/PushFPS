@@ -7,6 +7,8 @@
 #error The reviewed Chiaki video metadata patch is required
 #endif
 #include <chiaki/opusdecoder.h>
+#include <chiaki/opusencoder.h>
+#include <chiaki/audio.h>
 #include <chiaki/controller.h>
 #include <chiaki/orientation.h>
 #include <cmath>
@@ -71,6 +73,12 @@ struct ChiakiBackend::Impl {
     ChiakiOrientationTracker orientation{};ChiakiAccelNewZero accelZero{};
     uint64_t lastMotion=0;
     std::mutex feedbackMutex;ControllerFeedback feedback;
+    // PushFPS voice chat (setMicrophone): the encoder exists only once the microphone was asked for.
+    // micMutex orders the microphone thread's encoding against mute and stop; the rest is the owner's.
+    ChiakiOpusEncoder micEncoder{};
+    std::mutex micMutex;
+    bool micLive=false;                                   // under micMutex
+    bool micEncoderInitialized=false,micConnected=false;  // owner thread
 
     static void logCallback(ChiakiLogLevel level,const char* message,void* user) noexcept {
         auto& self=*static_cast<Impl*>(user);
@@ -224,6 +232,7 @@ BackendResult ChiakiBackend::stop(){
     auto& s=*p_;
     if(!s.onOwner())return {false,-1102,"wrong_owner_thread"};
     s.active=false;
+    {std::lock_guard lock(s.micMutex);s.micLive=false;}
     ChiakiErrorCode stopResult=CHIAKI_ERR_SUCCESS;
     if(s.started){
         ChiakiControllerState idle;chiaki_controller_state_set_idle(&idle);
@@ -237,6 +246,8 @@ BackendResult ChiakiBackend::stop(){
         if(stopCode!=CHIAKI_ERR_SUCCESS)s.apiError=static_cast<int>(stopCode);
     }
     if(s.opusInitialized){chiaki_opus_decoder_fini(&s.opus);s.opusInitialized=false;}
+    // The session's threads are joined and the caller detached its microphone first (RemotePlaySessionSource).
+    if(s.micEncoderInitialized){chiaki_opus_encoder_fini(&s.micEncoder);s.micEncoderInitialized=false;}
     if(s.initialized){chiaki_session_fini(&s.session);s.initialized=false;}
     wipe(&s.session,sizeof(s.session));
     p_.reset();return result(stopResult,"stop_join_fini");
@@ -249,6 +260,30 @@ BackendResult ChiakiBackend::submitLoginPin(std::string_view pin){
     if(!p_||!p_->onOwner()||!p_->started)return {false,-1104,"pin_without_session"};
     if(pin.empty()||pin.size()>8||!std::all_of(pin.begin(),pin.end(),[](char c){return c>='0'&&c<='9';}))return {false,-1105,"invalid_login_pin"};
     return p_->record(chiaki_session_set_login_pin(&p_->session,reinterpret_cast<const std::uint8_t*>(pin.data()),pin.size()),"chiaki_session_set_login_pin");
+}
+BackendResult ChiakiBackend::setMicrophone(bool live){
+    if(!p_||!p_->onOwner()||!p_->started||!p_->connected)return {false,-1107,"microphone_without_session"};
+    auto& s=*p_;
+    if(live&&!s.micConnected){
+        if(!s.micEncoderInitialized){chiaki_opus_encoder_init(&s.micEncoder,&s.log);s.micEncoderInitialized=true;}
+        // The format chiaki-ng's own client sends: 48 kHz stereo, 10 ms frames.
+        ChiakiAudioHeader header{};chiaki_audio_header_set(&header,2,16,48000,480);
+        chiaki_opus_encoder_header(&header,&s.micEncoder,&s.session);
+        if(!s.micEncoder.opus_encoder)return {false,-1108,"microphone_encoder"};
+        const auto code=chiaki_session_connect_microphone(&s.session);
+        if(code!=CHIAKI_ERR_SUCCESS)return s.record(code,"chiaki_session_connect_microphone");
+        s.micConnected=true;
+    }
+    if(!s.micConnected)return {true,0,"microphone_closed"};
+    {std::lock_guard lock(s.micMutex);s.micLive=live;}
+    // Chiaki's parameter is the state the console has now: true sends "unmute" (ctrl.c), as its client does.
+    return s.record(chiaki_session_toggle_microphone(&s.session,live),"chiaki_session_toggle_microphone");
+}
+void ChiakiBackend::submitMicrophone(std::int16_t* stereo480) noexcept {
+    // p_ stays while a microphone is attached: the session owner detaches it before stop().
+    if(!p_||!stereo480)return;
+    std::lock_guard lock(p_->micMutex);
+    if(p_->micLive&&p_->micEncoderInitialized)chiaki_opus_encoder_frame(stereo480,&p_->micEncoder);
 }
 BackendResult ChiakiBackend::submitController(const ControllerState& state){
     if(!p_||!p_->onOwner()||!p_->started)return {false,-1106,"controller_without_session"};

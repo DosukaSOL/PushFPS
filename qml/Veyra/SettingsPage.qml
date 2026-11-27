@@ -1876,6 +1876,7 @@ VPage {
                                 { id: "compareClip", a: qsTr("开始 / 停止对比片段"), note: qsTr("按 设置 → 录制 里对比片段的布局和长度录制；再按一次停止") },
                                 { id: "fgToggle", a: qsTr("开启 / 关闭补帧") },
                                 { id: "enhanceToggle", a: qsTr("开启 / 关闭 AI 画面增强") },
+                                { id: "micMute", a: qsTr("PS5 语音聊天：麦克风静音 / 打开"), note: qsTr("PS5 远程游玩开着“电脑麦克风”时；鼠标和键盘交给主机时也能用") },
                                 { id: "toggleMode", a: qsTr("切换极简 / 专业") },
                                 { id: "gamePanel", a: qsTr("游戏模式：调整画面"), note: qsTr("仅在游戏模式中接管按键；支持 Ctrl、Alt、Shift 组合") },
                                 { id: "gameExit", a: qsTr("游戏模式：退出鼠标穿透"), note: qsTr("退出全屏，恢复普通窗口操作") }
@@ -1922,6 +1923,15 @@ VPage {
                         VRow {
                             label: qsTr("恢复默认")
                             VButton { text: qsTr("全部还原"); ghost: true; onClicked: veyra.resetShortcuts() }
+                        }
+                    }
+                    // PushFPS: the keyboard and mouse as a controller for the console (PushKbmDialog.qml).
+                    VGroup {
+                        VRow {
+                            objectName: "set-kbm"
+                            label: qsTr("鼠标和键盘")
+                            hint: qsTr("用鼠标和键盘玩主机游戏：GTA 6、GTA V 和 Red Dead Redemption 2 的键位，每个键都可以改")
+                            VButton { objectName: "set-kbm-open"; text: qsTr("按键设置"); onClicked: veyra.navigate("kbm") }
                         }
                     }
                     VGroup {

@@ -25,6 +25,9 @@ bool isProCaptureDevicePath(std::wstring_view directShowPath);
 // True when this build knows the SDK and LibMWCapture.dll could be loaded. `detail` says
 // which file was used or why not.
 bool runtimeAvailable(std::wstring* detail = nullptr);
+// PushFPS: false in a build made without Magewell's SDK headers: the low-latency mode is then not in the
+// program at all, and the card captures through DirectShow like any other.
+bool builtIn();
 
 // The user's choice (capture dialog). Read when a capture device is connected.
 void setLowLatencyPreference(bool enabled);
