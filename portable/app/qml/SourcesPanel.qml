@@ -79,12 +79,14 @@ ColumnLayout {
             hint: qsTr("打开 PushFPS 时直接连接上次使用的采集卡")
             VSwitch { objectName: "home-autoconnect"; checked: app.autoConnect; onToggled: on => app.autoConnect = on }
         }
-        RowLayout {
+        // A Flow, not a row: where the two buttons do not fit beside each other (German in the narrow left pane)
+        // Refresh goes under Connect instead of pushing the card, and every row in it, past the list's edge.
+        // Right to left, so Connect stands at the right edge as it did.
+        Flow {
             Layout.fillWidth: true
             Layout.topMargin: 4
             spacing: 8
-            Item { Layout.fillWidth: true }
-            VButton { text: qsTr("刷新"); iconName: "refresh"; onClicked: app.refreshDevices() }
+            layoutDirection: Qt.RightToLeft
             VButton {
                 objectName: "home-connect"
                 text: qsTr("连接")
@@ -92,6 +94,7 @@ ColumnLayout {
                 enabled: app.videoDevices.length > 0
                 onClicked: app.startCamera()
             }
+            VButton { text: qsTr("刷新"); iconName: "refresh"; onClicked: app.refreshDevices() }
         }
     }
 
@@ -106,7 +109,8 @@ ColumnLayout {
     VCard {
         Layout.fillWidth: true
         PanelTitle { text: qsTr("测试画面"); hint: qsTr("没有采集卡也能看看补帧效果") }
-        RowLayout {
+        Flow {
+            Layout.fillWidth: true
             spacing: 8
             VButton { objectName: "home-test"; text: qsTr("开始"); onClicked: app.startTestPattern(false) }
             VButton { text: qsTr("不均匀出帧"); onClicked: app.startTestPattern(true) }
