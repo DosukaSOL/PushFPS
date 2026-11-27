@@ -287,8 +287,15 @@ int gpucheck(QGuiApplication& app, const QString& savePath) {
     pick->hold = held;
     pick->subHold = heldText;
     FrameView::setFixedPick(pick);
+    // Two HUD protection boxes (Protection.h), a rectangle and an ellipse, away from the crosshair and the text:
+    // inside them the shader's picture has to be the older real frame, as the reference's is.
+    const ProtectBox boxList[] = {{0.62f, 0.06f, 0.94f, 0.40f, false}, {0.05f, 0.06f, 0.33f, 0.40f, true}};
+    const Protection boxes = Protection::clean(boxList, 2, 6.f);
+    QVariantList boxVariants;
+    for (const ProtectBox& bx : boxList)
+        boxVariants << QVariantMap{{"left", bx.left}, {"top", bx.top}, {"right", bx.right}, {"bottom", bx.bottom}, {"ellipse", bx.ellipse}};
     Bgra reference, withoutHold;
-    interpolate(a, b, fields->forward, fields->backward, nullptr, 0.5f, reference, 2, {}, held.get(), heldText.get());
+    interpolate(a, b, fields->forward, fields->backward, nullptr, 0.5f, reference, 2, {}, held.get(), heldText.get(), &boxes);
     interpolate(a, b, fields->forward, fields->backward, nullptr, 0.5f, withoutHold, 2);
     const QImage ref = imageFromBgra(reference);
     // The square round the crosshair, for the two comparisons that say the shader held it.
@@ -306,6 +313,13 @@ int gpucheck(QGuiApplication& app, const QString& savePath) {
         print(QStringLiteral("GPU CHECK RESULT\nresult: FAIL (GpuCheck.qml did not load)"));
         return 1;
     }
+    if (auto* frame = view.rootObject() ? view.rootObject()->findChild<FrameView*>() : nullptr) {
+        frame->setProtectFeather(6.0);
+        frame->setProtect(boxVariants);
+    }
+    // The rectangle's inside (6 px of feather left out), for the comparison that says the shader held it.
+    const QRect boxRect(int(0.62f * w) + 7, int(0.06f * h) + 7, int(0.32f * w) - 14, int(0.34f * h) - 14);
+    const QImage boxA = ia.copy(boxRect), boxPlain = imageFromBgra(withoutHold).copy(boxRect);
     view.resize(w, h);
     view.show();
     int code = 4;
@@ -330,15 +344,20 @@ int gpucheck(QGuiApplication& app, const QString& savePath) {
         const QImage shotText = shot.copy(text);
         const double textHeld = psnr(shotText, refText, 0), textPlain = psnr(shotText, plainText, 0);
         const bool subOk = heldText != nullptr && textHeld > 32.0 && textHeld > textPlain + 3.0;
-        code = !software && match > 38.0 && match > againstA + 3.0 && holdOk && subOk ? 0 : 4;
+        const QImage shotBox = shot.copy(boxRect);
+        const double boxHeld = psnr(shotBox, boxA, 0), boxPlainDb = psnr(shotBox, boxPlain, 0);
+        const bool boxOk = boxHeld > 32.0 && boxHeld > boxPlainDb + 3.0;
+        code = !software && match > 38.0 && match > againstA + 3.0 && holdOk && subOk && boxOk ? 0 : 4;
         print(QStringLiteral("GPU CHECK RESULT\ngraphics api: %1\nGPU vs CPU reference: %2 dB\nGPU vs real frame A: %3 dB (CPU reference vs A: %4 dB)\n"
                              "crosshair hold: round the crosshair %8 dB against the reference that holds it, %9 dB against the one that does not (%10 px held)\n"
                              "subtitle hold: round the text %11 dB against the reference that holds it, %12 dB against the one that does not (%13 px held)\n"
+                             "hud boxes: inside the box %14 dB against real frame A, %15 dB against the picture without boxes\n"
                              "diagnostics: upside down vs reference %6 dB, GPU vs real frame B %7 dB\nresult: %5")
                   .arg(int(api)).arg(match, 0, 'f', 1).arg(againstA, 0, 'f', 1).arg(refVsA, 0, 'f', 1)
                   .arg(code == 0 ? QStringLiteral("PASS") : (software ? QStringLiteral("FAIL (software renderer, no shaders)") : QStringLiteral("FAIL (mismatch)")))
                   .arg(flipped, 0, 'f', 1).arg(againstB, 0, 'f', 1).arg(aimHeld, 0, 'f', 1).arg(aimPlain, 0, 'f', 1).arg(held ? held->held : 0)
-                  .arg(textHeld, 0, 'f', 1).arg(textPlain, 0, 'f', 1).arg(heldText ? heldText->held : 0));
+                  .arg(textHeld, 0, 'f', 1).arg(textPlain, 0, 'f', 1).arg(heldText ? heldText->held : 0)
+                  .arg(boxHeld, 0, 'f', 1).arg(boxPlainDb, 0, 'f', 1));
         app.exit(code);
     });
     return app.exec();

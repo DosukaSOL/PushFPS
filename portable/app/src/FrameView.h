@@ -5,8 +5,10 @@
 // with the interpolation shader (shaders/frame.frag) through Qt's renderer (Vulkan or OpenGL on Linux,
 // Metal on macOS). On Qt's software renderer it shows the real frames only.
 #include "veyra/portable/Engine.h"
+#include "veyra/portable/Protection.h"
 
 #include <QQuickItem>
+#include <QVariantList>
 #include <QtQml/qqmlregistration.h>
 
 #include <functional>
@@ -35,6 +37,11 @@ class FrameView : public QQuickItem {
     Q_PROPERTY(QRectF keep READ keep WRITE setKeep NOTIFY pictureChanged)
     Q_PROPERTY(qreal zoom READ zoom WRITE setZoom NOTIFY pictureChanged)
     Q_PROPERTY(QPointF shift READ shift WRITE setShift NOTIFY pictureChanged)
+    // HUD protection boxes (portable/core Protection.h, the Windows build's "Exclude all effects" regions): a list
+    // of {left, top, right, bottom, ellipse} as shares of the picture, at most four; generated frames show the
+    // older real frame inside them. `protectFeather` softens their edges (picture pixels).
+    Q_PROPERTY(QVariantList protect READ protect WRITE setProtect NOTIFY pictureChanged)
+    Q_PROPERTY(qreal protectFeather READ protectFeather WRITE setProtectFeather NOTIFY pictureChanged)
     // The live comparison with the original (the picture before the picture controls and NIS), as the
     // Windows build's compareMode: 0 off, 2 split, 1 the original alone. The split stands at compareSplit
     // (a share of this item's width; the line itself is engine/PushCompareLine.h's); compareSwap puts
@@ -77,6 +84,10 @@ public:
     void setKeep(const QRectF& v);
     void setZoom(qreal v);
     void setShift(const QPointF& v);
+    QVariantList protect() const { return protect_; }
+    qreal protectFeather() const { return protection_.feather; }
+    void setProtect(const QVariantList& v);
+    void setProtectFeather(qreal v);
     // Where the kept part of a picture fw x fh large stands in an item w x h large (`rect`, which can reach
     // past the item) and the part of the picture drawn there (`source`, shares) once it is cut to the item.
     struct Placement { QRectF rect, source; };
@@ -137,6 +148,8 @@ private:
     QRectF keep_{0, 0, 1, 1};
     qreal zoom_ = 1;
     QPointF shift_;
+    QVariantList protect_;
+    veyra::portable::Protection protection_;
     int compare_ = 0;
     qreal compareSplit_ = 0.5;
     bool compareSwap_ = false;

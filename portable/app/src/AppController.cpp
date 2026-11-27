@@ -47,6 +47,26 @@ QString formatLabel(const QCameraFormat& f) {
     return QStringLiteral("%1×%2 · %3 Hz · %4").arg(f.resolution().width()).arg(f.resolution().height())
         .arg(QString::number(double(f.maxFrameRate()), 'f', f.maxFrameRate() == float(int(f.maxFrameRate())) ? 0 : 2)).arg(pixel);
 }
+// HUD protection boxes as the Windows bridge's pushSetExclusionRegions takes them: in range, in order, at most
+// four, none thinner than half a per cent.
+QVariantList cleanHudRegions(const QVariantList& list) {
+    QVariantList out;
+    for (const QVariant& item : list) {
+        if (out.size() >= 4) break;
+        const QVariantMap r = item.toMap();
+        const auto num = [&](const char* key) {
+            const double v = r.value(QString::fromLatin1(key)).toDouble();
+            return std::isfinite(v) ? std::clamp(v, 0.0, 1.0) : 0.0;
+        };
+        const double l = std::min(num("left"), num("right")), t = std::min(num("top"), num("bottom"));
+        const double rr = std::max(num("left"), num("right")), b = std::max(num("top"), num("bottom"));
+        if (rr - l < 0.005 || b - t < 0.005) continue;
+        out << QVariantMap{{QStringLiteral("left"), l}, {QStringLiteral("top"), t}, {QStringLiteral("right"), rr},
+                           {QStringLiteral("bottom"), b}, {QStringLiteral("ellipse"), r.value(QStringLiteral("ellipse")).toBool()}};
+    }
+    return out;
+}
+double cleanFeather(double v) { return std::isfinite(v) ? std::clamp(v, 0.0, 64.0) : 8.0; }
 }  // namespace
 
 AppController::AppController(QQmlEngine* qml, CatalogTranslator* translator, QString startPage, QObject* parent)
@@ -58,6 +78,12 @@ AppController::AppController(QQmlEngine* qml, CatalogTranslator* translator, QSt
     hud_ = s.value(QStringLiteral("hudLock"), false).toBool();
     crosshairHold_ = s.value(QStringLiteral("crosshairHold"), false).toBool();
     subtitleHold_ = s.value(QStringLiteral("subtitleHold"), false).toBool();
+    {
+        const QJsonDocument boxes = QJsonDocument::fromJson(s.value(QStringLiteral("hudRegions")).toString().toUtf8());
+        const QVariantList stored = boxes.isArray() ? boxes.toVariant().toList() : QVariantList();
+        hudRegions_ = cleanHudRegions(stored);
+        hudFeather_ = cleanFeather(s.value(QStringLiteral("hudFeather"), 8.0).toDouble());
+    }
     dedup_ = s.value(QStringLiteral("removeDuplicates"), true).toBool();
     quality_ = std::clamp(s.value(QStringLiteral("quality"), 1).toInt(), 0, 1);
     audioOn_ = s.value(QStringLiteral("audioPassthrough"), true).toBool();
@@ -577,6 +603,18 @@ void AppController::setHudLock(bool v) {
     save(QStringLiteral("hudLock"), v);
     applyEngineSettings();
     emit settingsChanged();
+}
+
+bool AppController::setHudRegions(const QVariantList& regions, double feather) {
+    const QVariantList clean = cleanHudRegions(regions);
+    const double f = cleanFeather(feather);
+    if (clean == hudRegions_ && f == hudFeather_) return true;
+    hudRegions_ = clean;
+    hudFeather_ = f;
+    save(QStringLiteral("hudRegions"), QString::fromUtf8(QJsonDocument::fromVariant(clean).toJson(QJsonDocument::Compact)));
+    save(QStringLiteral("hudFeather"), f);
+    emit settingsChanged();
+    return true;
 }
 
 void AppController::setCrosshairHold(bool v) {
