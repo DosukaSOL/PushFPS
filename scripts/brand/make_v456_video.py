@@ -29,7 +29,18 @@ from make_tour_video import panel, heading
 from make_v45_video import facts
 
 V.SHOTS = os.environ.get("PUSHFPS_VIDEO_SHOTS") or os.path.join(V.ROOT, "out", "v456-shots")
-V.shot = V45._shot           # these shots show no home page, so nothing to cover
+# The home page behind each window ends its source panel with a line of credits; the owner wants the film
+# about PushFPS alone, so that line is covered with the panel's own colour (as in the 4.5.0 film).
+@lru_cache(maxsize=None)
+def shot_without_credit_line(name):
+    im = V45._shot(name).copy()
+    box = (230, 706, 470, 734)
+    fill = im.getpixel((box[0] + 4, box[1] - 8))
+    ImageDraw.Draw(im).rectangle(box, fill=fill)
+    return im
+
+
+V.shot = shot_without_credit_line
 V.INTRO_TAG = [("4.5.6", LIME), ("   what's new", T1)]
 V.ALSO_HEAD = [("Also new ", T1), ("since 4.5", LIME)]
 V.OUTRO_TAG = [("4.5.6", LIME), ("  is out", T1)]
@@ -42,9 +53,9 @@ V.ALSO = [("Lighter start", "Windows you haven't opened aren't made at start"),
 
 # Rectangles in a 1600 x 900 screenshot (x, y, w, h), measured on the V-* pictures (set_rects() reads them
 # from the pictures' own rows when the shots are taken again; these are the values used for the film).
-KBM_PRESET = (560, 250, 480, 52)
-KBM_KEYS = (560, 380, 480, 400)
-PS5_MIC = (560, 420, 480, 56)
+KBM_PRESET = (522, 258, 545, 50)     # V-01-kbm: the layout row
+KBM_KEYS = (522, 318, 545, 425)      # V-02-kbm-keys: the key rows
+PS5_MIC = (482, 474, 624, 50)        # V-03-ps5: PC microphone
 
 
 # ---------------------------------------------------------------- drawn pictures
@@ -185,19 +196,23 @@ def scene_kbm_demo(canvas, t):
 
 def scene_kbm_window(canvas, t):
     b0, b1 = 16, 24
-    rx, ry, rw, rh = KBM_PRESET
-    cam = cam_mix(cam_base(), cam_region(rx - 40, ry - 80, rw + 80, 560, max_s=1.9),
-                  in_out_cubic(at(t, beat(17.2), beat(17.2) + 0.7)))
+    # The window as it opens (the layout row), then scrolled to the keys: one camera on the dialog.
+    cam = cam_mix(cam_base(), cam_region(500, 96, 600, 650, max_s=1.6),
+                  in_out_cubic(at(t, beat(17.0), beat(17.0) + 0.7)))
     enter = out_cubic(at(t, beat(b0), beat(b0) + 0.3))
     leave = at(t, beat(b1) - 0.18, beat(b1))
-    window(canvas, "V-01-kbm", cam, alpha=enter * (1 - leave), shadow=clamp(1.7 - cam[0]))
-    lit1 = at(t, beat(18), beat(18) + 0.3) * (1 - at(t, beat(20.4), beat(20.4) + 0.3))
+    swap = in_out_cubic(at(t, beat(20.2), beat(20.2) + 0.35))
+    alpha = enter * (1 - leave)
+    window(canvas, "V-01-kbm", cam, alpha=alpha, shadow=clamp(1.7 - cam[0]))
+    if swap > 0.001:
+        window(canvas, "V-02-kbm-keys", cam, alpha=alpha * swap, shadow=0.0)
+    lit1 = at(t, beat(18), beat(18) + 0.3) * (1 - at(t, beat(20.0), beat(20.0) + 0.25))
     focus(canvas, cam, KBM_PRESET, lit1, radius=8, grow=6, blur=5.0, dim=0.36)
     highlight(canvas, cam, KBM_PRESET, lit1 * 0.9, radius=8, grow=6)
-    lit2 = at(t, beat(20.6), beat(20.6) + 0.3) * (1 - at(t, beat(b1) - 0.2, beat(b1)))
+    lit2 = at(t, beat(20.8), beat(20.8) + 0.3) * (1 - at(t, beat(b1) - 0.2, beat(b1)))
     focus(canvas, cam, KBM_KEYS, lit2, radius=8, grow=6, blur=5.0, dim=0.36)
     highlight(canvas, cam, KBM_KEYS, lit2 * 0.9, radius=8, grow=6)
-    scrim(canvas, cam, enter * (1 - leave))
+    scrim(canvas, cam, alpha)
     caption(canvas, t, beat(b0) + 0.2, beat(20.4), "GTA 6, GTA V and RDR2 layouts", "After Rockstar's own PC keys")
     caption(canvas, t, beat(20.4) + 0.1, beat(b1), "Every key can be changed", "Two keys per button, mouse buttons and the wheel too")
 
@@ -214,7 +229,7 @@ def scene_kbm_facts(canvas, t):
 def scene_voice(canvas, t):
     b0, b1 = 32, 40
     rx, ry, rw, rh = PS5_MIC
-    cam = cam_mix(cam_base(), cam_region(rx - 60, ry - 140, rw + 120, 360, max_s=1.9),
+    cam = cam_mix(cam_base(), cam_region(rx - 20, ry - 110, rw + 40, 300, max_s=1.9),
                   in_out_cubic(at(t, beat(33), beat(33) + 0.7)))
     enter = out_cubic(at(t, beat(b0), beat(b0) + 0.3))
     leave = at(t, beat(b1) - 0.18, beat(b1))
