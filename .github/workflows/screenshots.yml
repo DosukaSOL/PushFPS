@@ -328,7 +328,13 @@ jobs:
             @{ name = 'R-appearance'; size = '1440x900'; args = @('--page', 'home', '--dialog', 'appearance', '--lang', 'en', '--pref', 'pushQuickFolded=fg,picture,hud') },
             @{ name = 'R-legacy'; size = '1440x900'; args = @('--page', 'home', '--lang', 'en', '--pref', 'pushDesign=legacy', '--pref', 'pushSunset=false') },
             @{ name = 'R-sides-folded'; size = '1440x900'; args = @('--page', 'home', '--lang', 'en', '--pref', 'pushSideCollapsed=true', '--pref', 'pushNavCollapsed=true') },
-            @{ name = 'R-pro-folded'; size = '1440x900'; args = @('--page', 'pro', '--lang', 'en', '--pref', 'pushProFolded=quality,fg,audio') }
+            @{ name = 'R-pro-folded'; size = '1440x900'; args = @('--page', 'pro', '--lang', 'en', '--pref', 'pushProFolded=quality,fg,audio') },
+            # The 4.5.6 video (scratch branch video/v456, never merged).
+            @{ name = 'V-00-warmup'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en') },
+            @{ name = 'V-01-kbm'; size = '1600x900'; args = @('--page', 'home', '--dialog', 'kbm', '--lang', 'en', '--pref', ('pushKbm=' + '{"on":true,"preset":"gta6"}'.Replace('"', '\"'))) },
+            @{ name = 'V-02-kbm-keys'; size = '1600x900'; args = @('--page', 'home', '--dialog', 'kbm', '--lang', 'en', '--scroll-to', 'pushfps-kbm-row-cross', '--pref', ('pushKbm=' + '{"on":true,"preset":"gta6"}'.Replace('"', '\"'))) },
+            @{ name = 'V-03-ps5'; size = '1600x900'; args = @('--page', 'home', '--dialog', 'ps5', '--lang', 'en', '--scroll-to', 'ps5-mic-row') },
+            @{ name = 'V-04-home-kbm'; size = '1600x900'; args = @('--page', 'home', '--lang', 'en', '--scroll-to', 'pushfps-kbm-row', '--pref', ('pushKbm=' + '{"on":true,"preset":"gta6"}'.Replace('"', '\"'))) }
           )
           if ($env:ONLY) { $list = @($list | Where-Object { $_.name -match $env:ONLY }); Write-Host "Only: $($list.name -join ', ')" }
           foreach ($s in $list) {

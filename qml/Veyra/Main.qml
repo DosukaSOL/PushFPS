@@ -1572,7 +1572,27 @@ Window {
         ToolTip.text: qsTr("停止本次启动音乐")
     }
     // PushFPS (screenshots): --scroll-to <objectName> once the settings page is laid out.
-    Timer { id: testScrollTimer; interval: 1500; onTriggered: (root.page === "home" ? homePage : settingsPage).scrollToObject(root.test.scrollTo) }
+    Timer { id: testScrollTimer; interval: 1500; onTriggered: {
+            // SCRATCH (video/v456 only): inside an open dialog, scroll its list to the row.
+            if (dialogs.dialog !== "") { root.scratchScrollDialog(root.test.scrollTo); return }
+            (root.page === "home" ? homePage : settingsPage).scrollToObject(root.test.scrollTo)
+        } }
+    function scratchFind(item, name) {
+        if (!item) return null
+        if (item.objectName === name) return item
+        const kids = item.children || []
+        for (let i = 0; i < kids.length; ++i) { const f = scratchFind(kids[i], name); if (f) return f }
+        return null
+    }
+    function scratchScrollDialog(name) {
+        const it = scratchFind(dialogs, name)
+        if (!it) { console.warn("scratch scroll: no " + name); return }
+        let p = it.parent
+        while (p && (p.contentY === undefined || p.contentItem === undefined)) p = p.parent
+        if (!p) { console.warn("scratch scroll: no list for " + name); return }
+        const y = it.mapToItem(p.contentItem, 0, 0).y
+        p.contentY = Math.max(0, Math.min(y - 140, p.contentHeight - p.height))
+    }
     // The menu anchors on laid-out buttons, so it opens once the page has settled.
     // --full-bar shown|hidden: enter fullscreen with the control window held shown
     // or held hidden, for the present-timing comparison (G2.5).
