@@ -20,6 +20,9 @@ Item {
             veyra.preferences = ({})
             veyra.pushKbm = ({built: true, on: false, available: false, captured: false, target: "", releaseName: "F12", listenControl: -1, listenSlot: -1})
             veyra.kbmListened = []
+            veyra.ps5Profiles = []
+            veyra.ps5ControlCalls = []
+            veyra.ps5ControlRestarts = 0
             host.dialog = "kbm"
             verify(kbm.shown)
         }
@@ -95,6 +98,43 @@ Item {
             compare(kbm.statusText, qsTr("可以开始：点击画面或按 %1").arg("F12"))
             veyra.pushKbm = Object.assign({}, veyra.pushKbm, {captured: true})
             compare(kbm.statusText, qsTr("正在使用：主机收到的是鼠标和键盘 · 按 %1 交还").arg("F12"))
+        }
+        // 4.5.7: switched on with a capture card alone (the report of 27 November 2026) the window says what is
+        // missing and offers the one step that fixes it.
+        function test_a_capture_card_alone_says_what_is_missing_and_offers_the_fix() {
+            control("pushfps-kbm-on").toggled(true)
+            const fixRow = control("pushfps-kbm-window-fix-row")
+            veyra.pushKbm = Object.assign({}, veyra.pushKbm, {on: true, waiting: "capture-off", waitingText: "a capture card only brings the picture in"})
+            compare(kbm.statusText, "a capture card only brings the picture in", "the status line says what is missing")
+            veyra.ps5Profiles = [{id: "p", label: "PS5"}]
+            tryVerify(function() { return fixRow.visible }, 3000, "with a PS5 paired the fix is one button")
+            compare(fixRow.label, qsTr("用远程游玩控制 PS5"))
+            const button = control("pushfps-kbm-window-fix")
+            compare(button.text, qsTr("开启"))
+            button.clicked()
+            compare(veyra.ps5ControlCalls.length, 1)
+            compare(veyra.ps5ControlCalls[0][0], "enabled")
+            verify(veyra.ps5ControlCalls[0][1] === true, "it switches on PS5 controller control")
+            veyra.ps5Profiles = []
+            tryCompare(button, "text", qsTr("去配对"))
+            let page = ""
+            const opened = function(p) { page = p }
+            veyra.navigate.connect(opened)
+            button.clicked()
+            veyra.navigate.disconnect(opened)
+            compare(page, "ps5", "nothing paired: PS5 streaming opens to pair it")
+            veyra.pushKbm = Object.assign({}, veyra.pushKbm, {waiting: "capture-failed", waitingText: "stopped"})
+            tryCompare(button, "text", qsTr("重连"))
+            button.clicked()
+            compare(veyra.ps5ControlRestarts, 1, "a stopped connection is reconnected")
+            veyra.pushKbm = Object.assign({}, veyra.pushKbm, {waiting: "nosource", waitingText: "nothing connected"})
+            tryVerify(function() { return !fixRow.visible }, 3000, "nothing to press when no console is connected")
+            compare(kbm.statusText, "nothing connected")
+            veyra.pushKbm = Object.assign({}, veyra.pushKbm, {waiting: "capture-off", available: true})
+            tryVerify(function() { return !fixRow.visible }, 3000, "and nothing once a session takes them")
+            veyra.pushKbm = Object.assign({}, veyra.pushKbm, {available: false})
+            control("pushfps-kbm-on").toggled(false)
+            tryVerify(function() { return !fixRow.visible }, 3000, "nor while switched off")
         }
     }
 }

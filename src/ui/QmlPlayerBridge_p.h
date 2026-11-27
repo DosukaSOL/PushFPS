@@ -581,6 +581,11 @@ struct QmlPlayerBridge::Impl {
     remoteplay::ControllerState kbmPad;
     enum class KbmTarget { None, Ps5, Ps5Control, Xbox } kbmTarget = KbmTarget::None;
     std::chrono::steady_clock::time_point kbmMovedSent{};   // the last send of mouse movement alone
+    // Switched on and no session takes them: why (remoteplay::kbm::kWaitingIds), shown and said when the
+    // release key or a click on the picture asks for them; the session the "ready" notice was given for.
+    remoteplay::kbm::Waiting kbmWaiting = remoteplay::kbm::Waiting::NoSource;
+    KbmTarget kbmReadyNoticed = KbmTarget::None;
+    std::chrono::steady_clock::time_point kbmWaitNoticeAt{};
     // A controller poll with the keyboard and mouse added when they serve this session.
     remoteplay::ControllerState kbmMix(const remoteplay::ControllerState& pad, KbmTarget from) {
         kbmPad = pad;

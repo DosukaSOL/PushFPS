@@ -19,6 +19,7 @@
 #include <cmath>
 #include <cstdint>
 #include <deque>
+#include <optional>
 #include <string_view>
 
 #include "veyra/remoteplay/Types.h"
@@ -241,6 +242,68 @@ private:
     double intervalUs_ = 1000.0;   // a 1000 Hz mouse until the reports say otherwise
     bool haveInterval_ = false;
 };
+
+// ---- where the hidden cursor is held while captured ---------------------------------------------------
+// Screen pixels, right and bottom exclusive (as Windows' RECT). The cursor is held on one pixel in the
+// middle of the picture, or of the window when the picture has no usable place: nothing floating over
+// the picture (the full screen bar, a menu) can then be clicked by the console's buttons.
+struct Box { long left = 0, top = 0, right = 0, bottom = 0; };
+inline std::optional<Box> cursorHold(Box picture, Box window) {
+    const auto usable = [](const Box& b) { return b.right - b.left >= 2 && b.bottom - b.top >= 2; };
+    const Box* area = usable(picture) ? &picture : usable(window) ? &window : nullptr;
+    if (!area) return std::nullopt;
+    const long x = area->left + (area->right - area->left) / 2, y = area->top + (area->bottom - area->top) / 2;
+    return Box{x, y, x + 1, y + 1};
+}
+
+// ---- why nothing takes them yet -----------------------------------------------------------------------
+// Switched on while no session can take the keyboard and mouse: what is missing, so the interface can say
+// it and offer the one step that fixes it. A capture card only brings the picture and the sound in; the
+// keys reach a PS5 through Remote Play ("Control the PS5 through Remote Play" in the capture card window,
+// which needs the PS5 paired once under PS5 streaming).
+enum class Waiting : std::uint8_t {
+    Ready,            // a session takes them (nothing is missing)
+    NoSource,         // nothing plays
+    OtherSource,      // a picture without a console behind it (a file, a screen capture, the test pattern)
+    PcStream,         // PC streaming sends the real keyboard and mouse to the PC itself
+    ViewOnly,         // a PS5 stream in view-only mode: the PC's input is off
+    XboxNoPad,        // an Xbox stream with its controller switched off
+    CaptureOff,       // a capture card without "Control the PS5 through Remote Play"
+    CapturePair,      // ... switched on, and no PS5 is paired
+    CaptureStarting,  // ... connecting (or coming back)
+    CapturePin,       // ... the PS5 asks for its sign-in PIN
+    CaptureFailed,    // ... it stopped and waits for a reconnect
+    Connecting,       // a PS5 or Xbox stream is still opening
+    Count
+};
+constexpr std::array<std::string_view, std::size_t(Waiting::Count)> kWaitingIds{
+    "", "nosource", "source", "pc", "viewonly", "xboxpad",
+    "capture-off", "capture-pair", "capture-starting", "capture-pin", "capture-failed", "connecting"};
+struct Sources {
+    bool playing = false;           // a picture plays
+    bool ps5Stream = false;         // a PS5 Remote Play stream (opening or running)
+    bool ps5StreamPad = false;      // ... and its controller is read (not view only)
+    bool ps5StreamRunning = false;  // ... and it runs
+    bool xboxStream = false, xboxStreamPad = false;
+    bool pcStream = false;
+    bool captureCard = false;       // a capture card is the picture
+    bool captureControl = false;    // "Control the PS5 through Remote Play" is switched on
+    std::string_view controlState;  // its state: off, nopair, starting, recovering, connected, failed, pin
+};
+inline Waiting waitingFor(const Sources& s) {
+    if (s.ps5Stream) return !s.ps5StreamPad ? Waiting::ViewOnly : s.ps5StreamRunning ? Waiting::Ready : Waiting::Connecting;
+    if (s.xboxStream) return s.xboxStreamPad ? Waiting::Ready : Waiting::XboxNoPad;
+    if (s.captureCard) {
+        if (!s.captureControl) return Waiting::CaptureOff;
+        if (s.controlState == "connected") return Waiting::Ready;
+        if (s.controlState == "nopair") return Waiting::CapturePair;
+        if (s.controlState == "pin") return Waiting::CapturePin;
+        if (s.controlState == "failed") return Waiting::CaptureFailed;
+        return Waiting::CaptureStarting;
+    }
+    if (s.pcStream) return Waiting::PcStream;
+    return s.playing ? Waiting::OtherSource : Waiting::NoSource;
+}
 
 inline std::int16_t axis(double v) {
     return std::int16_t(std::lround(std::clamp(v, -1.0, 1.0) * 32767.0));

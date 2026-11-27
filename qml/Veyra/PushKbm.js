@@ -105,3 +105,23 @@ function status(state, on) {
     if (state && state.available === true) return "ready"
     return "waiting"
 }
+
+// Waiting (switched on, nothing takes them): the one step that fixes what is missing, as an action id the
+// interface words and runs, or "" when there is nothing to press (connect a console, reconnect a stream).
+// `waiting` is the bridge's kWaitingIds (remoteplay/PushKbm.h); `paired` whether a PS5 is paired.
+//   control-on  switch on "Control the PS5 through Remote Play" (a capture card brings only the picture)
+//   pair        open PS5 streaming to pair the PS5 once (what controller control needs)
+//   reconnect   reconnect PS5 controller control
+//   capture     open the capture card window (the PS5 asks for its sign-in PIN there)
+//   ps5 / xbox  open that window (view only, or the Xbox controller switched off)
+function fixFor(waiting, paired) {
+    switch (String(waiting || "")) {
+    case "capture-off": return paired === true ? "control-on" : "pair"
+    case "capture-pair": return "pair"
+    case "capture-failed": return "reconnect"
+    case "capture-pin": return "capture"
+    case "viewonly": return "ps5"
+    case "xboxpad": return "xbox"
+    }
+    return ""
+}

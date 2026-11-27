@@ -75,6 +75,7 @@ void QmlPlayerBridge::setupKbm() {
     connect(i.kbm.get(), &ui::PushKbmCapture::releaseRequested, this, [this] {
         emit notice(tr("已交还鼠标和键盘 · 点击画面或按 %1 再交给主机").arg(impl_->kbmReleaseName), false);
     });
+    connect(i.kbm.get(), &ui::PushKbmCapture::notReady, this, [this] { kbmSayWaiting(false); });
     connect(i.kbm.get(), &ui::PushKbmCapture::input, this, [this] { kbmSend(false); });
     connect(i.kbm.get(), &ui::PushKbmCapture::moved, this, [this] { kbmSend(true); });
     connect(i.kbm.get(), &ui::PushKbmCapture::listeningChanged, this, [this] { refreshKbmState(); });
@@ -102,7 +103,10 @@ void QmlPlayerBridge::tickKbm() {
 #ifdef VEYRA_ENABLE_REMOTEPLAY
     auto& i = *impl_;
     if (!i.kbm) return;
-    if (i.videoWindow) i.kbm->setWindow(GetAncestor(i.videoWindow, GA_ROOT));
+    if (i.videoWindow) {
+        i.kbm->setWindow(GetAncestor(i.videoWindow, GA_ROOT));
+        i.kbm->setPicture(i.videoWindow);
+    }
     // Who takes the keyboard and mouse now: a session whose controller timer runs (a view-only PS5
     // stream has none) and, for PS5 controller control, a session that is connected.
     const auto& s = i.snapshot;
@@ -120,9 +124,78 @@ void QmlPlayerBridge::tickKbm() {
         i.kbmTarget = target;
         veyra::log::info("kbm", std::format("target={}", int(target)));
     }
-    i.kbm->setAvailable(target != T::None && i.kbm->settings().on);
+    const bool on = i.kbm->settings().on;
+    i.kbm->setAvailable(target != T::None && on);
+
+    // Nothing takes them: what is missing (said in the interface, and when they are asked for).
+    kbm::Sources src;
+    src.playing = s.running && !s.failed;
+    src.ps5Stream = s.remotePlay && !s.failed && (s.running || s.transport == engine::TransportState::Opening);
+    src.ps5StreamPad = i.controllerTimer && i.controllerTimer->isActive();
+    src.ps5StreamRunning = s.running;
+#ifdef VEYRA_ENABLE_XBOX
+    src.xboxStream = s.xboxActive;
+    src.xboxStreamPad = i.xboxTimer && i.xboxTimer->isActive();
+#endif
+    src.pcStream = s.moonlightActive;
+    src.captureCard = captureCardLive();
+    src.captureControl = i.prefBool("ps5CaptureControl", false);
+    const std::string controlState = i.ps5ControlState.value(QStringLiteral("state")).toString().toStdString();
+    src.controlState = controlState;
+    kbm::Waiting waiting = target != T::None ? kbm::Waiting::Ready : kbm::waitingFor(src);
+    if (target == T::None && waiting == kbm::Waiting::Ready) waiting = kbm::Waiting::Connecting;
+    if (waiting != i.kbmWaiting && on)
+        veyra::log::info("kbm", std::format("waiting={}", kbm::kWaitingIds[std::size_t(waiting)]));
+    i.kbmWaiting = waiting;
+
+    // Once per session that can take them: how to start (a click on the picture or the release key).
+    if (target == T::None) i.kbmReadyNoticed = T::None;
+    else if (on && i.kbmReadyNoticed != target && !i.kbm->captured()) {
+        i.kbmReadyNoticed = target;
+        emit notice(tr("鼠标和键盘可以用了：点击画面或按 %1 开始").arg(i.kbmReleaseName), false);
+    }
 #endif
     refreshKbmState();
+}
+
+QString QmlPlayerBridge::kbmWaitingText() const {
+#ifdef VEYRA_ENABLE_REMOTEPLAY
+    using W = kbm::Waiting;
+    switch (impl_->kbmWaiting) {
+    case W::Ready: return {};
+    case W::NoSource: return tr("还没有连接主机：连接 PS5 串流或 Xbox 串流，或在采集卡窗口打开“用远程游玩控制 PS5”");
+    case W::OtherSource: return tr("这个画面后面没有主机：鼠标和键盘用于 PS5 串流、Xbox 串流，以及打开“用远程游玩控制 PS5”的采集卡");
+    case W::PcStream: return tr("PC 串流直接把鼠标和键盘发给电脑，用不到这个功能");
+    case W::ViewOnly: return tr("这个 PS5 串流是“仅观看”，电脑的输入已关闭：关掉“仅观看”后重新连接");
+    case W::XboxNoPad: return tr("这个 Xbox 串流没有打开手柄：在 Xbox 窗口打开“手柄”后重新连接");
+    case W::CaptureOff: return tr("采集卡只把画面和声音传进来，按键要经 PS5 远程游玩发给主机：打开“用远程游玩控制 PS5”");
+    case W::CapturePair: return tr("先配对 PS5：在「PS5 串流」里配对一次，采集卡就能经远程游玩控制 PS5");
+    case W::CaptureStarting: return tr("正在连接 PS5 手柄控制，连上后就能用鼠标和键盘");
+    case W::CapturePin: return tr("PS5 要求输入登录 PIN：在采集卡面板「PS5 手柄控制」里填写");
+    case W::CaptureFailed: return tr("PS5 手柄控制没有连上：检查 PS5 和网络后重连");
+    case W::Connecting: return tr("正在连接，连上后就能用鼠标和键盘");
+    case W::Count: break;
+    }
+#endif
+    return {};
+}
+
+void QmlPlayerBridge::kbmSayWaiting(bool fromClick) {
+#ifdef VEYRA_ENABLE_REMOTEPLAY
+    auto& i = *impl_;
+    using W = kbm::Waiting;
+    if (!i.kbm || !i.kbm->settings().on || i.kbm->available()) return;
+    // A click on a picture with no console behind it is an ordinary click: that is said for the key only.
+    if (fromClick && (i.kbmWaiting == W::OtherSource || i.kbmWaiting == W::PcStream || i.kbmWaiting == W::NoSource)) return;
+    // The key's message can reach the filter twice (the event loop and the window procedure).
+    const auto now = std::chrono::steady_clock::now();
+    if (now - i.kbmWaitNoticeAt < std::chrono::seconds(fromClick ? 8 : 2)) return;
+    i.kbmWaitNoticeAt = now;
+    const QString text = kbmWaitingText();
+    if (!text.isEmpty()) emit notice(text, true);
+#else
+    (void)fromClick;
+#endif
 }
 
 void QmlPlayerBridge::kbmSend(bool movement) {
@@ -171,6 +244,9 @@ void QmlPlayerBridge::refreshKbmState() {
                                    : i.kbmTarget == T::Ps5Control ? QStringLiteral("ps5control")
                                    : i.kbmTarget == T::Xbox ? QStringLiteral("xbox") : QString();
     next[QStringLiteral("releaseName")] = i.kbmReleaseName;
+    const bool waiting = have && i.kbm->settings().on && !i.kbm->available();
+    next[QStringLiteral("waiting")] = waiting ? [&] { const auto id = kbm::kWaitingIds[std::size_t(i.kbmWaiting)]; return QString::fromLatin1(id.data(), qsizetype(id.size())); }() : QString();
+    next[QStringLiteral("waitingText")] = waiting ? kbmWaitingText() : QString();
     next[QStringLiteral("listenControl")] = have ? i.kbm->listeningControl() : -1;
     next[QStringLiteral("listenSlot")] = have ? i.kbm->listeningSlot() : -1;
 #else
@@ -180,6 +256,8 @@ void QmlPlayerBridge::refreshKbmState() {
     next[QStringLiteral("captured")] = false;
     next[QStringLiteral("target")] = QString();
     next[QStringLiteral("releaseName")] = QString();
+    next[QStringLiteral("waiting")] = QString();
+    next[QStringLiteral("waitingText")] = QString();
     next[QStringLiteral("listenControl")] = -1;
     next[QStringLiteral("listenSlot")] = -1;
 #endif
@@ -195,7 +273,11 @@ void QmlPlayerBridge::pushKbmCapture(bool on) {
     auto& i = *impl_;
     if (!i.kbm) return;
     if (!on) { i.kbm->capture(false); return; }
-    if (i.videoWindow) i.kbm->setWindow(GetAncestor(i.videoWindow, GA_ROOT));
+    if (!i.kbm->available()) { kbmSayWaiting(true); return; }
+    if (i.videoWindow) {
+        i.kbm->setWindow(GetAncestor(i.videoWindow, GA_ROOT));
+        i.kbm->setPicture(i.videoWindow);
+    }
     i.kbm->capture(true);
 #else
     (void)on;

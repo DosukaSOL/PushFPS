@@ -83,7 +83,8 @@ DialogLayer {
         case "using": return qsTr("正在使用：主机收到的是鼠标和键盘 · 按 %1 交还").arg(kbm.releaseName)
         case "ready": return qsTr("可以开始：点击画面或按 %1").arg(kbm.releaseName)
         }
-        return qsTr("用于 PS5 远程游玩、开着“用远程游玩控制 PS5”的采集卡，以及 Xbox 串流")
+        // Waiting: what is missing (a capture card alone cannot press anything on the console).
+        return String(kbm.kbmState.waitingText || "") || qsTr("用于 PS5 远程游玩、开着“用远程游玩控制 PS5”的采集卡，以及 Xbox 串流")
     }
 
     onShownChanged: if (!shown) { veyra.pushKbmStopListening(); kbm.note = "" }
@@ -106,11 +107,18 @@ DialogLayer {
             label: qsTr("使用鼠标和键盘")
             hint: kbm.statusText
             hintBelow: true
+            hintColor: Kbm.status(kbm.kbmState, kbm.cfg.on) === "waiting" && String(kbm.kbmState.waiting || "") !== "" ? Theme.warn : Theme.t3
             VSwitch {
                 objectName: "pushfps-kbm-on"
                 checked: kbm.cfg.on
                 onToggled: v => kbm.set("on", v)
             }
+        }
+        PushKbmFixRow {
+            objectName: "pushfps-kbm-window-fix-row"
+            buttonName: "pushfps-kbm-window-fix"
+            switchedOn: kbm.cfg.on
+            kbmState: kbm.kbmState
         }
         VRow {
             objectName: "pushfps-kbm-preset-row"

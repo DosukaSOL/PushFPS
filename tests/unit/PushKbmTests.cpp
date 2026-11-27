@@ -179,6 +179,58 @@ int main() {
         check(out.inputActive && !has(out, ControllerState::Cross) && out.r2 == 255, "without a controller only the keys and mouse count");
     }
 
+    // ---- where the hidden cursor is held ----
+    {
+        const auto hold = cursorHold(Box{100, 50, 2020, 1130}, Box{0, 0, 3000, 2000});
+        check(hold && hold->left == 1060 && hold->top == 590 && hold->right == 1061 && hold->bottom == 591,
+              "the cursor is held on one pixel in the middle of the picture");
+        const auto window = cursorHold(Box{}, Box{0, 0, 1920, 1080});
+        check(window && window->left == 960 && window->top == 540, "the middle of the window when the picture has no place");
+        check(!cursorHold(Box{5, 5, 6, 6}, Box{0, 0, 1, 1}), "nothing usable: the cursor is left alone");
+        // A picture far wider than tall (a screen capture cropped thin) still has a middle.
+        const auto thin = cursorHold(Box{0, 0, 3000, 2}, Box{});
+        check(thin && thin->top == 1, "a thin picture still has a middle");
+    }
+
+    // ---- why nothing takes them yet ----
+    {
+        Sources s;
+        check(waitingFor(s) == Waiting::NoSource, "nothing plays");
+        s.playing = true;
+        check(waitingFor(s) == Waiting::OtherSource, "a picture with no console behind it");
+        s.captureCard = true;
+        check(waitingFor(s) == Waiting::CaptureOff, "a capture card alone: PS5 controller control is what is missing");
+        s.captureControl = true; s.controlState = "off";
+        check(waitingFor(s) == Waiting::CaptureStarting, "switched on, not yet started");
+        s.controlState = "starting";
+        check(waitingFor(s) == Waiting::CaptureStarting, "connecting");
+        s.controlState = "recovering";
+        check(waitingFor(s) == Waiting::CaptureStarting, "coming back");
+        s.controlState = "nopair";
+        check(waitingFor(s) == Waiting::CapturePair, "no PS5 paired");
+        s.controlState = "pin";
+        check(waitingFor(s) == Waiting::CapturePin, "the sign-in PIN");
+        s.controlState = "failed";
+        check(waitingFor(s) == Waiting::CaptureFailed, "stopped: reconnect");
+        s.controlState = "connected";
+        check(waitingFor(s) == Waiting::Ready, "connected: nothing is missing");
+        Sources ps5; ps5.playing = true; ps5.ps5Stream = true;
+        check(waitingFor(ps5) == Waiting::ViewOnly, "a PS5 stream whose controller is not read is view only");
+        ps5.ps5StreamPad = true;
+        check(waitingFor(ps5) == Waiting::Connecting, "a PS5 stream still opening");
+        ps5.ps5StreamRunning = true;
+        check(waitingFor(ps5) == Waiting::Ready, "a running PS5 stream takes them");
+        Sources xbox; xbox.playing = true; xbox.xboxStream = true;
+        check(waitingFor(xbox) == Waiting::XboxNoPad, "an Xbox stream with its controller switched off");
+        xbox.xboxStreamPad = true;
+        check(waitingFor(xbox) == Waiting::Ready, "an Xbox stream with its controller on");
+        Sources pc; pc.playing = true; pc.pcStream = true;
+        check(waitingFor(pc) == Waiting::PcStream, "PC streaming has the real keyboard and mouse");
+        bool named = true;
+        for (std::size_t w = 1; w < kWaitingIds.size(); ++w) named = named && !kWaitingIds[w].empty();
+        check(named && kWaitingIds[0].empty(), "every reason has an id the interface knows, Ready has none");
+    }
+
     std::printf("%s (%d failed)\n", failures ? "FAILED" : "ALL PASSED", failures);
     return failures ? 1 : 0;
 }

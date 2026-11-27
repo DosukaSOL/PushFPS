@@ -1236,9 +1236,11 @@ VGroup {
                 case "using": return qsTr("正在使用：主机收到的是鼠标和键盘 · 按 %1 交还").arg(kbmRow.releaseName)
                 case "ready": return qsTr("可以开始：点击画面或按 %1").arg(kbmRow.releaseName)
                 }
-                return qsTr("用于 PS5 远程游玩、开着“用远程游玩控制 PS5”的采集卡，以及 Xbox 串流")
+                // Waiting: what is missing (a capture card alone cannot press anything on the console).
+                return String(kbmRow.kbmState.waitingText || "") || qsTr("用于 PS5 远程游玩、开着“用远程游玩控制 PS5”的采集卡，以及 Xbox 串流")
             }
             hintBelow: true
+            hintColor: Kbm.status(kbmRow.kbmState, kbmRow.cfg.on) === "waiting" && String(kbmRow.kbmState.waiting || "") !== "" ? Theme.warn : Theme.t3
             RowLayout {
                 spacing: 8
                 VButton {
@@ -1252,6 +1254,12 @@ VGroup {
                     onToggled: v => veyra.setPreference("pushKbm", Kbm.text(Kbm.changed(kbmRow.cfg, "on", v)))
                 }
             }
+        }
+        // The one step that lets them reach the console, under the row that says what is missing.
+        PushKbmFixRow {
+            objectName: "pushfps-kbm-fix-row"
+            switchedOn: kbmRow.cfg.on
+            kbmState: kbmRow.kbmState
         }
     }
     PushSection {

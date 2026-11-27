@@ -46,6 +46,14 @@ t.same(K.controlsFor(['cross', 'create', 'home'], 'ps'), ['cross', 'create', 'ho
 t.same([K.status({}, false), K.status({ captured: true }, true), K.status({ available: true }, true), K.status({}, true)],
        ['off', 'using', 'ready', 'waiting'], 'the status line follows the state')
 
+// A capture card brings only the picture: the fix is controller control (or pairing the PS5 first).
+t.same([K.fixFor('capture-off', true), K.fixFor('capture-off', false), K.fixFor('capture-pair', true),
+        K.fixFor('capture-failed', true), K.fixFor('capture-pin', true), K.fixFor('viewonly', true), K.fixFor('xboxpad', false)],
+       ['control-on', 'pair', 'pair', 'reconnect', 'capture', 'ps5', 'xbox'], 'each missing step has its button')
+t.same([K.fixFor('', true), K.fixFor('nosource', true), K.fixFor('source', true), K.fixFor('pc', true),
+        K.fixFor('capture-starting', true), K.fixFor('connecting', true), K.fixFor(undefined, true)],
+       ['', '', '', '', '', '', ''], 'nothing to press where waiting is all there is to do')
+
 const round = K.config(K.text(c), defaults)
 t.same(round, c, 'what is written reads back the same')
 t.done('push_kbm')

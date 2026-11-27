@@ -359,6 +359,10 @@ with the controller and aim with the mouse once you're out of the car.
 - **Start and stop**: click the picture or press **F12** to hand the mouse and keyboard to the console; F12
   again or Alt+Tab takes them back. Function keys you haven't bound stay PushFPS shortcuts.
 - Turn it on in quick setup (*Mouse and keyboard*) or in *Settings*.
+- **With a capture card**: a capture card only brings the picture and the sound in, so the keys go to the PS5
+  through Remote Play. Pair your PS5 once under *PS5 streaming*, then turn on *Control the PS5 through Remote
+  Play* in the capture card window. While something is missing, the *Mouse and keyboard* row says what and
+  offers the button that fixes it.
 
 **PS5 voice chat**: turn on *PC microphone* in the PS5 window and your microphone (the one chosen in
 *Settings → Recording*) joins party and game chat. **F2** mutes and unmutes it, also while the console has

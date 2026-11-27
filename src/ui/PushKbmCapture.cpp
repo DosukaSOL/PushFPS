@@ -100,13 +100,23 @@ void PushKbmCapture::stopListening() {
 }
 
 void PushKbmCapture::clipToWindow() {
-    RECT client{};
-    if (!window_ || !GetClientRect(window_, &client)) return;
-    POINT topLeft{client.left, client.top}, bottomRight{client.right, client.bottom};
-    ClientToScreen(window_, &topLeft);
-    ClientToScreen(window_, &bottomRight);
-    const RECT screen{topLeft.x, topLeft.y, bottomRight.x, bottomRight.y};
-    ClipCursor(&screen);
+    // The hidden cursor is held at the middle of the picture (of the window when the picture has no
+    // place now): raw input still reports every movement of the mouse, and a cursor held there can
+    // never reach the controls floating over the picture.
+    kbm::Box picture{}, window{};
+    RECT r{};
+    if (picture_ && IsWindowVisible(picture_) && GetWindowRect(picture_, &r)) picture = {r.left, r.top, r.right, r.bottom};
+    if (window_ && GetClientRect(window_, &r)) {
+        POINT topLeft{r.left, r.top}, bottomRight{r.right, r.bottom};
+        ClientToScreen(window_, &topLeft);
+        ClientToScreen(window_, &bottomRight);
+        window = {topLeft.x, topLeft.y, bottomRight.x, bottomRight.y};
+    }
+    const auto hold = kbm::cursorHold(picture, window);
+    if (!hold) return;
+    const RECT clip{hold->left, hold->top, hold->right, hold->bottom};
+    SetCursorPos(int(hold->left), int(hold->top));
+    ClipCursor(&clip);
 }
 
 std::uint16_t PushKbmCapture::keyCode(WPARAM wParam, LPARAM lParam) {
@@ -212,6 +222,11 @@ bool PushKbmCapture::nativeEventFilter(const QByteArray& eventType, void* messag
     }
 
     if (!captured_) {
+        // Switched on but no session can take them: the release key says why (the bridge words it). The
+        // key itself goes on to the interface as it would with the feature off.
+        if (isKey && !available_ && mixer_.settings().on && (m == WM_KEYDOWN || m == WM_SYSKEYDOWN) &&
+            ((msg->lParam >> 30) & 1) == 0 && keyCode(msg->wParam, msg->lParam) == mixer_.settings().release)
+            emit notReady();
         // Not captured: only the release key (to start) and the key-up of what ended a capture.
         if (!isKey || !available_ || !mixer_.settings().on) {
             if (isKey && swallowUp_ && (m == WM_KEYUP || m == WM_SYSKEYUP) && keyCode(msg->wParam, msg->lParam) == swallowUp_) {
@@ -239,6 +254,9 @@ bool PushKbmCapture::nativeEventFilter(const QByteArray& eventType, void* messag
                 emit moved();
             }
         }
+        // Read, and handed to the default procedure for the cleanup Windows asks for (RIM_INPUT); the
+        // interface never sees it.
+        DefWindowProcW(msg->hwnd, msg->message, msg->wParam, msg->lParam);
         if (result) *result = 0;
         return true;
     }
