@@ -1275,6 +1275,17 @@ target_include_directories(veyra_push_ocr_windows_tests PRIVATE ${CMAKE_CURRENT_
 target_compile_definitions(veyra_push_ocr_windows_tests PRIVATE UNICODE _UNICODE NOMINMAX)
 target_compile_options(veyra_push_ocr_windows_tests PRIVATE /utf-8 /EHsc)
 target_link_libraries(veyra_push_ocr_windows_tests PRIVATE windowsapp windowscodecs)
+# PushFPS Discord status: what is shown and every byte written (ui/PushDiscordPresence.h; pure, also builds
+# with g++), and the connection against a pretend Discord on pipes of the test's own (ui/PushDiscordClient.h).
+add_executable(veyra_push_discord_presence_tests tests/unit/PushDiscordPresenceTests.cpp)
+target_compile_features(veyra_push_discord_presence_tests PRIVATE cxx_std_20)
+target_include_directories(veyra_push_discord_presence_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+add_executable(veyra_push_discord_client_tests tests/integration/PushDiscordClientTests.cpp src/ui/PushDiscordClient.cpp)
+target_compile_features(veyra_push_discord_client_tests PRIVATE cxx_std_20)
+target_include_directories(veyra_push_discord_client_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_definitions(veyra_push_discord_client_tests PRIVATE UNICODE _UNICODE NOMINMAX)
+target_compile_options(veyra_push_discord_client_tests PRIVATE /utf-8 /EHsc)
+target_link_libraries(veyra_push_discord_client_tests PRIVATE veyra_base)
 add_executable(veyra_push_fg_health_tests tests/unit/PushFgHealthTests.cpp)
 target_compile_features(veyra_push_fg_health_tests PRIVATE cxx_std_20)
 target_include_directories(veyra_push_fg_health_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -1614,6 +1625,8 @@ if(VEYRA_BUILD_QML_UI AND Qt6_FOUND)
     src/ui/PushOcrWinrt.cpp include/veyra/ui/PushOcr.h
     # PushFPS: the keyboard and mouse as a controller for a console (remoteplay/PushKbm.h has the rules).
     src/ui/PushKbmCapture.cpp include/veyra/ui/PushKbmCapture.h
+    # PushFPS: the Discord status (ui/PushDiscordPresence.h decides, PushDiscordClient carries it to Discord).
+    src/ui/PushDiscordClient.cpp include/veyra/ui/PushDiscordClient.h include/veyra/ui/PushDiscordPresence.h
     include/veyra/ui/QmlPlayerBridge.h include/veyra/ui/ThumbnailProvider.h
     # PushFPS streaming mode: a scene source's live picture for the interface.
     src/ui/PushSourceImageProvider.cpp include/veyra/ui/PushSourceImageProvider.h
@@ -1631,6 +1644,7 @@ if(VEYRA_BUILD_QML_UI AND Qt6_FOUND)
     src/ui/bridge/PushStream.cpp
     src/ui/bridge/PushControl.cpp
     src/ui/bridge/PushKbm.cpp
+    src/ui/bridge/PushDiscord.cpp
     src/ui/bridge/PushOcr.cpp
     src/ui/bridge/PushStudio.cpp
     src/ui/bridge/PushFrameInput.cpp

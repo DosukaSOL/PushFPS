@@ -229,6 +229,9 @@ class QmlPlayerBridge : public QObject {
     // PushFPS: the keyboard and mouse as a controller (ui/PushKbmCapture.h, bridge/PushKbm.cpp).
     // {built, on, available, captured, target: ""|ps5|ps5control|xbox, releaseName, listenControl, listenSlot}
     Q_PROPERTY(QVariantMap pushKbm READ pushKbm NOTIFY pushKbmChanged)
+    // PushFPS: the Discord status (ui/PushDiscordPresence.h, bridge/PushDiscord.cpp).
+    // {on, state: off|looking|connected|refused, showing (Discord shows the line now), picture (a console plays)}
+    Q_PROPERTY(QVariantMap pushDiscord READ pushDiscord NOTIFY pushDiscordChanged)
     // PC streaming (Moonlight / Sunshine): hosts, pairing, apps and stream settings live in
     // `moonlight` (null when the build has no Moonlight); capture state and the stats overlay here.
     Q_PROPERTY(QObject* moonlight READ moonlightModel CONSTANT)
@@ -906,6 +909,7 @@ public:
     Q_INVOKABLE QVariantMap pushKbmDefaults() const;
     Q_INVOKABLE QStringList pushKbmControls() const;
     QVariantMap pushKbm() const;
+    QVariantMap pushDiscord() const;
     QString remotePlayHost() const;
     void setRemotePlayHost(const QString& value);
     QString remotePlayPin() const;
@@ -1713,6 +1717,7 @@ signals:
     void ps5Changed();
     void ps5ControlChanged();
     void pushKbmChanged();
+    void pushDiscordChanged();
     void pushKbmBinding(int control, int slot, int code);
     void moonlightUiChanged();
     void imageBatchChanged();
@@ -1867,6 +1872,7 @@ private:
     void setupKbm();
     void pushApplyKbm();
     void tickKbm();
+    void tickDiscord();
     void kbmSend(bool movement);
     void refreshKbmState();
     QString kbmWaitingText() const;

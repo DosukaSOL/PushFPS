@@ -376,6 +376,11 @@ Item {
             // Reported on 27 November 2026 (issue 33): a Magewell Pro Capture HDMI 4K Plus LT, as DirectShow names it.
             veyra.captureDeviceLabel = "00 Pro Capture HDMI 4K Plus LT"
             compare(row.hint, qsTr("有 PushFPS 用户报告可用"))
+            // Reported on 27 November 2026 (issues 36 and 35): a UGREEN 15389 (CM629) and a Benfei card.
+            veyra.captureDeviceLabel = "UGREEN 15389"
+            compare(row.hint, qsTr("有 PushFPS 用户报告可用"))
+            veyra.captureDeviceLabel = "Benfei Video Capture"
+            compare(row.hint, qsTr("有 PushFPS 用户报告可用"))
             veyra.captureDeviceLabel = "USB Capture HDMI 4K+"
             verify(!findChild(quick, "pushfps-card-status").visible)
             veyra.captureDeviceLabel = "AVerMedia Live Gamer Ultra-Video"

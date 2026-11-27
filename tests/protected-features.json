@@ -2411,6 +2411,43 @@
     }
    ],
    "needs_hardware": "a capture card and a PS5, a mouse and keyboard"
+  },
+  {
+   "id": "F90",
+   "what": "Discord status: off unless switched on; only while a console's picture plays, the game profile's name (unless switched off), the console as PushFPS names it and the frame rates go to the Discord app's local pipe, opened at identification level, with every byte written held by a test, Discord's answers read only for their event and code, updates paced to what Discord takes, and a pipe that misbehaves or never answers dropped without holding PushFPS",
+   "guards": [
+    {
+     "file": "tests/unit/PushDiscordPresenceTests.cpp",
+     "ci": "veyra_push_discord_presence_tests",
+     "contains": "Never for a video, a file, a window, the frame input or a still picture"
+    },
+    {
+     "file": "tests/unit/PushDiscordPresenceTests.cpp",
+     "ci": "veyra_push_discord_presence_tests",
+     "contains": "A user name cannot pose as the event"
+    },
+    {
+     "file": "tests/unit/PushDiscordPresenceTests.cpp",
+     "ci": "veyra_push_discord_presence_tests",
+     "contains": "never more than Discord takes"
+    },
+    {
+     "file": "tests/integration/PushDiscordClientTests.cpp",
+     "ci": "veyra_push_discord_client_tests",
+     "contains": "A program that holds the pipe and never answers does not hold PushFPS"
+    },
+    {
+     "file": "tests/integration/PushDiscordClientTests.cpp",
+     "ci": "veyra_push_discord_client_tests",
+     "contains": "Switched off: the line is cleared, then the pipe closes, quickly"
+    },
+    {
+     "file": "tests/qml/quick/tst_push_discord.qml",
+     "ci": "tst_push_discord",
+     "contains": "test_off_until_switched_on_and_the_game_name_follows"
+    }
+   ],
+   "needs_hardware": "a PC with the Discord app and a second Discord account to look at the profile"
   }
  ]
 }

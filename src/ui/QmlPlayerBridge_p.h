@@ -115,6 +115,8 @@ class QProcess;
 #endif
 // PushFPS: the keyboard and mouse as a controller (bridge/PushKbm.cpp); built in every configuration.
 #include "veyra/ui/PushKbmCapture.h"
+// PushFPS: the Discord status (bridge/PushDiscord.cpp).
+#include "veyra/ui/PushDiscordClient.h"
 #include <future>
 #include <functional>
 #include <map>
@@ -586,6 +588,16 @@ struct QmlPlayerBridge::Impl {
     remoteplay::kbm::Waiting kbmWaiting = remoteplay::kbm::Waiting::NoSource;
     KbmTarget kbmReadyNoticed = KbmTarget::None;
     std::chrono::steady_clock::time_point kbmWaitNoticeAt{};
+    // PushFPS: the Discord status (bridge/PushDiscord.cpp). The connection exists while the switch is on;
+    // discordState is what pushDiscord() answers. The picture's start time is kept per source, and the game
+    // profile's name is read again only when pushProfiles or pushConsole changes.
+    std::unique_ptr<ui::PushDiscordClient> discord;
+    QVariantMap discordState;
+    std::chrono::steady_clock::time_point discordTickAt{};
+    uint64_t discordSession = 0;
+    int64_t discordStart = 0;
+    QString discordProfilesRead, discordConsoleRead;
+    std::string discordGame;
     // A controller poll with the keyboard and mouse added when they serve this session.
     remoteplay::ControllerState kbmMix(const remoteplay::ControllerState& pad, KbmTarget from) {
         kbmPad = pad;

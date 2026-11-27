@@ -10,6 +10,7 @@ PushFPS connects to other systems only in these cases:
 |---|---|---|---|
 | Automatic update check, a few seconds after start, and *Settings → Check for updates* | GitHub (`api.github.com`, this repository's latest release) | A normal HTTPS request; GitHub sees your IP address as with any website | Block PushFPS in your firewall, or do not click *Check*; no other data is sent |
 | *Share to Discord*, only when you click it | The Discord webhook address you entered (Discord URLs only) | The recording you chose to share | Leave the webhook address empty |
+| *Discord status*, only if you switch it on | The Discord app on your PC (a local connection, no network); Discord then shows it to your friends | While a console's picture plays: the chosen game profile's name (unless you switch that off), the console, the frame rates and when the picture started. Nothing about you is read from Discord | Leave *Discord status* off |
 | PS5 streaming, only when you connect | Your own PS5 on your network | Remote Play pairing and stream data; the PSN account ID you entered is used for pairing and stored encrypted on this PC | Do not use PS5 streaming |
 | PC streaming (Moonlight), only when you connect | Your own Sunshine host on your network | Pairing and stream data | Do not use PC streaming |
 | Xbox streaming, only when you sign in and connect | Microsoft's sign-in and Xbox services, then your Xbox | Your Microsoft sign-in (in Microsoft's own page) and stream data; tokens are stored encrypted on this PC | Do not use Xbox streaming |

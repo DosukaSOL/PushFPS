@@ -130,6 +130,7 @@ that, PushFPS adds what console players need:
 | **NVIDIA Image Scaling** | Fast upscaling and sharpening on NVIDIA, AMD and Intel graphics |
 | **Picture & sound editor** | Picture styles, gamma, sharpness and sound profiles (bass boost, footsteps, night mode and more) |
 | **Share clips** | Saved recordings and instant replays go to Discord in one click |
+| **Discord status** | Your Discord profile shows friends what you're playing through PushFPS (off until you switch it on) |
 | **OBS Studio plugin** | Your boosted picture as a source in OBS |
 | **Tested capture cards** | Which cards are known to work, shown in the app |
 | **15 languages** | English, 简体中文, 繁體中文, 日本語, 한국어, Nederlands, Deutsch, Español, Français, Italiano, Português (Brasil), Türkçe, Polski, Русский, العربية |
@@ -871,6 +872,10 @@ the editor), **Export** (trim, pick tracks, re-encode) and **Show in folder**.
 - **Share to Discord**: the card that appears after saving has **Share to Discord**. Without setup it copies
   the clip and opens Discord, so you paste it with Ctrl+V. With a Discord webhook in *Settings, Playback*
   it posts clips up to 10 MB straight to that channel.
+- **Discord status** (*Settings, Recording*, off by default): your Discord profile shows friends what you're
+  playing through PushFPS, for example *GTA 6 · PS5 · 30 → 120 FPS* and how long you've been playing, while a
+  console's picture plays. The game's name comes from the game profile you picked in quick setup, and you can
+  leave it out. It needs the Discord app running on the same PC.
 - **Advanced encoding settings** (*Settings, Playback*, off by default): rate control (VBR, CBR or constant
   quality with a 1–51 level), encoder preset 1–7, keyframe interval, audio bitrate and MP4 or MKV, like OBS's
   output settings. Off, recordings use the standard settings. If the graphics card can't use a combination,
@@ -1060,6 +1065,8 @@ the window.</sub>
 | FEELWORLD C4K | Reported working by a user (PS5 Pro at 4K 30 FPS, RTX 5080, 30 → 120 FPS) |
 | Monster Capture Card | Reported working by a user (PS5 over USB 3.0, RTX 2080 SUPER) |
 | Magewell Pro Capture HDMI 4K Plus LT | Reported working by a user (PS5 Pro over PCIe, RTX 5090) |
+| UGREEN 15389 (CM629) | Reported working by a user (PS5 at 1080p60 over USB 3.2, RTX 4070 SUPER) |
+| Benfei Video/Audio Capture Card | Reported working by a user (PS5 at 1080p60, RTX 4060; no HDR, sound sometimes only after switching the PS5's resolution) |
 
 Any card that Windows shows as a camera and that sends uncompressed 1080p60 or 4K60 should work. The quick
 setup shows whether your card is on this list.
@@ -1306,6 +1313,7 @@ A measurement from your own card helps: [how to take one](docs/BENCHMARKING.md).
 - [x] Game presets with HUD protection and share codes
 - [x] Latency readout on the picture
 - [x] Share clips to Discord
+- [x] Discord status: what you're playing, on your Discord profile
 - [x] Capture card list with tested status and a report form
 - [x] 14 interface languages, light and black appearance modes
 - [x] Automatic HUD detection with a box editor
@@ -1357,7 +1365,7 @@ A measurement from your own card helps: [how to take one](docs/BENCHMARKING.md).
 PushFPS has no accounts, analytics or telemetry. It only connects to the internet for the update check (GitHub),
 when you share a clip to your own Discord webhook, when you connect a streaming source, when you go live
 (only to the platforms you chose), and for translation when you download the local model or choose an online
-engine. Reading the text on the picture happens on your PC. Details in [PRIVACY.md](PRIVACY.md).
+engine. The Discord status, if you switch it on, goes to the Discord app on your PC. Reading the text on the picture happens on your PC. Details in [PRIVACY.md](PRIVACY.md).
 
 ## Build from source
 
