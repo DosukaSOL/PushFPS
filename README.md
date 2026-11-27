@@ -338,12 +338,31 @@ AI enhancement, HUD protection, recording and every other PushFPS feature work o
 
 | Source | What it streams | What you need |
 |---|---|---|
-| **PS5 streaming** | Your own PS5 over your home network (Remote Play protocol, via [chiaki-ng](https://github.com/streetpea/chiaki-ng)) | Remote Play turned on on the PS5, a one-time registration with your PSN account ID and the pairing number the PS5 shows ([step by step](#remote-play-setup-step-by-step)). Your controller works through PushFPS |
+| **PS5 streaming** | Your own PS5 over your home network (Remote Play protocol, via [chiaki-ng](https://github.com/streetpea/chiaki-ng)) | Remote Play turned on on the PS5, a one-time registration with your PSN account ID and the pairing number the PS5 shows ([step by step](#remote-play-setup-step-by-step)). Your controller works through PushFPS, and so do your [mouse and keyboard](#mouse-and-keyboard-on-a-console) |
 | **PC streaming** | Another computer running [Sunshine](https://github.com/LizardByte/Sunshine) (Moonlight protocol) | Sunshine on the other PC and a one-time pairing PIN |
 | **Xbox streaming** (experimental, unofficial) | Your own Xbox console over your home network | Remote features turned on on the Xbox and a Microsoft account sign-in ([step by step](#remote-play-setup-step-by-step)) |
 
 A wired network (or 5 GHz Wi-Fi) gives the most stable picture. Streams are compressed, so a capture card
 still gives the sharpest picture and the lowest latency.
+
+### Mouse and keyboard on a console
+
+Play with this PC's mouse and keyboard on PS5 Remote Play, on Xbox streaming, and on a capture card with
+*Control the PS5 through Remote Play* on. The console sees a controller: each key presses the button that does
+the same thing, the mouse turns the camera, and your controller keeps working beside them, so you can drive
+with the controller and aim with the mouse once you're out of the car.
+
+- **Layouts** for GTA 6 (default and classic), GTA V and Red Dead Redemption 2, after Rockstar's PC keys:
+  WASD to move, Shift to run, Space to jump, F / E to interact, Q for cover, Tab for weapons, the mouse to aim
+  and shoot. Every key can be changed, two keys per button.
+- **Mouse settings**: sensitivity, vertical sensitivity, response curve, stick start and invert vertical.
+- **Start and stop**: click the picture or press **F12** to hand the mouse and keyboard to the console; F12
+  again or Alt+Tab takes them back. Function keys you haven't bound stay PushFPS shortcuts.
+- Turn it on in quick setup (*Mouse and keyboard*) or in *Settings*.
+
+**PS5 voice chat**: turn on *PC microphone* in the PS5 window and your microphone (the one chosen in
+*Settings → Recording*) joins party and game chat. **F2** mutes and unmutes it, also while the console has
+the keyboard.
 
 ### Remote Play setup, step by step
 
@@ -1036,8 +1055,7 @@ the window.</sub>
 | AVerMedia Live Streamer Ultra HD (GC571) | Reported working by a user (PS5 at 1440p60 over PCIe, RTX 3060 Ti) |
 | FEELWORLD C4K | Reported working by a user (PS5 Pro at 4K 30 FPS, RTX 5080, 30 → 120 FPS) |
 | Monster Capture Card | Reported working by a user (PS5 over USB 3.0, RTX 2080 SUPER) |
-| Magewell USB Capture HDMI 4K Plus | Native low-latency mode (from Veyra) |
-| Blackmagic DeckLink / UltraStudio | Blackmagic's own interface (from Veyra) |
+| Magewell Pro Capture HDMI 4K Plus LT | Reported working by a user (PS5 Pro over PCIe, RTX 5090) |
 
 Any card that Windows shows as a camera and that sends uncompressed 1080p60 or 4K60 should work. The quick
 setup shows whether your card is on this list.

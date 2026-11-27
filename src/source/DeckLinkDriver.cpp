@@ -19,6 +19,7 @@
 #include <mutex>
 
 namespace veyra::source::decklink {
+bool builtIn(){return true;}
 using Microsoft::WRL::ComPtr;
 namespace {
 bool checked(HRESULT hr,const char* operation,std::wstring* error=nullptr){
@@ -271,6 +272,7 @@ std::unique_ptr<Driver> makeDriver(){return std::make_unique<ComDriver>();}
 }
 #else
 namespace veyra::source::decklink {
+bool builtIn(){return false;}
 std::vector<Device> devices(){return {};}
 std::vector<Mode> modes(std::wstring_view){return {};}
 std::unique_ptr<Driver> makeDriver(){return {};}

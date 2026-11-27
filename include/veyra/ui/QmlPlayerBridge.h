@@ -175,6 +175,9 @@ class QmlPlayerBridge : public QObject {
     // Magewell Pro Capture low-latency mode (MagewellCapture.h): whether the selected device is
     // one, and a one-line state (active with its latency, missing runtime, or why it fell back).
     Q_PROPERTY(bool captureMagewellDevice READ captureMagewellDevice NOTIFY captureChanged)
+    // PushFPS: false when the build has no Magewell / Blackmagic SDK (the rows for those paths are hidden).
+    Q_PROPERTY(bool captureMagewellBuilt READ captureMagewellBuilt CONSTANT)
+    Q_PROPERTY(bool captureBlackmagicNativeBuilt READ captureBlackmagicNativeBuilt CONSTANT)
     Q_PROPERTY(QString captureMagewellStatus READ captureMagewellStatus NOTIFY snapshotChanged)
 
     // --- screen-capture dialog ---------------------------------------------
@@ -768,6 +771,8 @@ public:
     bool captureBlackmagicDevice() const;
     bool captureForceSdr() const;
     bool captureMagewellDevice() const;
+    bool captureMagewellBuilt() const;
+    bool captureBlackmagicNativeBuilt() const;
     QString captureMagewellStatus() const;
     void setCaptureForceSdr(bool value);
     bool captureFlipVertical() const;
@@ -882,6 +887,8 @@ public:
     // PushFPS: the address Sony's sign-in page landed on (or its code); fills in the Account ID.
     Q_INVOKABLE void ps5FinishSignIn(const QString& pasted);
     Q_INVOKABLE void ps5SendLoginPin(const QString& pin);
+    // PushFPS voice chat: mute or unmute this PC's microphone in a PS5 stream (shortcut micMute, F2 unless changed).
+    Q_INVOKABLE void ps5ToggleMicMute();
     Q_INVOKABLE void ps5Cancel();
     Q_INVOKABLE void ps5Calibrate();
     // key: enabled | background (saved preferences ps5CaptureControl / ps5ControlBackground).

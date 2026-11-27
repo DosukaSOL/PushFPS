@@ -219,6 +219,7 @@ void EngineController::openRemotePlay(HWND window,source::RemotePlayConnectDesc 
 // A PS5 stream (activeRemote_) takes precedence; otherwise PS5 手柄控制.
 remoteplay::ControllerFeedback EngineController::remotePlayFeedback(){std::lock_guard lock(mutex_);if(activeRemote_)return activeRemote_->takeFeedback();return controlRemote_?controlRemote_->takeFeedback():remoteplay::ControllerFeedback{};}
 void EngineController::remotePlayController(const remoteplay::ControllerState& state){std::lock_guard lock(mutex_);if(activeRemote_)activeRemote_->controller(state);else if(controlRemote_)controlRemote_->controller(state);}
+void EngineController::remotePlayMicrophoneMuted(bool muted){std::lock_guard lock(mutex_);if(activeRemote_)activeRemote_->microphoneMuted(muted);}
 void EngineController::remotePlayLoginPin(std::string pin){std::lock_guard lock(mutex_);if(activeRemote_)activeRemote_->loginPin(std::move(pin));else if(controlRemote_)controlRemote_->loginPin(std::move(pin));}
 void EngineController::startRemoteControl(source::RemotePlayConnectDesc desc){
     desc.controlOnly=true;desc.request.viewOnly=false;
@@ -473,6 +474,7 @@ PlayerSnapshot EngineController::snapshot()const{
         copy.remoteReceivedFps=s.receivedFps;copy.remoteDecodedFps=s.decodedFps;copy.remoteRatesReady=s.ratesReady;
         copy.remoteReceived=s.video.accessUnits;copy.remoteDecoded=s.decodedFrames;copy.remoteIngressDropped=s.video.dropped;
         copy.remotePlaySkipped=activeRemote->skipped();copy.captureAudio=activeRemote->audioState();copy.audioAvailable=copy.captureAudio.available;
+        copy.remoteMicrophoneLive=activeRemote->microphoneLive();
     }
 #endif
 #ifdef VEYRA_ENABLE_MOONLIGHT

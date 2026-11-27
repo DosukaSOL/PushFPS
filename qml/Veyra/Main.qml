@@ -1112,6 +1112,14 @@ Window {
         autoRepeat: false
         onActivated: root.keyToggleLatency()
     }
+    // PushFPS voice chat: this PC's microphone in a PS5 stream (Ps5SourceDialog "电脑麦克风").
+    Shortcut {
+        objectName: "pushfps-key-mic"
+        sequence: veyra.shortcuts.micMute || ""
+        autoRepeat: false
+        enabled: !!veyra.ps5 && veyra.ps5.mic === true && veyra.ps5.active === true
+        onActivated: veyra.ps5ToggleMicMute()
+    }
     Shortcut {
         objectName: "pushfps-key-compare"
         sequence: veyra.shortcuts.compareClip || ""

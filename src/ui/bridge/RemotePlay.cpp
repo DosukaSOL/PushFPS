@@ -1,5 +1,6 @@
 // QML bridge: RemotePlay responsibilities.
 #include "../QmlPlayerBridge_p.h"
+#include "veyra/engine/MicrophoneCapture.h"   // PushFPS voice chat (ps5Connect)
 
 namespace veyra::ui {
 // --- PS5 Remote Play (P4-e) ---------------------------------------------------
@@ -24,6 +25,9 @@ QVariantMap QmlPlayerBridge::ps5() const {
     out["controller"] = c.connected;
     out["gyro"] = c.gyro && c.accel;
     out["calibrating"] = c.calibrating;
+    // PushFPS voice chat: muted by the key, and whether the console hears this PC's microphone now.
+    out["micMuted"] = impl_->ps5MicMuted;
+    out["micLive"] = s.remotePlay && s.remoteMicrophoneLive;
 #else
     out["available"] = false;
 #endif
@@ -297,7 +301,9 @@ void QmlPlayerBridge::ps5Load() {
         // sharper picture than H.264 at the same requested bitrate (every PS5 encodes it for Remote Play).
         i.ps5Form = QVariantMap{{"host", QString()}, {"account", QString()}, {"quality", 3}, {"codec", 1}, {"bitrate", 2}, {"viewOnly", false},
             {"decode", int(std::min(2u, GetPrivateProfileIntW(L"RemotePlay", L"DecodeMode", 0, ps5Settings().c_str())))},
-            {"sampling", int(std::min(1u, GetPrivateProfileIntW(L"RemotePlay", L"FineSampling", 1, ps5Settings().c_str())))}};
+            {"sampling", int(std::min(1u, GetPrivateProfileIntW(L"RemotePlay", L"FineSampling", 1, ps5Settings().c_str())))},
+            // PushFPS voice chat: off unless switched on; one setting for every pairing, like decoding.
+            {"mic", GetPrivateProfileIntW(L"RemotePlay", L"Microphone", 0, ps5Settings().c_str()) == 1}};
         if (!i.ps5Profile.empty())
             if (auto saved = remoteplay::loadProfile(directory / i.ps5Profile)) {
                 i.ps5Form["host"] = QString::fromStdString(saved->host);
@@ -327,7 +333,7 @@ bool QmlPlayerBridge::ps5Set(const QString& key, const QVariant& value) {
         bool ok = false; const int n = value.toInt(&ok); const auto [low, high] = ranges.value(key);
         if (!ok || n < low || n > high) return false;
         impl_->ps5Form[key] = n;
-    } else if (key == QLatin1String("viewOnly")) impl_->ps5Form[key] = value.toBool();
+    } else if (key == QLatin1String("viewOnly") || key == QLatin1String("mic")) impl_->ps5Form[key] = value.toBool();
     else if (key == QLatin1String("host") || key == QLatin1String("account")) impl_->ps5Form[key] = value.toString().trimmed();
     else return false;
     emit ps5Changed();
@@ -461,6 +467,15 @@ bool QmlPlayerBridge::ps5Connect() {
     desc.highQualitySampling = i.ps5Form.value("sampling").toInt() == 1;
     WritePrivateProfileStringW(L"RemotePlay", L"DecodeMode", std::to_wstring(decode).c_str(), ps5Settings().c_str());
     WritePrivateProfileStringW(L"RemotePlay", L"FineSampling", desc.highQualitySampling ? L"1" : L"0", ps5Settings().c_str());
+    // PushFPS voice chat: the microphone chosen for recording (empty: Windows' default), never in view-only.
+    desc.microphone = i.ps5Form.value("mic").toBool() && !desc.request.viewOnly;
+    if (desc.microphone) {
+        desc.attachMicrophone = [id = recordingMicrophoneId().toStdWString()](std::shared_ptr<engine::MicrophoneSink> sink) {
+            engine::attachMicrophone(std::move(sink), id);
+        };
+        desc.detachMicrophone = [](const engine::MicrophoneSink* sink) { engine::detachMicrophone(sink); };
+    }
+    WritePrivateProfileStringW(L"RemotePlay", L"Microphone", i.ps5Form.value("mic").toBool() ? L"1" : L"0", ps5Settings().c_str());
     const bool viewOnly = desc.request.viewOnly;
     // The console has one Remote Play slot; the engine ends PS5 手柄控制 first.
     if (i.engine.remoteControlRequested()) emit notice(tr("已结束 PS5 手柄控制：PS5 同一时间只允许一个远程游玩连接"), false);
@@ -504,6 +519,7 @@ bool QmlPlayerBridge::ps5Connect() {
         }
     });
     i.ps5Watching = true;
+    i.ps5MicMuted = false; i.ps5MicNoticed = false;   // a new session starts unmuted (PushFPS voice chat)
     rememberSource(QStringLiteral("ps5"), QString::fromStdString(host));
     i.ps5Status = tr("连接已开始。需要登录 PIN 时在下方提交。关闭面板不停止串流。");
     veyra::log::info("remoteplay-ui", std::format("connect quality={} codec={} bitrate={} decode={} viewOnly={}",
@@ -655,6 +671,18 @@ void QmlPlayerBridge::ps5SendLoginPin(const QString& pin) {
     (void)pin; // RemotePlay disabled: keep the QML-callable symbol but no backend.
 #endif
 }
+void QmlPlayerBridge::ps5ToggleMicMute() {
+#ifdef VEYRA_ENABLE_REMOTEPLAY
+    auto& i = *impl_;
+    if (!i.ps5Form.value("mic").toBool() || !i.snapshot.remotePlay) return;
+    i.ps5MicMuted = !i.ps5MicMuted;
+    i.engine.remotePlayMicrophoneMuted(i.ps5MicMuted);
+    const QString key = shortcuts().value(QStringLiteral("micMute")).toString();
+    emit notice(i.ps5MicMuted ? (key.isEmpty() ? tr("PS5 语音聊天：麦克风已静音") : tr("PS5 语音聊天：麦克风已静音 · 按 %1 取消静音").arg(key))
+                              : (key.isEmpty() ? tr("PS5 语音聊天：麦克风已打开") : tr("PS5 语音聊天：麦克风已打开 · 按 %1 静音").arg(key)), false);
+    emit ps5Changed();
+#endif
+}
 void QmlPlayerBridge::ps5Cancel() {
     if (impl_->ps5Busy && impl_->ps5Worker.joinable()) { impl_->ps5Worker.request_stop(); return; }
     if (impl_->snapshot.remotePlay) stopPlayback();
@@ -735,6 +763,17 @@ void QmlPlayerBridge::tickPs5() {
         const bool wanted = (i.padUsers & (Impl::PadPs5 | Impl::PadXbox)) != 0 && !(i.kbm && i.kbm->settings().on);
         if (i.padMissing.due(playing, wanted, i.controller.connected(), remoteplay::monotonic100ns()))
             emit notice(tr("这台电脑上没有找到手柄。请用 USB 线或蓝牙把手柄连接到这台电脑：连接在主机上的手柄在这里读不到。"), false);
+    }
+    // PushFPS voice chat: the first time a session's microphone goes live, PushFPS says so and how to mute it.
+    {
+        const bool live = i.snapshot.remotePlay && i.snapshot.remoteMicrophoneLive;
+        if (live != i.ps5MicLiveSeen) { i.ps5MicLiveSeen = live; changed = true; }
+        if (live && !i.ps5MicNoticed) {
+            i.ps5MicNoticed = true;
+            const QString key = shortcuts().value(QStringLiteral("micMute")).toString();
+            emit notice(key.isEmpty() ? tr("PS5 语音聊天：这台电脑的麦克风已打开")
+                                      : tr("PS5 语音聊天：这台电脑的麦克风已打开 · 按 %1 静音").arg(key), false);
+        }
     }
 #endif
     if (changed) emit ps5Changed();

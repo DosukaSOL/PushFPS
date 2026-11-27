@@ -33,7 +33,9 @@ QVariantList QmlPlayerBridge::captureDevices() const {
     QVariantList out;
     for (const auto& d : impl_->captureVideo) {
         const bool native=source::decklink::isPath(d.path);
-        const bool enabled=impl_->prefBool("blackmagicNativeCapture",false);
+        // PushFPS: only where the build has Blackmagic's SDK; without it the native list is always empty and
+        // the switch would hide the card's DirectShow entry too.
+        const bool enabled=source::decklink::builtIn()&&impl_->prefBool("blackmagicNativeCapture",false);
         if(native&&!enabled)continue;
         if(!native&&enabled&&source::isBlackmagicCaptureDevice(d.name,d.path))continue;
         // PushFPS's own virtual camera is its output, never a source (source/PushCaptureDevicePick.h).
@@ -332,6 +334,9 @@ bool QmlPlayerBridge::openCaptureDriverSettings(bool inputSelector) {
     queryCapture(3, i.captureDevice);
     return true;
 }
+// PushFPS: whether this build has the vendors' own capture paths at all (their SDKs are not part of it).
+bool QmlPlayerBridge::captureMagewellBuilt() const { return source::magewell::builtIn(); }
+bool QmlPlayerBridge::captureBlackmagicNativeBuilt() const { return source::decklink::builtIn(); }
 bool QmlPlayerBridge::captureMagewellDevice() const { return source::magewell::isProCaptureDevicePath(impl_->captureDevice); }
 QString QmlPlayerBridge::captureMagewellStatus() const {
     std::wstring runtime;
@@ -473,7 +478,7 @@ void QmlPlayerBridge::tickCapture() {
         if(allowed(i.capturePrefs.videoPath))pick=i.capturePrefs.videoPath;
         // The two APIs are separate identities. Restore an explicitly used
         // endpoint, or select a unique native endpoint; never map by ordinal.
-        const bool native=i.prefBool("blackmagicNativeCapture",false);
+        const bool native=source::decklink::builtIn()&&i.prefBool("blackmagicNativeCapture",false);
         const auto remembered=wideOf(i.prefs.value(native?"blackmagicNativeLastDevice":"blackmagicDirectShowLastDevice").toString());
         if(pick.empty()&&allowed(remembered))pick=remembered;
         if(pick.empty()&&native){std::vector<std::wstring> candidates;for(const auto& d:i.captureVideo)if(source::decklink::isPath(d.path))candidates.push_back(d.path);if(candidates.size()==1)pick=candidates.front();}
@@ -554,7 +559,7 @@ bool QmlPlayerBridge::startCaptureSession() {
     int device = -1;
     for (size_t k = 0; k < i.captureVideo.size(); ++k) if (i.captureVideo[k].path == i.captureDevice) device = int(k);
     const auto* format = source::selectCapturePixelFormat(i.captureFormatList,i.captureResolutionChoice,i.captureRateChoice,i.captureFormatKey);
-    if(source::decklink::isPath(i.captureDevice)!=i.prefBool("blackmagicNativeCapture",false)&&captureBlackmagicDevice()){
+    if(source::decklink::isPath(i.captureDevice)!=(source::decklink::builtIn()&&i.prefBool("blackmagicNativeCapture",false))&&captureBlackmagicDevice()){
         emit notice(tr("采集接口已切换，请刷新并重新选择设备和格式"),true);return false;
     }
     if(device<0){emit notice(tr("请先选择采集设备和格式"),true);return false;}

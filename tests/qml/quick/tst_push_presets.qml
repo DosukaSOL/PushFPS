@@ -373,6 +373,11 @@ Item {
             // Reported on 26 November 2026 (issue 32): a Monster Capture Card.
             veyra.captureDeviceLabel = "Monster Capture Card"
             compare(row.hint, qsTr("有 PushFPS 用户报告可用"))
+            // Reported on 27 November 2026 (issue 33): a Magewell Pro Capture HDMI 4K Plus LT, as DirectShow names it.
+            veyra.captureDeviceLabel = "00 Pro Capture HDMI 4K Plus LT"
+            compare(row.hint, qsTr("有 PushFPS 用户报告可用"))
+            veyra.captureDeviceLabel = "USB Capture HDMI 4K+"
+            verify(!findChild(quick, "pushfps-card-status").visible)
             veyra.captureDeviceLabel = "AVerMedia Live Gamer Ultra-Video"
             verify(!findChild(quick, "pushfps-card-status").visible)
             veyra.captureDeviceLabel = "USB Video"

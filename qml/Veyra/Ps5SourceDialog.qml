@@ -180,6 +180,22 @@ DialogLayer {
             hint: qsTr("不向 PS5 转发电脑手柄输入")
             VSwitch { checked: veyra.ps5.viewOnly === true; onToggled: checked => veyra.ps5Set("viewOnly", checked) }
         }
+        // PushFPS voice chat: this PC's microphone in the PS5's voice chat (party chat, game chat).
+        VRow {
+            objectName: "ps5-mic-row"
+            label: qsTr("电脑麦克风")
+            hint: veyra.ps5.mic === true && veyra.ps5.active === true
+                  ? (veyra.ps5.micLive === true ? qsTr("PS5 正在收到这台电脑的麦克风。") : qsTr("已静音，或等待 PS5 接受麦克风。"))
+                    + " " + ((veyra.shortcuts || {}).micMute ? qsTr("按 %1 静音或打开。").arg(veyra.shortcuts.micMute) : qsTr("可在 设置 → 快捷键 设定静音键。"))
+                  : qsTr("把这台电脑的麦克风接入 PS5 的语音聊天（派对、游戏内聊天）。用 设置 → 录制 里选的麦克风；下次连接时生效。")
+            VSwitch {
+                objectName: "ps5-mic"
+                enabled: veyra.ps5.viewOnly !== true
+                opacity: enabled ? 1 : 0.35
+                checked: veyra.ps5.mic === true
+                onToggled: checked => veyra.ps5Set("mic", checked)
+            }
+        }
         // The mirror of 仅观看: only the pad, the picture from a capture card.
         VRow {
             visible: veyra.ps5Control.available === true

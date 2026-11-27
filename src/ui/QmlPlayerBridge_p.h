@@ -536,6 +536,7 @@ struct QmlPlayerBridge::Impl {
     std::wstring ps5Profile;                 // file name inside profileDirectory()
     QVariantList ps5ProfileList;
     bool ps5Watching = false;
+    bool ps5MicMuted = false, ps5MicNoticed = false, ps5MicLiveSeen = false;   // PushFPS voice chat
     struct Ps5Outcome { std::wstring message; std::vector<std::pair<std::string, std::string>> hosts; std::wstring savedPath; bool refreshProfiles = false; };
     std::mutex ps5Mutex;
     Ps5Outcome ps5Outcome;

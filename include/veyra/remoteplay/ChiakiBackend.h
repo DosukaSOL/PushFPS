@@ -3,6 +3,7 @@
 #include "SessionInbox.h"
 #include <array>
 #include <chrono>
+#include <cstdint>
 #include <memory>
 #include <stop_token>
 #include <string>
@@ -63,6 +64,12 @@ public:
     BackendResult requestIdr();
     BackendResult submitController(const ControllerState&);
     BackendResult submitLoginPin(std::string_view);
+    // PushFPS: this PC's microphone in the console's voice chat. Owner thread, once connected: the first
+    // call with true sets up Chiaki's Opus encoder and opens the console's microphone channel (nothing
+    // of it exists before), then true unmutes and false mutes.
+    BackendResult setMicrophone(bool live);
+    // Microphone thread: one 10 ms block of 48 kHz 16-bit stereo (480 frames). Dropped unless live.
+    void submitMicrophone(std::int16_t* stereo480) noexcept;
     NativeSnapshot snapshot() const;
     ControllerFeedback takeFeedback();
 private:

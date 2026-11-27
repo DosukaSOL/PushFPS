@@ -2,6 +2,8 @@
 #include "veyra/Log.h"
 #include "veyra/remoteplay/StreamRecovery.h"
 #include "veyra/remoteplay/PushRetryWait.h"
+#include "veyra/engine/MicrophoneCapture.h"
+#include <array>
 #include <cmath>
 #include <format>
 #include <algorithm>
@@ -9,8 +11,25 @@ extern "C" {
 #include <libavutil/frame.h>
 }
 namespace veyra::source {
+namespace {
+// PushFPS voice chat: the shared microphone (48 kHz float stereo, after the streaming mixer's filters) cut
+// into the 10 ms 16-bit blocks Chiaki's Opus encoder takes. Runs on the microphone thread.
+struct ConsoleMicrophone final : engine::MicrophoneSink {
+    explicit ConsoleMicrophone(RemotePlaySource& s):source(s){}
+    void microphonePcm(const float* stereo,size_t frames,int64_t) override {
+        for(size_t i=0;i<frames*2;++i){
+            block[fill++]=static_cast<std::int16_t>(std::lrint(std::clamp(stereo[i],-1.0f,1.0f)*32767.0f));
+            if(fill==block.size()){source.submitMicrophone(block.data());fill=0;}
+        }
+    }
+    RemotePlaySource& source;
+    std::array<std::int16_t,960> block{};
+    size_t fill=0;
+};
+}
 bool RemotePlaySessionSource::connect(RemotePlayConnectDesc desc) {
     close();
+    microphoneMuted_.store(false); microphoneLive_.store(false);   // a new session starts unmuted (PushFPS voice chat)
     { std::lock_guard lock(mutex_); initialized_=started_=failed_=false; skipped_=publishedSequence_=0; recovery_={}; rates_={}; feedback_={}; controllers_.clear(); controllers_.resetStats(); snapshot_={}; }
     owner_=std::jthread([this, request=std::move(desc)](std::stop_token stop) mutable { run(stop,std::move(request)); });
     std::unique_lock lock(mutex_);
@@ -39,6 +58,9 @@ void RemotePlaySessionSource::run(std::stop_token stop, RemotePlayConnectDesc de
     {std::lock_guard lock(mutex_);receivedBase=rates_.received;droppedBase=rates_.ingressDropped;}
     std::jthread feeder;
     std::jthread monitor;
+    // PushFPS voice chat: attached once the console is connected, detached before the source closes.
+    std::shared_ptr<ConsoleMicrophone> microphone;
+    bool microphoneTried=false,microphoneOn=false;
     try {
         const bool ok=source.connect(desc);
         if(!ok){retryWasRpInUse=source.nativeSnapshot().startupRetryAllowed;retryAfterLive=false;retry=recovery.poll(milliseconds(),false,true)==remoteplay::StreamRecovery::Action::Reconnect;}
@@ -181,6 +203,22 @@ void RemotePlaySessionSource::run(std::stop_token stop, RemotePlayConnectDesc de
                         native.packetReceived,native.packetLost,native.warnings,native.errors,native.transportErrors,
                         native.assemblyErrors,native.lastQuitReason,native.lastApiError,
                         snapshot.video.recoveries,snapshot.video.highWaterDepth,snapshot.video.dropped,snapshot.video.waitingForIdr));}
+                // PushFPS voice chat. `native` is read once a second: soon enough to open the microphone.
+                if(desc.microphone&&!desc.controlOnly&&desc.attachMicrophone&&desc.detachMicrophone&&!microphoneTried&&native.connected){
+                    microphoneTried=true;
+                    const bool muted=microphoneMuted_.load();
+                    const auto r=source.setMicrophone(!muted);
+                    if(r.ok){microphone=std::make_shared<ConsoleMicrophone>(source);desc.attachMicrophone(microphone);microphoneOn=!muted;}
+                    microphoneLive_.store(r.ok&&microphoneOn);
+                    log::info("remoteplay-microphone",std::format("{} ok={} code={} live={}",r.operation,r.ok,r.code,r.ok&&microphoneOn));
+                }
+                // Every pass, not once a second: a mute takes effect at once.
+                if(microphone&&microphoneOn==microphoneMuted_.load()){
+                    microphoneOn=!microphoneOn;
+                    const auto r=source.setMicrophone(microphoneOn);
+                    microphoneLive_.store(microphoneOn&&r.ok);
+                    log::info("remoteplay-microphone",std::format("{} live={} ok={} code={}",r.operation,microphoneOn,r.ok,r.code));
+                }
                 {std::lock_guard lock(mutex_);snapshot_=snapshot;feedback_.merge(std::move(feedback));
                     rates_.received=receivedBase+snapshot.video.accessUnits;rates_.ingressDropped=droppedBase+snapshot.video.dropped;
                     const double elapsed=std::chrono::duration<double>(now-rateStart).count();
@@ -243,6 +281,9 @@ void RemotePlaySessionSource::run(std::stop_token stop, RemotePlayConnectDesc de
     log::info("remoteplay-recovery",std::format("teardown begin attempt={} retry={} cancelled={}",recovery.reconnects(),retry,stop.stop_requested()));
     if(monitor.joinable()){monitor.request_stop();monitor.join();}
     if(feeder.joinable()){feeder.request_stop();feeder.join();}
+    // Synchronous: no microphone block reaches the backend after this returns (MicrophoneCapture.cpp).
+    microphoneLive_.store(false);
+    if(microphone){desc.detachMicrophone(microphone.get());microphone.reset();}
     audio_.stop();
     source.close();
     log::info("remoteplay-recovery",std::format("teardown complete attempt={}",recovery.reconnects()));

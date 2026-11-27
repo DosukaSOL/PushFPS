@@ -26,6 +26,10 @@ public:
     void close() noexcept override;
     void controller(remoteplay::ControllerState state);
     void loginPin(std::string pin);
+    // PushFPS voice chat: any thread; the owner mutes or unmutes on its next pass. microphoneLive() says
+    // whether the console hears this PC's microphone now.
+    void microphoneMuted(bool muted) noexcept { microphoneMuted_.store(muted); }
+    bool microphoneLive() const noexcept { return microphoneLive_.load(); }
     remoteplay::ControllerFeedback takeFeedback();
     remoteplay::SessionInbox::Snapshot sessionSnapshot() const;
     uint64_t skipped() const;
@@ -55,6 +59,7 @@ private:
     std::condition_variable ready_;
     std::jthread owner_;
     std::atomic<bool> alive_{false};
+    std::atomic<bool> microphoneMuted_{false}, microphoneLive_{false};
     bool initialized_=false, started_=false, failed_=false;
     std::optional<Frame> latest_;
     remoteplay::PresentedArrivals presented_;   // under mutex_

@@ -9,9 +9,11 @@
 #include "veyra/remoteplay/SessionInbox.h"
 #include "veyra/remoteplay/Timeline.h"
 #include "veyra/sink/AudioPcmSource.h"
+#include "veyra/engine/MicrophoneCapture.h"   // the sink interface only (header, nothing linked)
 
 #include <cstdint>
 #include <deque>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <span>
@@ -34,6 +36,13 @@ struct RemotePlayConnectDesc {
     // protocol has no "stop sending media" switch, so the console still sends a
     // keepalive stream; only this side drops it.
     bool controlOnly=false;
+    // PushFPS: this PC's microphone in the console's voice chat once the stream is connected. The caller
+    // gives the two ends of the shared microphone (engine/MicrophoneCapture.h, with the endpoint it chose),
+    // so this library calls nothing of the engine's; without both, there is no microphone. Never for a
+    // controller-only session.
+    bool microphone=false;
+    std::function<void(std::shared_ptr<engine::MicrophoneSink>)> attachMicrophone;
+    std::function<void(const engine::MicrophoneSink*)> detachMicrophone;
     // Set by the engine; shared ownership keeps the exact presentation adapter
     // alive until the decoder owner has stopped, including failed connects.
     std::shared_ptr<ID3D12Device> decodeDevice;
@@ -53,6 +62,8 @@ public:
     bool connect(const RemotePlayConnectDesc& desc);
     remoteplay::BackendResult submitController(const remoteplay::ControllerState& state) { return backend_.submitController(state); }
     remoteplay::BackendResult submitLoginPin(std::string_view pin) { return backend_.submitLoginPin(pin); }
+    remoteplay::BackendResult setMicrophone(bool live) { return backend_.setMicrophone(live); }
+    void submitMicrophone(std::int16_t* stereo480) noexcept { backend_.submitMicrophone(stereo480); }
     remoteplay::ControllerFeedback takeFeedback(){return backend_.takeFeedback();}
     remoteplay::NativeSnapshot nativeSnapshot()const{return backend_.snapshot();} // session owner only
     remoteplay::BackendResult disconnectTransportForTest(){return backend_.stop();}

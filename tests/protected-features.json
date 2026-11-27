@@ -2372,6 +2372,18 @@
     }
    ],
    "needs_hardware": "a PS5 or Xbox, and a mouse and keyboard"
+  },
+  {
+   "id": "F88",
+   "what": "PS5 voice chat: the PC microphone switch is the form's own setting, off in a view-only stream, and says whether the PS5 hears it",
+   "guards": [
+    {
+     "file": "tests/qml/quick/tst_push_ps5_pairing.qml",
+     "ci": "tst_push_ps5_pairing",
+     "contains": "test_pc_microphone_switch_follows_the_form_and_view_only"
+    }
+   ],
+   "needs_hardware": "a PS5 and a microphone"
   }
  ]
 }

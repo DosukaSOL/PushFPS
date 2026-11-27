@@ -929,7 +929,10 @@ const QVariantMap& shortcutDefaults() {
                                {"gamePanel", "Home"}, {"gameExit", "Ctrl+Alt+Home"},
                                // PushFPS (4.5.3): actions a player wants without leaving full screen. The two with a key
                                // take keys nothing had; frame generation and AI picture enhancement start unbound.
-                               {"latencyOverlay", "F3"}, {"compareClip", "Shift+F8"}, {"fgToggle", ""}, {"enhanceToggle", ""}};
+                               {"latencyOverlay", "F3"}, {"compareClip", "Shift+F8"}, {"fgToggle", ""}, {"enhanceToggle", ""},
+                               // PushFPS (4.5.6): PS5 voice chat's microphone. A function key, because those still reach
+                               // PushFPS while the keyboard and mouse are handed to the console (ui/PushKbmCapture.h).
+                               {"micMute", "F2"}};
     return d;
 }
 }
