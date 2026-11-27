@@ -3,6 +3,7 @@
 #include "AppController.h"
 
 #include "FrameView.h"
+#include "HudDetection.h"
 #include "Settings.h"
 #include "VideoFrames.h"
 
@@ -603,6 +604,17 @@ void AppController::setHudLock(bool v) {
     save(QStringLiteral("hudLock"), v);
     applyEngineSettings();
     emit settingsChanged();
+}
+
+bool AppController::startHudDetection(int samples) {
+    if (!hudDetection_) hudDetection_ = new HudDetection([this] { return engine_; }, this);
+    return hudDetection_->start(samples);
+}
+void AppController::cancelHudDetection() {
+    if (hudDetection_) hudDetection_->cancel();
+}
+QVariantMap AppController::hudDetection() const {
+    return hudDetection_ ? hudDetection_->status() : QVariantMap();
 }
 
 bool AppController::setHudRegions(const QVariantList& regions, double feather) {

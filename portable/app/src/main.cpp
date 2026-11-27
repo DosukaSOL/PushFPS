@@ -461,7 +461,7 @@ int main(int argc, char** argv) {
     QCommandLineOption shot(QStringLiteral("screenshot"), QStringLiteral("Open the interface, save a screenshot, quit."), QStringLiteral("png"));
     QCommandLineOption page(QStringLiteral("page"), QStringLiteral("Start page: home, pro, min or set."), QStringLiteral("page"), QStringLiteral("home"));
     QCommandLineOption lang(QStringLiteral("lang"), QStringLiteral("Interface language code."), QStringLiteral("code"));
-    QCommandLineOption dialog(QStringLiteral("dialog"), QStringLiteral("With --screenshot: open a dialog first (crop or diagnose)."), QStringLiteral("key"));
+    QCommandLineOption dialog(QStringLiteral("dialog"), QStringLiteral("With --screenshot: open a dialog first (crop, diagnose or hud)."), QStringLiteral("key"));
     cli.addOptions({list, self, src, target, pacing, hud, gpu, nis, save, shot, page, lang, dialog});
     cli.process(app);
 

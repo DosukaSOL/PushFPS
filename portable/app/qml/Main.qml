@@ -146,12 +146,14 @@ Window {
     // Check my setup (CheckSetupDialog.qml), opened from the home page, Professional mode and Settings.
     CheckSetupDialog { id: checkSetup; parent: Overlay.overlay }
     CropDialog { id: cropDialog; parent: Overlay.overlay }
+    HudDialog { id: hudDialog; parent: Overlay.overlay }
     // A dialog asked for by a part that cannot reach this window (app.openDialog).
     Connections {
         target: app
         function onDialogRequested(key) {
             if (key === "crop") cropDialog.open()
             else if (key === "diagnose") checkSetup.open()
+            else if (key === "hud") hudDialog.open()
         }
     }
     // Crop and resize (PushCrop.js): for a capture card's picture, and the test pattern that stands in for

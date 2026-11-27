@@ -19,6 +19,7 @@ qt_add_executable(pushfps_portable
   src/AudioPassthrough.cpp src/AudioPassthrough.h
   src/CaptureSource.cpp src/CaptureSource.h
   src/FrameView.cpp src/FrameView.h
+  src/HudDetection.cpp src/HudDetection.h
   src/NisNode.cpp src/NisNode.h
   src/Settings.cpp src/Settings.h
   src/TestPattern.cpp src/TestPattern.h
@@ -63,7 +64,8 @@ set(pushfps_own_files
     qml/Main.qml qml/HomePage.qml qml/ProPage.qml qml/MinimalPage.qml qml/SettingsPage.qml qml/GpuCheck.qml
     qml/SourcesPanel.qml qml/QuickSettings.qml qml/PictureSettings.qml qml/SoundSettings.qml qml/LiveFigures.qml
     qml/PicturePlaceholder.qml qml/PanelTitle.qml qml/UpscaleRow.qml qml/SuperResolutionCard.qml qml/ConsoleProfiles.qml qml/CheckSetupDialog.qml
-    qml/CropDialog.qml qml/CropRow.qml)
+    qml/CropDialog.qml qml/CropRow.qml
+    qml/HudDialog.qml)
 set(pushfps_qml_resources qml/logo.png qml/icon.png)
 # Every file sits next to the module's qmldir in the resources: in a folder of its own, that folder is
 # also an implicit import that offers Theme.qml as a plain type, and Qt picks one or the other at random

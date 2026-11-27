@@ -23,6 +23,7 @@ class QQmlEngine;
 class QSettings;
 
 namespace pushfps {
+class HudDetection;
 
 class AppController : public QObject {
     Q_OBJECT
@@ -197,6 +198,11 @@ public:
     Q_INVOKABLE void openDialog(const QString& key) { emit dialogRequested(key); }
     // The boxes and their feather (0..64 picture pixels); an empty list turns HUD protection off. Always accepted.
     Q_INVOKABLE bool setHudRegions(const QVariantList& regions, double feather);
+    // Automatic HUD detection (HudDetection.h, the Windows bridge's pushStartHudDetection / pushHudDetection /
+    // pushCancelHudDetection): false with nothing playing.
+    Q_INVOKABLE bool startHudDetection(int samples);
+    Q_INVOKABLE void cancelHudDetection();
+    Q_INVOKABLE QVariantMap hudDetection() const;
     Q_INVOKABLE void clearError();
 
     // Self-test (command line) access.
@@ -245,6 +251,7 @@ private:
     bool lowLatency_ = false, autoConnect_ = false, applyingLowLatency_ = false, savedCameraFound_ = false;
     bool crosshairHold_ = false;
     QVariantList hudRegions_;
+    HudDetection* hudDetection_ = nullptr;
     double hudFeather_ = 8.0;
     bool subtitleHold_ = false;   // Subtitle Hold: off unless switched on (not everyone uses subtitles)
     bool autoConnectPending_ = false;
