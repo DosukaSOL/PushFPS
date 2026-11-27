@@ -21,6 +21,8 @@ Popup {
     width: Math.min(760, (parent ? parent.width : 760) - 40)
     height: Math.min(implicitHeight, (parent ? parent.height : 700) - 60)
     padding: 20
+    leftPadding: 13
+    rightPadding: 13
     closePolicy: hud.phase === "watching" ? Popup.NoAutoClose : Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
     readonly property int maxBoxes: 4
@@ -173,15 +175,11 @@ Popup {
         border.width: 1
         border.color: Theme.stroke
     }
-    contentItem: Flickable {
-        implicitHeight: body.implicitHeight
-        contentHeight: body.implicitHeight
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
-        ScrollBar.vertical: VScrollBar {}
+    // RowList keeps a row's hover light inside the list (its `room` comes out of this dialog's side padding).
+    contentItem: RowList {
         ColumnLayout {
             id: body
-            width: parent.width - 16
+            Layout.fillWidth: true
             spacing: 0
             Text {
                 text: qsTr("HUD 保护")

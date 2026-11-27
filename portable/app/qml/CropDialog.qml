@@ -22,6 +22,8 @@ Popup {
     width: Math.min(760, (parent ? parent.width : 760) - 40)
     height: Math.min(implicitHeight, (parent ? parent.height : 700) - 60)
     padding: 20
+    leftPadding: 13
+    rightPadding: 13
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
     property var crop: Crop.read(app.preferences)
@@ -79,19 +81,14 @@ Popup {
         border.width: 1
         border.color: Theme.stroke
     }
-    contentItem: Flickable {
+    // RowList keeps a row's hover light inside the list (its `room` comes out of this dialog's side padding).
+    contentItem: RowList {
         id: scroller
-        implicitHeight: body.implicitHeight
-        contentHeight: body.implicitHeight
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
         // A drag on the picture moves the crop, never the page.
         interactive: !pointer.pressed
-        ScrollBar.vertical: VScrollBar {}
         ColumnLayout {
             id: body
-            // Room for the scroll bar, so the last field of a row is never under it.
-            width: parent.width - 16
+            Layout.fillWidth: true
             spacing: 0
             Text {
                 text: qsTr("裁剪和缩放")

@@ -45,6 +45,7 @@
 #include <atomic>
 #include <cmath>
 #include <cstdio>
+#include <functional>
 #include <thread>
 #include <vector>
 
@@ -435,6 +436,42 @@ int nischeck(QGuiApplication& app, const QString& savePath) {
 
 }  // namespace
 
+
+// The layout check (--layoutcheck): opens every page and every dialog of the real window and checks that no
+// row's hover light (VRow.qml: 7 px past the row on each side, in the new design) is cut by a list that
+// clips it, or runs under that list's scroll bar (its width and 4 px). A row's light that is cut shows as a
+// row whose left margin is off. Returns the rows at fault, as lines to print.
+QStringList hoverRoomFaults(QQuickWindow* window, const QString& where) {
+    QStringList faults;
+    constexpr qreal kLight = 7, kGap = 4;
+    std::function<void(QQuickItem*)> walk = [&](QQuickItem* item) {
+        if (!item || !item->isVisible()) return;
+        const QString type = QString::fromLatin1(item->metaObject()->className());
+        if ((type == QLatin1String("VRow") || type.startsWith(QLatin1String("VRow_QML"))) && item->width() > 1 && item->height() > 1) {
+            const QRectF light = item->mapRectToScene(QRectF(-kLight, 0, item->width() + 2 * kLight, item->height()));
+            for (QQuickItem* a = item->parentItem(); a; a = a->parentItem()) {
+                if (!a->clip()) continue;
+                const QRectF box = a->mapRectToScene(QRectF(0, 0, a->width(), a->height()));
+                qreal right = box.right();
+                for (QQuickItem* c : a->childItems())
+                    if (c->inherits("QQuickScrollBar") && c->property("orientation").toInt() == Qt::Vertical)
+                        right = std::min(right, c->mapRectToScene(QRectF(0, 0, c->width(), c->height())).left() - kGap);
+                if (light.left() < box.left() - 0.5 || light.right() > right + 0.5) {
+                    const QString name = item->objectName().isEmpty() ? item->property("label").toString() : item->objectName();
+                    faults << QStringLiteral("%1: row \"%2\" light %3..%4, room %5..%6 (%7)")
+                                  .arg(where, name).arg(light.left(), 0, 'f', 1).arg(light.right(), 0, 'f', 1)
+                                  .arg(box.left(), 0, 'f', 1).arg(right, 0, 'f', 1)
+                                  .arg(a->objectName().isEmpty() ? QString::fromLatin1(a->metaObject()->className()) : a->objectName());
+                    break;
+                }
+            }
+        }
+        for (QQuickItem* c : item->childItems()) walk(c);
+    };
+    walk(window->contentItem());
+    return faults;
+}
+
 int main(int argc, char** argv) {
     QCoreApplication::setOrganizationName(QStringLiteral("PushFPS"));
     QCoreApplication::setApplicationName(QStringLiteral("PushFPS"));
@@ -461,8 +498,9 @@ int main(int argc, char** argv) {
     QCommandLineOption shot(QStringLiteral("screenshot"), QStringLiteral("Open the interface, save a screenshot, quit."), QStringLiteral("png"));
     QCommandLineOption page(QStringLiteral("page"), QStringLiteral("Start page: home, pro, min or set."), QStringLiteral("page"), QStringLiteral("home"));
     QCommandLineOption lang(QStringLiteral("lang"), QStringLiteral("Interface language code."), QStringLiteral("code"));
-    QCommandLineOption dialog(QStringLiteral("dialog"), QStringLiteral("With --screenshot: open a dialog first (crop, diagnose or hud)."), QStringLiteral("key"));
-    cli.addOptions({list, self, src, target, pacing, hud, gpu, nis, save, shot, page, lang, dialog});
+    QCommandLineOption dialog(QStringLiteral("dialog"), QStringLiteral("With --screenshot: open a dialog first (crop, diagnose, hud or games)."), QStringLiteral("key"));
+    QCommandLineOption layout(QStringLiteral("layoutcheck"), QStringLiteral("Open every page and dialog and check that no row's hover light is cut."));
+    cli.addOptions({list, self, src, target, pacing, hud, gpu, nis, save, shot, page, lang, dialog, layout});
     cli.process(app);
 
     if (cli.isSet(list)) return listDevices();
@@ -510,6 +548,39 @@ int main(int argc, char** argv) {
             controller.stop();
             app.exit(ok ? 0 : 1);
         });
+    }
+    if (cli.isSet(layout)) {
+        // Every page with the test picture playing (some rows show only then), then every dialog over the home
+        // page. Each step waits for the page or the dialog to be laid out and faded in.
+        auto* window = qobject_cast<QQuickWindow*>(qml.rootObjects().first());
+        QObject* root = qml.rootObjects().first();
+        controller.startTestPattern(false);
+        struct Step { QString page, dialog; };
+        const QList<Step> steps{{"home", {}}, {"pro", {}}, {"set", {}}, {"min", {}},
+                                {"home", "crop"}, {"home", "diagnose"}, {"home", "hud"}, {"home", "games"}};
+        auto faults = std::make_shared<QStringList>();
+        auto next = std::make_shared<std::function<void(int)>>();
+        *next = [&, window, root, steps, faults, next](int i) {
+            if (i >= steps.size()) {
+                for (const QString& f : *faults) print(f);
+                print(QStringLiteral("LAYOUT CHECK RESULT\nsteps: %1\nrows whose hover light is cut: %2\nresult: %3")
+                          .arg(steps.size()).arg(faults->size()).arg(faults->isEmpty() ? QStringLiteral("PASS") : QStringLiteral("FAIL")));
+                controller.stop();
+                app.exit(faults->isEmpty() ? 0 : 5);
+                return;
+            }
+            const Step step = steps[i];
+            QMetaObject::invokeMethod(root, "go", Q_ARG(QVariant, step.page));
+            if (!step.dialog.isEmpty()) QTimer::singleShot(500, &app, [&controller, d = step.dialog] { controller.openDialog(d); });
+            QTimer::singleShot(1500, &app, [&, window, root, step, faults, next, i] {
+                *faults << hoverRoomFaults(window, step.dialog.isEmpty() ? step.page : step.page + QStringLiteral("+") + step.dialog);
+                // Close what was opened: every Popup that is open.
+                for (QObject* o : root->findChildren<QObject*>())
+                    if (o->inherits("QQuickPopup") && o->property("opened").toBool()) QMetaObject::invokeMethod(o, "close");
+                QTimer::singleShot(400, &app, [next, i] { (*next)(i + 1); });
+            });
+        };
+        QTimer::singleShot(1500, &app, [next] { (*next)(0); });
     }
     const int result = app.exec();
     engine.reset();
