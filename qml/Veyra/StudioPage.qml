@@ -226,7 +226,7 @@ VPage {
     function statusOf(id) { return studio.sourceStatus.find(x => x.id === id) || null }
     // What a camera offers, largest first: a chosen resolution gives the closest of these.
     function cameraSizes(status) {
-        const sizes = status && Array.isArray(status.sizes) ? status.sizes : []
+        const sizes = status && status.sizes ? Array.from(status.sizes) : []   // a C++ list is not an Array to Array.isArray
         if (sizes.length === 0) return ""
         return qsTr("摄像头提供：%1。相机在网络摄像头模式下送出的画面可能低于它的录制分辨率")
             .arg(sizes.slice(0, 5).map(x => x.width + "×" + x.height + " (" + Math.round(Number(x.fps || 0)) + " FPS)").join(", "))

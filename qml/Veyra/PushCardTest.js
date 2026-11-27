@@ -33,7 +33,8 @@ function best(run, gameFps) {
 // One row per run, in the benchmark's order: { size, tier, networkMs, for30, for60 }.
 function rows(runs) {
     var out = []
-    var list = Array.isArray(runs) ? runs : []
+    // A list from C++ (the bridge's QVariantList) is not an Array to Array.isArray in Qt 6.8; it has a length.
+    var list = runs && typeof runs.length === "number" ? Array.prototype.slice.call(runs) : []
     for (var i = 0; i < list.length; ++i) {
         var r = list[i]
         if (!r || typeof r !== "object") continue

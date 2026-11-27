@@ -231,6 +231,13 @@ and edits would conflict on every merge.
   header a Qt file includes may not use them as names either (4.5.6's first release build failed on a loop
   variable called `slots` in `PushKbm.h`, which g++ had compiled without Qt). Define them in the same check file
   (`#define slots`, `#define signals public`, `#define emit`, `#define foreach for`, `#define forever for(;;)`).
+- **A list from C++ is not an Array in QML.** Qt 6.8 hands a `QVariantList` (also one inside a `QVariantMap`) to
+  QML as a list with a length and items for which `Array.isArray` is false (found by ShyVortex in the preview,
+  pull request #37, against a real C++ object). The HUD dialog's `Array.isArray(s.regions)` dropped every box
+  automatic detection found; `PushCardTest.js` and the streaming page's camera sizes had the same test. Read a
+  list from the bridge with `Array.from(x)` (or, in a `.pragma library` file, a length check and
+  `Array.prototype.slice.call`). The QML fixture is JavaScript and hands over real arrays, so a test of this needs
+  an array-like stand-in (`{ length: 1, 0: ... }`), as `test_boxes_found_in_a_list_from_cpp_are_kept` has.
 
 - After any QML change, `tests/qml/quick` runs in CI (`tst_push_*.qml` in their own step, then the whole suite: a failure in either
   fails the build; the fixture all of them share is one QML object in `tests/qml/QuickSmokeTests.cpp`, and a

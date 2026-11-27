@@ -81,6 +81,19 @@ Item {
             fuzzyCompare(veyra.lastRegions[1].bottom, 0.1, 1e-6)
             compare(veyra.exclusionState.feather, 6, "keeps the feather it opened with")
         }
+        function test_boxes_found_in_a_list_from_cpp_are_kept() {
+            // The bridge hands its regions over as a QVariantList, which Qt 6.8 gives QML as a list that has a length
+            // and items but is not an Array: an object shaped like that stands in for it here.
+            open()
+            hud.phase = "idle"
+            hud.detect()
+            const fromCpp = { length: 1, 0: { left: 0.6, top: 0.6, right: 0.9, bottom: 0.9 } }
+            verify(!Array.isArray(fromCpp))
+            veyra.hudState = root.done(fromCpp)
+            tryCompare(hud, "phase", "idle", 2000)
+            compare(hud.boxes.count, 1, "the box found is kept")
+            verify(!hud.messageError)
+        }
         function test_a_still_picture_keeps_the_boxes_and_explains() {
             veyra.exclusionState = ({ enabled: true, feather: 6, regions: [{ left: 0.1, top: 0.1, right: 0.2, bottom: 0.2 }] })
             open()

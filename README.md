@@ -1065,6 +1065,8 @@ the window.</sub>
 | FEELWORLD C4K | Reported working by a user (PS5 Pro at 4K 30 FPS, RTX 5080, 30 → 120 FPS) |
 | Monster Capture Card | Reported working by a user (PS5 over USB 3.0, RTX 2080 SUPER) |
 | Magewell Pro Capture HDMI 4K Plus LT | Reported working by a user (PS5 Pro over PCIe, RTX 5090) |
+| UGREEN 15389 (CM629) | Reported working by a user (PS5 at 1080p60 over USB 3.2, RTX 4070 SUPER) |
+| Benfei Video/Audio Capture Card | Reported working by a user (PS5 at 1080p60, RTX 4060; no HDR, sound sometimes only after switching the PS5's resolution) |
 
 Any card that Windows shows as a camera and that sends uncompressed 1080p60 or 4K60 should work. The quick
 setup shows whether your card is on this list.
