@@ -1385,6 +1385,9 @@ VPage {
                                 onEdited: t => veyra.setPreference("pushDiscordWebhook", t)
                             }
                         }
+                        // PushFPS: the Discord status (what friends see on the user's Discord profile).
+                        PushDiscordRow { part: "status" }
+                        PushDiscordRow { part: "game" }
                     }
                     VH3 { text: qsTr("虚拟摄像机"); Layout.topMargin: 6 }
                     VGroup {

@@ -61,4 +61,10 @@ inline constexpr const char* kCreatorName = "DosukaSOL";
 inline constexpr const char* kCreatorUrl = "https://x.com/DosukaSOL";
 // The PushFPS community (the same invitation the README and the website show); About row about-open-discord.
 inline constexpr const char* kDiscordUrl = "https://discord.gg/N88znNpSgC";
+// PushFPS's website (the button of the Discord status points to it).
+inline constexpr const char* kWebsiteUrl = "https://dosukasol.github.io/PushFPS/";
+// Discord status (ui/PushDiscordPresence.h): the application the owner made in Discord's developer portal.
+// Its id is public (Discord shows it to anyone who looks at an activity); there is no secret for this.
+// Discord shows the application's name, PushFPS, after "Playing"; its art asset "pushfps" is the logo.
+inline constexpr const char* kDiscordApplicationId = "1575866445412433962";
 }

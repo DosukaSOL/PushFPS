@@ -348,6 +348,9 @@ bool QmlPlayerBridge::setPreference(const QString& key, const QVariant& value) {
                                    "pushCompareSwap",
                                    // PushFPS local control (ui/PushControl.h): off unless switched on.
                                    "pushControl",
+                                   // PushFPS Discord status (ui/PushDiscordPresence.h): off unless switched on; the game
+                                   // profile's name in it, shown unless switched off.
+                                   "pushDiscordPresence", "pushDiscordGame",
                                    // PushFPS: a vertical copy (1080 x 1920) recorded beside every recording.
                                    "pushRecordVerticalCopy",
                                    // PushFPS crop and resize: the switch, and whether recordings and streams follow.

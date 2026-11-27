@@ -506,6 +506,8 @@ QtObject {
     property var ps5Control: ({enabled: false})
     // PushFPS mouse and keyboard (tst_push_kbm.qml). The maps are remoteplay/PushKbm.h's presets.
     property var pushKbm: ({built: true, on: false, available: false, captured: false, target: "", releaseName: "F12", waiting: "", waitingText: "", listenControl: -1, listenSlot: -1})
+    // PushFPS Discord status (bridge/PushDiscord.cpp): the connection's state.
+    property var pushDiscord: ({on: false, state: "off", showing: false, picture: false})
     property var ps5Profiles: []
     property var ps5ControlCalls: []
     property int ps5ControlRestarts: 0
