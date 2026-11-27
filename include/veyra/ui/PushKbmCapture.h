@@ -18,6 +18,11 @@
 // of its own), and a cursor left free to wander under raw mouse movement would click one of them with
 // the left button and end the capture. Raw input reports the mouse's own movement, so holding the cursor
 // changes nothing of what the console gets.
+// While captured Windows' accessibility shortcuts are switched off (Shift pressed five times opens Sticky
+// Keys, the right Shift held eight seconds Filter Keys, Num Lock held five seconds Toggle Keys): their
+// dialog takes the focus, which ends the capture, and a tapped Shift is how GTA's classic layout sprints.
+// Only where the feature itself is off, only for this Windows session (nothing written to the profile),
+// and put back exactly as it was on release: Microsoft's own guidance for games.
 #include <QAbstractNativeEventFilter>
 #include <QObject>
 #include <windows.h>
@@ -73,12 +78,18 @@ signals:
 
 private:
     void clipToWindow();
+    void holdShortcutKeys(bool hold);
     bool keyMessage(UINT msg, WPARAM wParam, LPARAM lParam);
     static std::int64_t nowUs();
 
     remoteplay::kbm::Mixer mixer_;
     HWND window_ = nullptr;
     HWND picture_ = nullptr;
+    // The accessibility settings as they were before the capture switched their shortcuts off.
+    STICKYKEYS stickyKeys_{sizeof(STICKYKEYS), 0};
+    TOGGLEKEYS toggleKeys_{sizeof(TOGGLEKEYS), 0};
+    FILTERKEYS filterKeys_{sizeof(FILTERKEYS), 0, 0, 0, 0, 0};
+    bool shortcutKeysHeld_ = false;
     bool available_ = false;
     bool captured_ = false;
     std::uint16_t swallowUp_ = 0;   // the key-up of the key that started or ended the capture
