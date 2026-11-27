@@ -212,6 +212,8 @@ void AppController::applyEngineSettings() {
     s.subtitleHold = subtitleHold_;
     s.removeDuplicates = dedup_;
     s.quality = quality_;
+    // Ambient fill (Windows pref pushAmbientFill): its copy is made only while it can be shown, i.e. with bars.
+    s.ambient = prefs_.value(QStringLiteral("pushAmbientFill")).toBool() && fillMode_ == 0;
     if (engine_) engine_->setSettings(s);
 }
 
@@ -489,7 +491,8 @@ const QStringList kThemes{QStringLiteral("default"), QStringLiteral("black"), QS
 const QStringList kAccents{QStringLiteral("orange"), QStringLiteral("white"), QStringLiteral("ice"), QStringLiteral("blue"),
                            QStringLiteral("violet"), QStringLiteral("rose"), QStringLiteral("amber")};
 const QStringList kFlags{QStringLiteral("pushNavCollapsed"), QStringLiteral("pushSideCollapsed"), QStringLiteral("reducedMotion"),
-                          QStringLiteral("pushCompareSwap"), QStringLiteral("pushLatencyOverlay"), QStringLiteral("pushCropOn")};
+                          QStringLiteral("pushCompareSwap"), QStringLiteral("pushLatencyOverlay"), QStringLiteral("pushCropOn"),
+                          QStringLiteral("pushAmbientFill")};
 const QStringList kFoldLists{QStringLiteral("pushQuickFolded"), QStringLiteral("pushProFolded")};
 // Whole percentages, as the Windows build keeps them (nisSharpness: 0..100, NVIDIA's default 50).
 const QStringList kPercents{QStringLiteral("nisSharpness")};
@@ -585,6 +588,7 @@ void AppController::setPreference(const QString& key, const QVariant& value) {
     if (!clean.isValid() || prefs_.value(key) == clean) return;
     prefs_.insert(key, clean);
     save(QStringLiteral("ui/") + key, clean);
+    if (key == QLatin1String("pushAmbientFill")) applyEngineSettings();
     emit preferencesChanged();
 }
 
@@ -777,6 +781,7 @@ void AppController::setFillMode(int m) {
     if (m == fillMode_) return;
     fillMode_ = m;
     save(QStringLiteral("fillMode"), m);
+    applyEngineSettings();  // ambient fill's copy only with bars
     emit settingsChanged();
 }
 

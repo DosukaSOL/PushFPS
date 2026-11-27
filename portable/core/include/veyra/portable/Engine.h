@@ -51,6 +51,7 @@ struct EngineSettings {
     bool hudLock = false;
     bool crosshairHold = false;  // Crosshair Hold (CrosshairHold.h); off unless switched on
     bool subtitleHold = false;   // Subtitle Hold: the same rule in the subtitle band; off unless switched on
+    bool ambient = false;        // ambient fill (Ambient.h): each real frame's small copy for the bars; off unless asked
     int quality = 1;             // 0 fast (vectors from the quarter-size picture), 1 balanced (half size)
     double estimateBudgetMs = 0; // headroom for motion estimation in the display delay; 0 = measured
 };
@@ -69,6 +70,8 @@ struct ContentFrame {
     std::shared_ptr<const HoldFrame> subHold;
     std::shared_ptr<const HoldPair> subHoldPair;
     uint64_t holdPairWith = 0;
+    // Ambient fill's small, blurred, dimmed copy of this frame; null with the setting off.
+    std::shared_ptr<const Bgra> ambient;
 };
 
 struct PairFields {
@@ -84,6 +87,7 @@ struct Pick {
     std::shared_ptr<const PairFields> fields;  // null: show the nearer real frame (no generation)
     std::shared_ptr<const HoldPair> hold;      // Crosshair Hold's part for this pair; null: nothing is held
     std::shared_ptr<const HoldPair> subHold;   // Subtitle Hold's part; null: nothing is held
+    std::shared_ptr<const Bgra> ambientA, ambientB;  // ambient fill's copies of a and b; null with it off
     uint64_t aId = 0, bId = 0;
     float t = 0;                               // 0 = a, 1 = b
     bool generated() const { return fields && t > 0.f && t < 1.f && a != b; }

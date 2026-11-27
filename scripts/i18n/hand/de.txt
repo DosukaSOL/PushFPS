@@ -1603,3 +1603,9 @@ zh:已开启：运动估计用「快速」，帧节奏修复关闭。关闭后�
 zh:帧节奏修复 · 已重排 %1%|Frame-Pacing-Korrektur · %1% neu getaktet
 zh:帧节奏修复 · 等待去重测出帧率|Frame-Pacing-Korrektur · wartet, bis das Entfernen doppelter Frames die Bildrate gemessen hat
 zh:引擎未接受帧节奏修复，原设置保留|Die Engine hat die Frame-Pacing-Korrektur nicht übernommen; die vorherige Einstellung bleibt
+zh:黑边|Balken
+zh:裁切|Zuschneiden
+zh:拉伸|Strecken
+zh:裁剪和缩放|Zuschneiden und Größe
+zh:宽屏填充|Breitbildfüllung
+zh:氛围填充|Ambient

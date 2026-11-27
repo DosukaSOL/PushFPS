@@ -1602,3 +1602,9 @@ zh:已开启：运动估计用「快速」，帧节奏修复关闭。关闭后�
 zh:帧节奏修复 · 已重排 %1%|Framepacing-herstel · %1% opnieuw getimed
 zh:帧节奏修复 · 等待去重测出帧率|Framepacing-herstel · wacht tot het verwijderen van dubbele frames de framerate heeft gemeten
 zh:引擎未接受帧节奏修复，原设置保留|De engine nam Framepacing-herstel niet aan; de vorige instelling blijft
+zh:黑边|Balken
+zh:裁切|Bijsnijden
+zh:拉伸|Uitrekken
+zh:裁剪和缩放|Bijsnijden en schalen
+zh:宽屏填充|Breedbeeldvulling
+zh:氛围填充|Ambient

@@ -2,7 +2,9 @@
 // Copyright (C) 2026 DosukaSOL and the PushFPS contributors. Part of PushFPS, a modified version of Veyra.
 #include "veyra/portable/Engine.h"
 
+#include "veyra/portable/Ambient.h"
 #include "veyra/portable/Dedup.h"
+#include "veyra/engine/PushAmbient.h"  // pure C++, shared with the Windows build: the gain
 #include "veyra/engine/PushPacingRepair.h"  // pure C++, shared with the Windows build
 
 #include <algorithm>
@@ -169,6 +171,7 @@ void Engine::push(Gray&& luma, const std::function<Bgra()>& makeImage, int64_t a
     bool queued = false;
     // Crosshair Hold: whether it is wanted for this frame, whether to start it over, and the frame before's part.
     bool holdWanted = false, holdStartOver = false;
+    bool ambientWanted = false;
     std::shared_ptr<const HoldFrame> holdBefore;
     uint64_t holdBeforeId = 0;
     // Subtitle Hold: the same, in the subtitle band.
@@ -205,6 +208,7 @@ void Engine::push(Gray&& luma, const std::function<Bgra()>& makeImage, int64_t a
         id = nextId_++;
         generation = generation_;
         holdWanted = s_.crosshairHold && s_.frameGeneration;
+        ambientWanted = s_.ambient;
         holdStartOver = holdReset_;
         holdReset_ = false;
         subWanted = s_.subtitleHold && s_.frameGeneration;
@@ -245,6 +249,10 @@ void Engine::push(Gray&& luma, const std::function<Bgra()>& makeImage, int64_t a
         if (subFrame && subBefore) subPair = CrosshairHold::pair(*subBefore, *subFrame);
     }
 
+    // Ambient fill's copy (about 2 ms at 4K here, on this thread and not the one that draws).
+    std::shared_ptr<const Bgra> ambientImage;
+    if (ambientWanted) ambientImage = std::make_shared<const Bgra>(ambient::make(*frameImage, veyra::engine::kPushAmbientEncodedGain));
+
     std::lock_guard lk(m_);
     // Started over meanwhile (another size, a reset): this frame belongs to what was thrown away.
     if (generation != generation_ || width != lastWidth_ || height != lastHeight_) return;
@@ -273,6 +281,7 @@ void Engine::push(Gray&& luma, const std::function<Bgra()>& makeImage, int64_t a
     frame->subHold = subFrame;
     frame->subHoldPair = subPair;
     frame->holdPairWith = holdPair || subPair ? holdBeforeId : 0;
+    frame->ambient = std::move(ambientImage);
     st_.holdState = holdWanted && holdFrame ? 1 : 0;
     st_.holdPixels = holdFrame ? holdFrame->masked : 0;
     st_.subHoldState = subWanted && subFrame ? 1 : 0;
@@ -358,6 +367,7 @@ Pick Engine::pick(int64_t displayNs) {
     if (frames_.empty()) return p;
     auto showOne = [&](const std::shared_ptr<const ContentFrame>& f) {
         p.a = p.b = f->image;
+        p.ambientA = p.ambientB = f->ambient;
         p.aId = p.bId = f->id;
         p.t = 0;
     };
@@ -449,13 +459,15 @@ Pick Engine::pick(int64_t displayNs) {
                 }
                 p.a = A->image;
                 p.b = B->image;
+                p.ambientA = A->ambient;
+                p.ambientB = B->ambient;
                 p.aId = A->id;
                 p.bId = B->id;
                 p.t = t;
                 p.fields = fields;
                 p.hold = B->holdPairWith == A->id ? B->holdPair : nullptr;
                 p.subHold = B->holdPairWith == A->id ? B->subHoldPair : nullptr;
-                if (t <= 0.f) { p.b = p.a; p.bId = p.aId; p.fields = nullptr; p.hold = nullptr; p.subHold = nullptr; }
+                if (t <= 0.f) { p.b = p.a; p.ambientB = p.ambientA; p.bId = p.aId; p.fields = nullptr; p.hold = nullptr; p.subHold = nullptr; }
                 {
                     const double less = lateMarginMs_ - std::max(0.0, lateMarginMs_ - 0.002);
                     lateMarginMs_ -= less;

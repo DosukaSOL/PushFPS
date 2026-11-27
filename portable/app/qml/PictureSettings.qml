@@ -5,6 +5,8 @@
 // in quick setup's Picture section, as on Windows: UpscaleRow.qml.)
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Window
+import "Fill.js" as Fill
 
 ColumnLayout {
     id: picture
@@ -31,16 +33,24 @@ ColumnLayout {
         }
     }
 
+    // The preview's own shape row. On a wide screen quick setup's Wide-screen fill (FillRow.qml, the Windows
+    // row) is shown with the same choices, so this one stands aside: each setting once a page. Which of the
+    // two is shown depends on the screen only, never on the choice, so the row never moves while it is used.
     VRow {
-        visible: picture.showShape
+        objectName: "home-fill-row"
+        visible: picture.showShape && !Fill.shown(Screen.height > 0 ? Screen.width / Screen.height : 0)
         label: qsTr("画面比例")
-        hint: qsTr("窗口和画面形状不同时：保留黑边、裁掉两侧铺满，或拉伸铺满")
+        hint: Fill.current(app.fillMode, app.preferences.pushAmbientFill === true) === "ambient"
+              ? qsTr("完整显示，不裁切也不变形；黑边换成画面本身柔和、变暗的延伸")
+              : qsTr("窗口和画面形状不同时：保留黑边、裁掉两侧铺满，或拉伸铺满")
         hintBelow: true
         VSeg {
             objectName: "home-fill"
-            options: [{ id: "0", label: qsTr("黑边") }, { id: "1", label: qsTr("裁切铺满") }, { id: "2", label: qsTr("拉伸") }]
-            current: String(app.fillMode)
-            onPicked: id => app.fillMode = Number(id)
+            // Ambient fill too (Fill.js), so it can be chosen on a screen where the Windows row stays hidden.
+            options: [{ id: "fit", label: qsTr("黑边") }, { id: "ambient", label: qsTr("氛围填充") },
+                      { id: "crop", label: qsTr("裁切铺满") }, { id: "stretch", label: qsTr("拉伸") }]
+            current: Fill.current(app.fillMode, app.preferences.pushAmbientFill === true)
+            onPicked: id => Fill.choose(app, id)
         }
     }
     Control { objectName: "picture-brightness"; label: qsTr("亮度"); from: -0.5; to: 0.5; neutral: 0; current: app.brightness; onChanged: v => app.brightness = v }
